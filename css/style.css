@@ -46,10 +46,10 @@ p {
 /* Logo */
 #logo {
   position: absolute;
-  top: 20px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 140px;
+  width: 230px;
   z-index: 60;
   cursor: pointer;
 }
