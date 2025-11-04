@@ -66,21 +66,17 @@ p {
 .mobile-nav {
   position: fixed;
   top: 0;
-  right: -290px;
-  width: 200px;
+  right: -310px;
+  width: 180px;
   height: 100vh;
-  /*
-  background: linear-gradient(180deg, #0b0b0b 0%, #171717 100%);
-  */
-  transition: right 0.3s ease;
+  background: linear-gradient(180deg, #080808 0%, #1b1b1b 100%);
+  transition: right 0.5s ease;
   z-index: 70;
-  padding: 80px 18px 48px 18px;
-  /*
-  border-left: 2px solid rgba(255, 204, 0, 0.1);
-  */
+  padding: 120px 18px 48px 18px;
 }
 .mobile-nav.open {
   right: 0;
+  background: linear-gradient(180deg, #080808 0%, #1b1b1b 100%);
 }
 .mobile-nav nav {
   display: flex;
@@ -102,7 +98,7 @@ p {
   position: absolute;
   top: 53px;
   right: 36px;
-  background: transparent;
+  background: #000;
   color: #cfcfcf;
   border: 0;
   font-size: 24px;
