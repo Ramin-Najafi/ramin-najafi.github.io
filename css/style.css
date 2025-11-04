@@ -66,7 +66,7 @@ p {
 .mobile-nav {
   position: fixed;
   top: 0;
-  right: -310px;
+  right: -320px;
   width: 180px;
   height: 100vh;
   background: linear-gradient(180deg, #080808 0%, #1b1b1b 100%);
@@ -320,9 +320,9 @@ button:hover {
 footer {
   padding: 28px 0;
   text-align: center;
-  font-size: 0.95em;
+  font-size: 0.7em;
   color: rgba(255, 255, 255, 0.6);
-  border-top: 1px solid rgba(255, 255, 255, 0.02);
+  border-top: .3px solid rgba(255, 255, 255, 0.02);
 }
 @media (min-width: 1422px) {
   .container {
@@ -354,13 +354,13 @@ footer {
     width: 120px;
   }
   .hero h1 {
-    font-size: 1.8em;
+    font-size: 1.2em;
   }
   .nav-toggle {
     right: 20px;
     font-size: 28px;
   }
   body {
-    font-size: 16px;
+    font-size: 10px;
   }
 }
