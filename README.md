@@ -4,7 +4,7 @@ A clean, single-page portfolio website showcasing my journey as an aspiring deve
 
 ## About
 
-This is my personal portfolio built to document my learning progress and showcase my skills in web development. I'm currently studying Web and Development Fundamentals, with a focus on front-end technologies and expanding into back-end languages.
+This is my personal portfolio, a dynamic showcase of my journey as an aspiring full-stack developer. It documents my learning progress and highlights my evolving skills in web development, currently focusing on a Web and Development Fundamentals program.
 
 ## Features
 
@@ -19,6 +19,7 @@ This is my personal portfolio built to document my learning progress and showcas
 - HTML5
 - CSS3 (with CSS Grid and Flexbox)
 - Vanilla JavaScript
+- jQuery
 - Google Fonts (Merienda)
 
 ## Sections
@@ -47,7 +48,7 @@ portfolio/
 ├── assets/
 │   └── images/
 │       ├── logo.png
-│       └── headerBkg.png
+│       └── headerBkg.jpg
 └── README.md
 ```
 
@@ -59,4 +60,4 @@ portfolio/
 
 ---
 
-© 2025 Ramin Najafi | Built with ❤️ and code
+© 2026 Ramin Najafi | Built with ❤️ and code

@@ -10,123 +10,113 @@
   <title>Ramin Najafi | Portfolio</title>
 </head>
 <body>
-  
-  <button id="navToggle" class="nav-toggle">☰</button>
+  <div id="hamburger" onclick="toggleMenu();">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
 
   <aside id="mobileNav" class="mobile-nav">
-    <button id="navClose" class="nav-close">✕</button>
     <nav>
       <a href="#home">home</a>
       <a href="#about">about</a>
-      <a href="#skills">skills</a>
-      <a href="#goals">goals</a>
+      <a href="#skills">Skills</a>
       <a href="#contact">contact</a>
     </nav>
   </aside>
 
   <header id="home" class="hero">
     <img id="logo" src="assets/images/logo.png" alt="Ramin logo">
-    <div class="container">
-      <h1>Hi, I'm <span class="accent">Ramin</span> 👋</h1>
-      <p class="tagline">Full-Stack Developer in Training | London, Ontario</p>
-      <p class="lead">
-        Combining nearly 20 years of customer service expertise with a passion for technology.
-        Currently building my foundation in web development through hands-on projects and continuous learning.
-      </p>
-    </div>
   </header>
+
+  <section class="container section">
+    <h1>Hi, I'm <span class="accent">Ramin</span> 👋</h1>
+    <p class="tagline">Aspiring Full-Stack Developer | London, Ontario</p>
+    <p class="lead">With nearly two decades of customer service expertise, I'm now channeling my passion for technology into web development, building a strong foundation through hands-on projects.</p>
+  </section>
 
   <section id="about" class="container section">
     <h2>About Me</h2>
-    <p>
-      I'm an aspiring developer based in London, Ontario, bringing nearly 20 years of experience in customer service,
-      customer relations, and the problem-solving skills that come with them. I also have a background in digital marketing
-      and a creative, quick-thinking approach to challenges.
-    </p>
-    <p>
-      Currently, I'm sharpening my programming and development skills through a <strong>Web and Development Fundamentals</strong> program.
-      This portfolio documents my journey — from small experiments to full projects — as I build the foundation for a career in software development.
-    </p>
+    <p>I'm an aspiring developer based in London, Ontario, leveraging extensive experience in customer relations and problem-solving. My background in digital marketing fuels a creative and quick-thinking approach to technical challenges.</p>
+    <p>Currently, I'm sharpening my programming and development skills through a <strong>Web and Development Fundamentals</strong> program. This portfolio documents my journey — from small experiments to full projects — as I build the foundation for a career in software development.</p>
     <ul class="about-list">
-      <li>Passionate about technology, design, and problem-solving</li>
-      <li>Transitioning into software development through hands-on learning</li>
-      <li>Exploring both front-end (HTML, CSS, JavaScript) and back-end (Java, Python, Swift)</li>
-      <li>Learning Linux and improving workflow with Git, Xcode, and macOS tools</li>
+      <li>Currently mastering modern web technologies in a <strong>Web and Development Fundamentals</strong> program.</li>
+      <li>Passionate about leveraging nearly two decades of customer service experience to build user-centric applications.</li>
+      <li>Eager to transition into a hands-on development role, with a focus on creating clean, efficient, and accessible code.</li>
+      <li>Actively exploring both front-end and back-end technologies to become a versatile full-stack developer.</li>
     </ul>
   </section>
 
-  <section id="skills" class="container section">
-    <h2>Skills & Learning</h2>
-    <p>Explore my latest projects on GitHub, experiments, and what I'm learning right now.</p>
-    <h3 class="subheading">Core Competencies</h3>
-    <div class="skills-grid">
-      <div class="skill-card">Web Development (HTML, CSS, JavaScript)</div>
-      <div class="skill-card">Version Control (Git & GitHub)</div>
-      <div class="skill-card">Java Programming (basics & OOP)</div>
-      <div class="skill-card">Python (practice & problem-solving soon)</div>
-      <div class="skill-card">Swift & iOS/macOS development (early stages)</div>
-      <div class="skill-card">Programming logic & problem solving</div>
-    </div>
+  <div class="skills-goals-grid container">
+    <section id="skills" class="section">
+      <h2>Skills & Learning</h2>
+      <p>Explore my latest projects on GitHub, experiments, and what I'm learning right now.</p>
+      <h3 class="subheading">Core Competencies</h3>
+      <div class="skills-grid">
+        <div class="skill-card">Web Development (HTML, CSS, JavaScript)</div>
+        <div class="skill-card">Version Control (Git & GitHub)</div>
+        <div class="skill-card">Java Programming (basics & OOP)</div>
+        <div class="skill-card">Python (practice & problem-solving)</div>
+        <div class="skill-card">Swift & iOS/macOS development (early stages)</div>
+        <div class="skill-card">Programming logic & problem solving</div>
+        <div class="skill-card">Leveraging AI tools for enhanced development workflows</div>
+        <div class="skill-card">WordPress Development & Linux Web Hosting</div>
+      </div>
+    </section>
 
+    <section id="goals" class="section">
+      <h2>Goals</h2>
+      <ul class="goals-list">
+        <li>Build real-world, production-ready applications</li>
+        <li>Contribute to open-source projects and collaborate effectively within a team</li>
+        <li>Grow into a full-stack developer with solid fundamentals in both front-end and back-end technologies</li>
+        <li>Master a modern front-end framework like React or Vue.js</li>
+        <li>Gain proficiency in back-end development with a language like Node.js or Python, including database interaction</li>
+        <li>Develop highly responsive, accessible, and performant web solutions</li>
+        <li>Keep learning every single day and adapt to evolving web technologies</li>
+        <li>Document my journey openly so others can learn and track my progress</li>
+      </ul>
+    </section>
+  </div>
+
+  <section id="currently-learning" class="container section">
     <h3 class="subheading">Currently Learning</h3>
     <div class="learning-tags">
-      <span>HTML5</span>
-      <span>CSS3</span>
-      <span>JavaScript</span>
-      <span>Java</span>
-      <span>Python</span>
-      <span>Swift</span>
-      <span>Linux</span>
-      <span>Adobe</span>
+      <span>React.js</span>
+      <span>Node.js</span>
+      <span>Full-Stack Development</span>
+      <span>Advanced CSS & Animations</span>
+      <span>Web Accessibility (WCAG)</span>
+      <span>Performance Optimization</span>
+      <span>SQL & Database Design</span>
+      <span>Cloud & Deployment (AWS/Netlify)</span>
     </div>
-  </section>
-
-  <section id="goals" class="container section">
-    <h2>Goals</h2>
-    <ul class="goals-list">
-      <li>Build real-world, production-ready applications</li>
-      <li>Contribute to open-source projects</li>
-      <li>Grow into a full-stack developer with solid fundamentals</li>
-      <li>Keep learning every single day</li>
-      <li>Document my journey openly so others can learn (and so I can see how far I've come)</li>
-    </ul>
   </section>
 
   <section id="contact" class="container section">
     <h2>Let's Connect</h2>
-    <p>
-      I'm always open to collaboration, mentorship, and sharing knowledge within the tech community.
-      At the moment, I'm actively seeking <strong>internship</strong> and <strong>entry-level opportunities</strong>
-      where I can contribute to real-world projects, grow as a developer, and continue learning from experienced teams.
-    </p>
+    <p>I'm open to collaboration, mentorship, and sharing knowledge. Currently seeking internship or entry-level opportunities where I can contribute to real-world projects and continue growing as a developer.</p>
     <form id="contactForm" class="contact-form" onsubmit="return submitContact(event)">
-      <label for="name"></label>
-      <input type="text" id="name" name="name" placeholder="Your name" required>
-
-      <label for="email"></label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" required>
-
-      <label for="subject"></label>
+      <div class="form-row">
+        <input type="text" id="name" name="name" placeholder="Your name" required>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
       <input type="text" id="subject" name="subject" placeholder="Subject" required>
-
-      <label for="message"></label>
       <textarea id="message" name="message" placeholder="Write your message..." required></textarea>
-
       <button type="submit">Send Message</button>
       <p id="successMsg" class="success" style="display:none;">Thank you! Your message has been sent.</p>
     </form>
     <div class="quote">"The expert in anything was once a beginner."</div>
-    
     <div class="social-links">
       <a href="https://github.com/ramin-najafi" target="_blank">GitHub</a>
-      <a href="mailto:rnajafi.dev@gmail.com">Email</a>
       <a href="https://www.linkedin.com/in/ramin-najafi-689110390/" target="_blank">LinkedIn</a>
     </div>
   </section>
 
   <footer>
-    <p>© 2025 Ramin Najafi | Built with ❤️ and code</p>
+    <p>© 2026 Ramin Najafi | Built with ❤️ and code 👨🏻‍💻</p>
   </footer>
+
   <script src="js/jquery.js"></script>
   <script src="js/app.js"></script>
 </body>
