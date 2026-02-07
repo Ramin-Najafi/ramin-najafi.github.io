@@ -18,10 +18,13 @@
 
   <aside id="mobileNav" class="mobile-nav">
     <nav>
-      <a href="#home">home</a>
-      <a href="#about">about</a>
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
       <a href="#skills">Skills</a>
-      <a href="#contact">contact</a>
+      <a href="#goals">Goals</a>
+      <a href="#projects">Projects</a>
+      <a href="#contact">Contact</a>
+      <a href="/linen/" class="menu-linen-app">Linen App</a>
     </nav>
   </aside>
 
@@ -39,7 +42,7 @@
     <h2>About Me</h2>
     <p>I'm an aspiring developer based in London, Ontario, leveraging extensive experience in customer relations and problem-solving. My background in digital marketing fuels a creative and quick-thinking approach to technical challenges.</p>
     <p>Currently, I'm sharpening my programming and development skills through a <strong>Web and Development Fundamentals</strong> program. This portfolio documents my journey — from small experiments to full projects — as I build the foundation for a career in software development.</p>
-    <ul class="about-list">
+    <ul class="about-feature-list">
       <li>Currently mastering modern web technologies in a <strong>Web and Development Fundamentals</strong> program.</li>
       <li>Passionate about leveraging nearly two decades of customer service experience to build user-centric applications.</li>
       <li>Eager to transition into a hands-on development role, with a focus on creating clean, efficient, and accessible code.</li>
@@ -47,8 +50,7 @@
     </ul>
   </section>
 
-  <div class="skills-goals-grid container">
-    <section id="skills" class="section">
+    <section id="skills" class="container section">
       <h2>Skills & Learning</h2>
       <p>Explore my latest projects on GitHub, experiments, and what I'm learning right now.</p>
       <h3 class="subheading">Core Competencies</h3>
@@ -77,9 +79,39 @@
         <li>Document my journey openly so others can learn and track my progress</li>
       </ul>
     </section>
-  </div>
 
-  <section id="currently-learning" class="container section">
+    <section id="projects" class="section">
+      <h2>Featured Projects</h2>
+      <div class="project-grid">
+        <div class="project-item">
+          <h3>Linen PWA - Personal Memory App</h3>
+          <p class="project-meta">Progressive Web Application | JavaScript, IndexedDB, Service Worker</p>
+          <p>A privacy-focused PWA designed to capture, organize, and recall personal memories. Works entirely offline with local storage.</p>
+          <ul class="project-features">
+            <li>Offline-first architecture using Service Workers for reliability</li>
+            <li>Secure local data storage with IndexedDB</li>
+            <li>Intuitive UI for memory capture, search, and insights</li>
+            <li>Installable on mobile and desktop for native-like experience</li>
+          </ul>
+        </div>
+
+        <div class="project-item">
+          <h3>ShopAll - E-Commerce Platform</h3>
+          <p class="project-meta">Full-Stack Web Application | HTML, CSS, JavaScript, Local Storage</p>
+          <p>A comprehensive tech product e-commerce site featuring 35+ products across 7 categories with full shopping cart functionality, wishlist system, and persistent local storage.</p>
+          <ul class="project-features">
+            <li>Implemented shopping cart with localStorage persistence and tax calculations (13%)</li>
+            <li>Built search system with product suggestions and category filtering</li>
+            <li>Created purchase confirmation popups with automatic data persistence</li>
+            <li>Designed responsive interface for mobile and desktop users</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+
+
+
     <h3 class="subheading">Currently Learning</h3>
     <div class="learning-tags">
       <span>React.js</span>
