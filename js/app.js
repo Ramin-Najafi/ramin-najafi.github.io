@@ -31,6 +31,24 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleMenu(); // Close the menu
         }
     });
+
+    // Add click functionality to Linen Project Box
+    const linenProjectBox = document.getElementById('linen-project-box');
+    if (linenProjectBox) {
+        linenProjectBox.style.cursor = 'pointer'; // Indicate clickable
+        linenProjectBox.addEventListener('click', function() {
+            window.open('/linen/', '_blank');
+        });
+    }
+
+    // Add click functionality to ShopAll Project Box
+    const shopallProjectBox = document.getElementById('shopall-project-box');
+    if (shopallProjectBox) {
+        shopallProjectBox.style.cursor = 'pointer'; // Indicate clickable
+        shopallProjectBox.addEventListener('click', function() {
+            window.open('/shopall/', '_blank'); // Assuming /shopall/ is the correct URL
+        });
+    }
 });
 
 async function submitContact(event) {
