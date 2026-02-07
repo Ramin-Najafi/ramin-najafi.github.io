@@ -149,7 +149,7 @@ p {
   font-size: 1.3em; /* Increased font size a little */
   font-style: italic; /* Styled as italic */
   color: #e0e0e0; /* Light grey font color */
-  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; /* White outline */
+  /* text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; /* White outline - REMOVED */
 }
 
 .nav-close {
