@@ -41,6 +41,16 @@
 }
 
 /* ============================================
+   DARK MODE OVERRIDES - Only for specific elements
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    #linen-hamburger .bar {
+        background-color: #ffffff; /* White bars in dark mode */
+    }
+}
+
+
+/* ============================================
    RESET & BASE STYLES
    ============================================ */
 
@@ -80,7 +90,7 @@ input, textarea, button {
 }
 
 .sidebar {
-    background-color: #ffffff;
+    background-color: #ffffff; /* Use primary bg color */
     border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
@@ -496,6 +506,7 @@ input, textarea, button {
 
 .memory-emotion {
     font-size: 1.5rem;
+    color: var(--color-text-primary); /* Changed from var(--color-emotion-positive) */
 }
 
 .memory-text {
@@ -806,8 +817,8 @@ body.sidebar-open .sidebar-overlay {
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
     background-color: #ffffff;
-    border-radius: 8px;
     border: 1px solid var(--color-border);
+    border-radius: 8px;
 }
 
 .message {

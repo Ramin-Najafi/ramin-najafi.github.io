@@ -184,7 +184,7 @@ Never be preachy or judgmental. Be genuine and supportive.`;
             ...conversationContext,
             {
                 role: 'user',
-                content: `${memoryContext}\n\nUser: ${userMessage}`
+                parts: [{ text: `${memoryContext}\n\nUser: ${userMessage}` }] // FIX: Changed 'content' to 'parts'
             }
         ];
 
@@ -221,8 +221,9 @@ Never be preachy or judgmental. Be genuine and supportive.`;
 
             return assistantMessage;
         } catch (error) {
-            console.error('Gemini API error:', error);
-            throw error;
+            document.getElementById(loadingId)?.remove(); // loadingId is not defined here
+            this.addChatMessage(`Sorry, I encountered an error: ${error.message}`, 'assistant');
+            console.error(error);
         }
     }
 
@@ -497,7 +498,11 @@ class Linen {
             const messagesContainer = document.getElementById('chat-messages');
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         } catch (error) {
-            document.getElementById(loadingId)?.remove();
+            // Fix: loadingId must be removed in catch
+            const loadingMessageElement = document.getElementById(loadingId);
+            if (loadingMessageElement) {
+                loadingMessageElement.remove();
+            }
             this.addChatMessage(`Sorry, I encountered an error: ${error.message}`, 'assistant');
             console.error(error);
         }
