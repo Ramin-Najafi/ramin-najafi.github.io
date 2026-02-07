@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="css/app.css">
+   <title>ShopAll</title>
+</head>
+<body>
+   <div id="lightbox" onclick="hideBox();">
+      <img id="lightboxImage" src="" alt="The Big Picture">
+   </div>
+   <div id="logo" onclick="showHome();" style="cursor: pointer;">                                                     │
+      <img src="assets/images/logo.png" alt="logo">
+   </div>
+   <div id="social">
+      <img src="assets/images/instagram.png" alt="instagram" class="socialIcon">
+      <img src="assets/images/twitter.png" alt="twitter" class="socialIcon">
+      <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
+      <img src="assets/images/youtube.png" alt="youtube" class="socialIcon">
+      </a>
+   </div>
+   <div id="hamburger" onclick="toggleMenu();">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+   </div>
+   <nav id="sideMenu">
+      <a href="#" onclick="closeNav(); showHome();">Home</a>
+      <a href="#about" onclick="closeNav(); showAbout();">About</a>
+      <a href="#wishlist" onclick="closeNav(); showWishlist();">Wish List</a>
+      <a href="#categories" onclick="closeNav(); showCategories();">Categories</a>
+   </nav>
+   <div id="cart">
+      <img src="assets/images/shoppingcart.png" alt="shoppingCart" onclick="toggleCart();">
+      <span id="cartCount">0</span>
+   </div>
+   <header>
+      <centre><h1>Your Final Shopping Destination</h1></centre>
+   </header>
+   <main>
+      <div id="search">
+         <img id="smlLogo" src="assets/images/search.png" alt="Search Icon Logo">
+         <input id="txtSearch" type="text" placeholder="Search for products...">
+         <div id="suggestions"></div>
+      </div>
+      <section id="trendingSection">
+         <h2>Best Sellers</h2>
+         <div id="latest"></div>
+      </section>
+      <section id="aboutSection" style="display:none;">
+         <h2>About US</h2>
+         <div id="aboutContent">
+            <p>Welcome to ShopAll, your ultimate destination for all your shopping needs! We bring you a diverse and ever-updating selection of products, from cutting-edge electronics like laptops and phones to unique fragrances and stylish furniture, all at competitive prices. Our inventory is dynamically sourced to ensure you always have access to the latest and greatest offerings.</p>
+            <h3>How to Navigate</h3>
+            <p><strong>Search:</strong> Easily find what you're looking for! Use the search bar at the top to find products by name or type. Our intelligent suggestions help you narrow down your choices quickly.</p>
+            <p><strong>Categories:</strong> Explore our wide range of products by browsing through our dynamically generated categories. After viewing items in a category, simply click the "« Back to Categories" button to return to the main category list.</p>
+            <p><strong>Best Sellers:</strong> Discover our most popular items instantly! Check out the trending products featured prominently on the home page. You can add items directly to your cart from this section.</p>
+            <p><strong>Shopping Cart:</strong> Manage your selections with ease. Click the cart icon in the top right to view items you've added. You can now adjust quantities directly, or remove items individually. Your cart is saved automatically so you can shop at your convenience.</p>
+            <p><strong>Wish List:</strong> Found something you love but not ready to buy? Save it for later by adding it to your wish list. Access it anytime from the menu.</p>
+            <p><strong>Product Details:</strong> Get all the information you need. Click on any product image to see full details, descriptions, and pricing in a convenient pop-up panel.</p>
+            <p>Enjoy a seamless and personalized shopping experience with ShopAll!</p>
+         </div>
+      </section>
+      <section id="resultsSection">
+         <div id="resultsHeader">
+            <center><button id="backToCategoriesBtn" style="display: none;">« Back to Categories</button></center>
+            <h2 id="resultsTitle" style="display:none;">Search Results</h2>
+         </div>
+         <div id="results"></div>
+      </section>
+      <section id="wishlistSection" style="display:none;">
+         <h2>My Wish List</h2>
+         <div id="wishlistItems"></div>
+      </section>
+      <section id="categoriesSection" style="display:none;">
+         <h2>Categories</h2>
+         <div id="categoryItems"></div>
+      </section>
+   </main>
+   <div id="productPanel"></div>
+      <div id="cartPanel">
+         <div id="cartHeader">
+            <h2>Shopping Cart</h2>
+            <span id="closeCart" onclick="toggleCart();">X</span>
+         </div>
+         <div id="cartItems"></div>
+         <div id="cartTotal">
+            <p>Total: <span id="totalPrice">$0.00</span></p>
+            <button onclick="buyNow();">Buy Now</button>
+         </div>
+      </div>
+   <footer>
+      <p>&copy;2026 ShopAll, All of Your Shopping Inquiries, Reserved In One Place!</p>
+   </footer>
+   <div id="confirmPopup">
+      <div id="confirmContent">
+         <h2>Confirm Purchase</h2>
+         <p>Complete your purchase of <span id="confirmTotal"></span>?</p>
+         <button onclick="completePurchase();">Yes, Buy Now</button>
+         <button onclick="closeConfirmPopup();">Cancel</button>
+      </div>
+   </div>
+   <div id="successPopup">
+      <div id="successContent">
+         <h2>Purchase Successful!</h2>
+         <p>Thank you for shopping with ShopAll!</p>
+         <button onclick="closeSuccessPopup();">Close</button>
+      </div>
+   </div>
+   <script src="js/jquery.js"></script>
+   <script src="js/app.js"></script>
+</body>
+</html>

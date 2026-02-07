@@ -116,14 +116,40 @@ p {
   font-size: 1.2em;
   padding: 12px 25px;
   transition: color 0.3s;
+  position: relative; /* Needed for ::after positioning */
 }
 
 .mobile-nav nav a:hover {
   color: #ffcc00;
 }
 
+.mobile-nav nav a:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(to right,
+    rgba(255, 204, 0, 0) 0%,
+    rgba(255, 204, 0, 0.7) 25%,
+    rgba(255, 204, 0, 1) 50%,
+    rgba(255, 204, 0, 0.7) 75%,
+    rgba(255, 204, 0, 0) 100%
+  );
+}
+
 .mobile-nav nav .menu-linen-app {
-  margin-top: 35px;
+  margin-top: 25px; /* Moved 10px up */
+}
+
+.mobile-nav nav .menu-linen-app,
+.mobile-nav nav .menu-shopall-app {
+  font-size: 1.3em; /* Increased font size a little */
+  font-style: italic; /* Styled as italic */
+  color: #e0e0e0; /* Light grey font color */
+  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; /* White outline */
 }
 
 .nav-close {
@@ -260,6 +286,7 @@ p {
   display: inline-block;
   width: 20px;
   margin-left: -20px;
+  font-weight: bold;
 }
 
 .about-feature-list, .goals-list {
@@ -286,7 +313,7 @@ p {
 }
 
 /* Thinning out line separator */
-.about-feature-list li:not(:last-child)::after, .goals-list li:not(:last-child)::after {
+.about-feature-list li:not(:last-child)::after, .goals-list li:not(:last-child)::after, .project-features li:not(:last-child)::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -335,6 +362,7 @@ p {
 .project-item h3 {
   margin-bottom: 8px;
   font-size: 1.3em;
+  text-align: center; /* Centered */
 }
 
 .project-meta {
@@ -342,6 +370,7 @@ p {
   font-size: 0.95em;
   margin-bottom: 12px;
   font-style: italic;
+  text-align: center; /* Centered */
 }
 
 .project-features {
@@ -350,22 +379,24 @@ p {
   list-style: none;
   max-width: fit-content; /* Center the ul itself */
   margin: 0 auto; /* Center the ul itself */
-  text-align: left; /* Keep list items left aligned */
+  text-align: center; /* Keep list items left aligned */
 }
 
 .project-features li {
   margin: 8px 0;
   padding-left: 20px;
   position: relative;
+  text-align: center; /* Centered */
 }
 
 .project-features li::before {
-  content: '✓';
+  content: none; /* Removed checkmark bullet */
   color: #ffcc00;
   display: inline-block;
   width: 20px;
   margin-left: -20px;
   font-weight: bold;
+  text-align: initial; /* Reset text-align for pseudo-element */
 }
 
 .learning-tags {
@@ -554,7 +585,7 @@ footer {
     grid-template-columns: 1fr 1fr;
     gap: 40px;
     margin-top: 30px;
-    padding: 0 35px; /* Add padding for distance from walls */
+    padding: 0 70px; /* Add padding for distance from walls */
   }
   
   .project-item {
