@@ -322,7 +322,7 @@ p {
   width: 80%; /* Adjust width as needed */
   height: 1px;
   background: linear-gradient(to right,
-    rgba(255, 204, 0, 0) 0%, /* Transparent left */
+    rgba(255, 204, 0, 0) 0%,
     rgba(255, 204, 0, 0.7) 25%,
     rgba(255, 204, 0, 1) 50%,
     rgba(255, 204, 0, 0.7) 75%,
@@ -618,6 +618,11 @@ footer {
   grid-template-columns: 1fr 1fr;
   gap: 40px; /* Consistent with .project-grid gap */
   align-items: start; /* Ensure equal height */
+}
+
+.skills-column,
+.goals-column {
+  padding: 0 15px; /* Add some horizontal padding inside the columns */
 }
 
 @media (max-width: 767px) {
