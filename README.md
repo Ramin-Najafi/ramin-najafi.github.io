@@ -9,8 +9,9 @@ This is my personal portfolio, a dynamic showcase of my journey as an aspiring f
 ## Features
 
 - Single-page design with smooth scrolling navigation
-- Responsive hamburger menu for all screen sizes
-- Sections: Home, About, Skills, Goals, and Contact
+- Responsive hamburger menu for all screen sizes (refined for tighter layout)
+- Integrated Linen PWA (Progressive Web Application) for a native-like experience
+- Sections: Home, About, Skills, Projects, Contact
 - Clean, minimal design with dark theme
 - Mobile-first approach
 
@@ -27,8 +28,18 @@ This is my personal portfolio, a dynamic showcase of my journey as an aspiring f
 - **Home** - Introduction and overview
 - **About** - Background and experience
 - **Skills** - Technical competencies and current learning
-- **Goals** - Development objectives
+- **Projects** - Featured work, including the Linen PWA and E-Commerce platform
 - **Contact** - Get in touch form and social links
+
+## Featured Projects
+
+### Linen PWA - Personal Memory App
+
+A privacy-focused Progressive Web Application designed to capture, organize, and recall personal memories. Works entirely offline with local storage and leverages the Gemini API for conversational insights. Features a mobile-first responsive design with a slide-in sidebar menu.
+
+### ShopAll - E-Commerce Platform
+
+A comprehensive tech product e-commerce site featuring 35+ products across 7 categories with full shopping cart functionality, wishlist system, and persistent local storage.
 
 ## Setup
 
@@ -49,6 +60,12 @@ portfolio/
 │   └── images/
 │       ├── logo.png
 │       └── headerBkg.jpg
+├── linen/ # Integrated Linen PWA
+│   ├── app.js
+│   ├── index.html
+│   ├── manifest.json
+│   ├── service-worker.js
+│   └── styles.css
 └── README.md
 ```
 
