@@ -615,7 +615,7 @@ footer {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 40px; /* Consistent with .project-grid gap */
-  align-items: stretch; /* Ensure equal height */
+  align-items: start; /* Ensure equal height */
 }
 
 @media (max-width: 767px) {
