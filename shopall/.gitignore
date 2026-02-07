@@ -1,5 +1,16 @@
-# Object file
-*.o
-
-# Ada Library Information
-*.ali
+# Web development ignores
+node_modules/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+dist/
+build/
+tmp/
+.tmp/
+.vscode/
+.DS_Store
+*.log
+*.zip
+*.rar

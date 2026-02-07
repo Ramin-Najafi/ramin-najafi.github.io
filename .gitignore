@@ -25,3 +25,16 @@ replay_pid*
 
 # macOS temporary files
 .DS_Store
+
+# Web development ignores
+node_modules/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+dist/
+build/
+tmp/
+.tmp/
+.vscode/
