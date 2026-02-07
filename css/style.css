@@ -323,10 +323,10 @@ p {
   height: 1px;
   background: linear-gradient(to right,
     rgba(255, 204, 0, 0) 0%, /* Transparent left */
-    rgba(255, 204, 0, 0.7) 25%, /* Thinning in */
-    rgba(255, 204, 0, 1) 50%, /* Center point */
-    rgba(255, 204, 0, 0.7) 75%, /* Thinning out */
-    rgba(255, 204, 0, 0) 100% /* Transparent right */
+    rgba(255, 204, 0, 0.7) 25%,
+    rgba(255, 204, 0, 1) 50%,
+    rgba(255, 204, 0, 0.7) 75%,
+    rgba(255, 204, 0, 0) 100%
   );
 }
 
@@ -611,52 +611,15 @@ footer {
   }
 }
 
-@media (max-width: 420px) {
-  header {
-    height: 350px;
-  }
-  
-  #logo {
-    width: 120px;
-  }
-  
-  .hero h1 {
-    font-size: 1.2em;
-  }
-  
-  body {
-    font-size: 10px;
-  }
+.skills-goals-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px; /* Consistent with .project-grid gap */
+  align-items: stretch; /* Ensure equal height */
 }
 
-@media (max-width: 859px) {
-  body {
-    font-size: 16px;
-  }
-  
-  h1 {
-    font-size: 2em;
-  }
-  
-  h2 {
-    font-size: 1.8em;
-  }
-  
-  h3 {
-    font-size: 1.3em;
-  }
-  
-  p, .tagline, .lead {
-    font-size: 1em;
-  }
-
-  .hero {
-    min-height: 200px;
-  }
-
-  #logo {
-    width: 99px;
-    left: 20px;
-    top: 20px;
+@media (max-width: 767px) {
+  .skills-goals-container {
+    grid-template-columns: 1fr;
   }
 }
