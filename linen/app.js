@@ -1,6 +1,6 @@
 /**
- * PERSONAL BUTLER - Application Logic
- * Manages memories, storage, and UI interactions
+ * LINEN - Personal Memory App with AI Assistant
+ * Uses Google Gemini API for conversational memory understanding
  */
 
 // ============================================
@@ -15,7 +15,7 @@ class LinenDB {
 
     async init() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('linen-db', 1);
+            const request = indexedDB.open('linen-db', 2);
 
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
@@ -34,31 +34,40 @@ class LinenDB {
                     });
                     store.createIndex('date', 'date', { unique: false });
                     store.createIndex('emotion', 'emotion', { unique: false });
-                    store.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+                }
+
+                // Create conversations store
+                if (!db.objectStoreNames.contains('conversations')) {
+                    db.createObjectStore('conversations', {
+                        keyPath: 'id',
+                        autoIncrement: true
+                    });
+                }
+
+                // Create settings store
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
                 }
             };
         });
     }
 
-    // Add a new memory
+    // Memory operations
     async addMemory(memory) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['memories'], 'readwrite');
             const store = transaction.objectStore('memories');
             const request = store.add(memory);
-
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
     }
 
-    // Get all memories
     async getAllMemories() {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['memories'], 'readonly');
             const store = transaction.objectStore('memories');
             const request = store.getAll();
-
             request.onsuccess = () => {
                 const memories = request.result.sort((a, b) => b.date - a.date);
                 resolve(memories);
@@ -67,34 +76,184 @@ class LinenDB {
         });
     }
 
-    // Delete a memory
     async deleteMemory(id) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['memories'], 'readwrite');
             const store = transaction.objectStore('memories');
             const request = store.delete(id);
-
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
     }
 
-    // Export all data
-    async exportData() {
-        const memories = await this.getAllMemories();
-        return JSON.stringify(memories, null, 2);
+    // Conversation operations
+    async addConversation(message) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['conversations'], 'readwrite');
+            const store = transaction.objectStore('conversations');
+            const request = store.add(message);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
     }
 
-    // Clear all memories
+    async getConversations() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['conversations'], 'readonly');
+            const store = transaction.objectStore('conversations');
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const convos = request.result.sort((a, b) => a.date - b.date);
+                resolve(convos);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Settings operations
+    async getSetting(key) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['settings'], 'readonly');
+            const store = transaction.objectStore('settings');
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result?.value || null);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async setSetting(key, value) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['settings'], 'readwrite');
+            const store = transaction.objectStore('settings');
+            const request = store.put({ key, value });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Utility
     async clearAllMemories() {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['memories'], 'readwrite');
-            const store = transaction.objectStore('memories');
-            const request = store.clear();
-
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+            const transaction = this.db.transaction(['memories', 'conversations'], 'readwrite');
+            transaction.objectStore('memories').clear();
+            transaction.objectStore('conversations').clear();
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
         });
+    }
+
+    async exportData() {
+        const memories = await this.getAllMemories();
+        const conversations = await this.getConversations();
+        return JSON.stringify({ memories, conversations }, null, 2);
+    }
+}
+
+// ============================================
+// GEMINI API INTEGRATION
+// ============================================
+
+class GeminiAssistant {
+    constructor(apiKey) {
+        this.apiKey = apiKey;
+        this.model = 'gemini-1.5-flash';
+        this.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
+    }
+
+    async chat(userMessage, conversationHistory, memories) {
+        if (!this.apiKey) {
+            throw new Error('API key not configured. Please add your Gemini API key in Settings.');
+        }
+
+        // Build context from memories
+        const memoryContext = this.buildMemoryContext(memories);
+        const conversationContext = this.buildConversationContext(conversationHistory);
+
+        const systemPrompt = `You are a thoughtful, empathetic personal assistant. Your role is to:
+- Listen and remember what users share
+- Help them notice patterns in their life
+- Support their decision-making without judgment
+- Be honest and caring, never dismissive
+- Ask clarifying questions when helpful
+- Surface insights from their memories when relevant
+
+You have access to their memories and past conversations. Use this context to give personalized, meaningful responses.
+Never be preachy or judgmental. Be genuine and supportive.`;
+
+        const messages = [
+            ...conversationContext,
+            {
+                role: 'user',
+                content: `${memoryContext}\n\nUser: ${userMessage}`
+            }
+        ];
+
+        try {
+            const response = await fetch(
+                `${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: messages,
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        },
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 1024
+                        }
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'API request failed');
+            }
+
+            const data = await response.json();
+            const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!assistantMessage) {
+                throw new Error('No response from assistant');
+            }
+
+            return assistantMessage;
+        } catch (error) {
+            console.error('Gemini API error:', error);
+            throw error;
+        }
+    }
+
+    buildMemoryContext(memories) {
+        if (!memories || memories.length === 0) {
+            return 'No memories yet.';
+        }
+
+        const recentMemories = memories.slice(0, 10);
+        let context = 'Recent memories:\n';
+
+        recentMemories.forEach(mem => {
+            const date = new Date(mem.date).toLocaleDateString();
+            const emotion = mem.emotion ? ` (felt ${mem.emotion})` : '';
+            const tags = mem.tags?.length ? ` [${mem.tags.join(', ')}]` : '';
+            context += `- ${date}: ${mem.text.substring(0, 100)}...${emotion}${tags}\n`;
+        });
+
+        return context;
+    }
+
+    buildConversationContext(conversationHistory) {
+        if (!conversationHistory || conversationHistory.length === 0) {
+            return [];
+        }
+
+        // Return last 10 exchanges for context
+        return conversationHistory.slice(-10).map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
     }
 }
 
@@ -105,6 +264,7 @@ class LinenDB {
 class Linen {
     constructor() {
         this.db = new LinenDB();
+        this.assistant = null;
         this.currentView = 'capture';
         this.selectedEmotion = '';
         this.init();
@@ -112,17 +272,68 @@ class Linen {
 
     async init() {
         await this.db.init();
+        const apiKey = await this.db.getSetting('gemini-api-key');
+        if (apiKey) {
+            this.assistant = new GeminiAssistant(apiKey);
+        }
+
         this.setupEventListeners();
         this.registerServiceWorker();
         await this.loadMemories();
-        this.updateMemoryCount();
+        await this.loadConversations();
+        await this.updateMemoryCount();
     }
+
+    // ============================================
+    // MOBILE SIDEBAR / HAMBURGER MENU
+    // ============================================
+
+    toggleMobileSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const hamburger = document.getElementById('linen-hamburger');
+        const body = document.body;
+
+        sidebar.classList.toggle('open');
+        hamburger.classList.toggle('open');
+        body.classList.toggle('sidebar-open');
+    }
+
+    closeMobileSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const hamburger = document.getElementById('linen-hamburger');
+        const body = document.body;
+
+        if (sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            hamburger.classList.remove('open');
+            body.classList.remove('sidebar-open');
+        }
+    }
+
 
     // ============================================
     // EVENT LISTENERS
     // ============================================
 
     setupEventListeners() {
+        // Hamburger Menu
+        const hamburger = document.getElementById('linen-hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', () => this.toggleMobileSidebar());
+        }
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            const sidebar = document.querySelector('.sidebar');
+            const hamburger = document.getElementById('linen-hamburger');
+
+            if (sidebar && hamburger && sidebar.classList.contains('open') &&
+                !sidebar.contains(e.target) &&
+                !hamburger.contains(e.target)) {
+                this.closeMobileSidebar();
+            }
+        });
+        
         // Navigation
         document.querySelectorAll('.nav-item').forEach(btn => {
             btn.addEventListener('click', (e) => this.switchView(e.target.closest('.nav-item')));
@@ -136,10 +347,17 @@ class Linen {
             btn.addEventListener('click', (e) => this.selectEmotion(e.target.closest('.emotion-btn')));
         });
 
-        // Recall search
-        document.getElementById('recall-input').addEventListener('input', (e) => this.handleRecall(e.target.value));
+        // Chat
+        document.getElementById('chat-send').addEventListener('click', () => this.handleChatSubmit());
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleChatSubmit();
+        });
+
+        // Memory search
+        document.getElementById('memory-search').addEventListener('input', (e) => this.handleMemorySearch(e.target.value));
 
         // Settings
+        document.getElementById('save-api-key').addEventListener('click', () => this.saveApiKey());
         document.getElementById('export-data').addEventListener('click', () => this.exportData());
         document.getElementById('clear-data').addEventListener('click', () => this.confirmClearData());
     }
@@ -151,16 +369,10 @@ class Linen {
     switchView(element) {
         const viewName = element.dataset.view;
 
-        // Update nav items
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         element.classList.add('active');
 
-        // Update views
-        document.querySelectorAll('.view').forEach(view => {
-            view.classList.remove('active');
-        });
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
 
         const viewElement = document.getElementById(`${viewName}-view`);
         if (viewElement) {
@@ -168,15 +380,15 @@ class Linen {
         }
 
         this.currentView = viewName;
-
-        // Clear search when switching away from recall
-        if (viewName !== 'recall') {
-            document.getElementById('recall-input').value = '';
+        
+        // Close sidebar if mobile and open
+        if (window.innerWidth <= 768) {
+            this.closeMobileSidebar();
         }
     }
 
     // ============================================
-    // CAPTURE FUNCTIONALITY
+    // CAPTURE
     // ============================================
 
     async handleCapture(e) {
@@ -208,12 +420,9 @@ class Linen {
             await this.db.addMemory(memory);
             this.showToast('Memory saved 💭');
 
-            // Clear form
             document.getElementById('capture-form').reset();
             this.selectedEmotion = '';
-            document.querySelectorAll('.emotion-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
+            document.querySelectorAll('.emotion-btn').forEach(btn => btn.classList.remove('selected'));
 
             await this.updateMemoryCount();
         } catch (error) {
@@ -223,24 +432,135 @@ class Linen {
     }
 
     selectEmotion(button) {
-        // Toggle selection
         if (button.classList.contains('selected')) {
             button.classList.remove('selected');
             this.selectedEmotion = '';
         } else {
-            document.querySelectorAll('.emotion-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
+            document.querySelectorAll('.emotion-btn').forEach(btn => btn.classList.remove('selected'));
             button.classList.add('selected');
             this.selectedEmotion = button.dataset.emotion;
         }
     }
 
     // ============================================
-    // RECALL FUNCTIONALITY
+    // CHAT
     // ============================================
 
-    async handleRecall(query) {
+    async handleChatSubmit() {
+        const input = document.getElementById('chat-input');
+        const userMessage = input.value.trim();
+
+        if (!userMessage) return;
+
+        if (!this.assistant) {
+            this.showToast('Please configure Gemini API key in Settings');
+            return;
+        }
+
+        // Add user message to chat
+        this.addChatMessage(userMessage, 'user');
+        input.value = '';
+
+        // Show loading indicator
+        const loadingId = this.addChatMessage('Thinking...', 'assistant', true);
+
+        try {
+            const memories = await this.db.getAllMemories();
+            const conversations = await this.db.getConversations();
+
+            const assistantResponse = await this.assistant.chat(
+                userMessage,
+                conversations,
+                memories
+            );
+
+            // Remove loading message
+            document.getElementById(loadingId)?.remove();
+
+            // Add assistant response
+            this.addChatMessage(assistantResponse, 'assistant');
+
+            // Save conversation
+            await this.db.addConversation({
+                text: userMessage,
+                sender: 'user',
+                date: new Date().getTime()
+            });
+
+            await this.db.addConversation({
+                text: assistantResponse,
+                sender: 'assistant',
+                date: new Date().getTime()
+            });
+
+            // Auto-scroll to bottom
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } catch (error) {
+            document.getElementById(loadingId)?.remove();
+            this.addChatMessage(`Sorry, I encountered an error: ${error.message}`, 'assistant');
+            console.error(error);
+        }
+    }
+
+    addChatMessage(text, sender, isLoading = false) {
+        const messagesContainer = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        const messageId = 'msg-' + Date.now();
+        messageDiv.id = messageId;
+        messageDiv.className = `message ${sender}-message`;
+        messageDiv.innerHTML = `<p>${this.escapeHTML(text)}</p>`;
+
+        messagesContainer.appendChild(messageDiv);
+        return messageId;
+    }
+
+    async loadConversations() {
+        try {
+            const conversations = await this.db.getConversations();
+            const messagesContainer = document.getElementById('chat-messages');
+
+            // Clear existing messages except greeting
+            const existing = messagesContainer.querySelectorAll('.message');
+            if (existing.length > 1) {
+                existing.forEach(msg => msg.remove());
+            }
+
+            // Reload conversations
+            conversations.forEach(msg => {
+                this.addChatMessage(msg.text, msg.sender);
+            });
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+        }
+    }
+
+    // ============================================
+    // MEMORIES
+    // ============================================
+
+    async loadMemories() {
+        const memoriesList = document.getElementById('memories-list');
+        const memories = await this.db.getAllMemories();
+
+        memoriesList.innerHTML = '';
+
+        if (memories.length === 0) {
+            memoriesList.innerHTML = `
+                <div class="empty-state">
+                    <p>Your memories will appear here</p>
+                    <span>Start by capturing something in the Capture tab</span>
+                </div>
+            `;
+            return;
+        }
+
+        memories.forEach(memory => {
+            memoriesList.appendChild(this.createMemoryCard(memory));
+        });
+    }
+
+    async handleMemorySearch(query) {
         const memoriesList = document.getElementById('memories-list');
         const memories = await this.db.getAllMemories();
 
@@ -269,31 +589,6 @@ class Linen {
                 memoriesList.appendChild(this.createMemoryCard(memory));
             });
         }
-    }
-
-    // ============================================
-    // MEMORY DISPLAY
-    // ============================================
-
-    async loadMemories() {
-        const memoriesList = document.getElementById('memories-list');
-        const memories = await this.db.getAllMemories();
-
-        memoriesList.innerHTML = '';
-
-        if (memories.length === 0) {
-            memoriesList.innerHTML = `
-                <div class="empty-state">
-                    <p>Your memories will appear here</p>
-                    <span>Start by capturing something in the Capture tab</span>
-                </div>
-            `;
-            return;
-        }
-
-        memories.forEach(memory => {
-            memoriesList.appendChild(this.createMemoryCard(memory));
-        });
     }
 
     createMemoryCard(memory) {
@@ -358,12 +653,27 @@ class Linen {
     }
 
     // ============================================
-    // MEMORY MANAGEMENT
+    // SETTINGS
     // ============================================
 
-    async updateMemoryCount() {
-        const memories = await this.db.getAllMemories();
-        document.getElementById('memory-count').textContent = memories.length;
+    async saveApiKey() {
+        const keyInput = document.getElementById('api-key-input');
+        const apiKey = keyInput.value.trim();
+
+        if (!apiKey) {
+            this.showToast('Please enter an API key');
+            return;
+        }
+
+        try {
+            await this.db.setSetting('gemini-api-key', apiKey);
+            this.assistant = new GeminiAssistant(apiKey);
+            keyInput.value = '';
+            this.showToast('API key saved');
+        } catch (error) {
+            this.showToast('Error saving API key');
+            console.error(error);
+        }
     }
 
     async exportData() {
@@ -373,7 +683,7 @@ class Linen {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `butler-memories-${new Date().getTime()}.json`;
+            a.download = `linen-data-${new Date().getTime()}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -386,27 +696,33 @@ class Linen {
     }
 
     confirmClearData() {
-        if (confirm('Are you sure? This will delete all memories permanently.') &&
-            confirm('This cannot be undone. Are you absolutely sure?')) {
-            this.clearAllMemories();
+        if (confirm('Delete all memories and conversations?') &&
+            confirm('This cannot be undone. Are you sure?')) {
+            this.clearAllData();
         }
     }
 
-    async clearAllMemories() {
+    async clearAllData() {
         try {
             await this.db.clearAllMemories();
             await this.loadMemories();
+            await this.loadConversations();
             await this.updateMemoryCount();
-            this.showToast('All memories cleared');
+            this.showToast('All data cleared');
         } catch (error) {
-            this.showToast('Error clearing memories');
+            this.showToast('Error clearing data');
             console.error(error);
         }
     }
 
     // ============================================
-    // UI UTILITIES
+    // UTILITIES
     // ============================================
+
+    async updateMemoryCount() {
+        const memories = await this.db.getAllMemories();
+        document.getElementById('memory-count').textContent = memories.length;
+    }
 
     showToast(message) {
         const toast = document.getElementById('toast');
@@ -424,13 +740,9 @@ class Linen {
         return div.innerHTML;
     }
 
-    // ============================================
-    // SERVICE WORKER
-    // ============================================
-
     registerServiceWorker() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js')
+            navigator.serviceWorker.register('/service-worker.js')
                 .then(registration => {
                     console.log('Service Worker registered');
                 })

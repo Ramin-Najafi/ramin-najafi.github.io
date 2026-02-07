@@ -3,7 +3,7 @@
  * Handles /linen/ subdirectory on GitHub Pages
  */
 
-const CACHE_NAME = 'linen-v1';
+const CACHE_NAME = 'linen-v2';
 const BASE_PATH = '/linen';
 const urlsToCache = [
     BASE_PATH + '/',
@@ -11,7 +11,8 @@ const urlsToCache = [
     BASE_PATH + '/styles.css',
     BASE_PATH + '/app.js',
     BASE_PATH + '/manifest.json',
-    BASE_PATH + '/favicon.svg'
+    BASE_PATH + '/favicon.svg',
+    BASE_PATH + '/apple-touch-icon.png'
 ];
 
 // ============================================
@@ -104,4 +105,3 @@ self.addEventListener('message', event => {
         self.skipWaiting();
     }
 });
-
