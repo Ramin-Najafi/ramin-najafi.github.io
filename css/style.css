@@ -341,30 +341,7 @@ p {
   margin-right: auto;
 }
 
-.goals-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 20px;
-  justify-content: center;
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
-}
 
-.goal-card {
-  background: linear-gradient(180deg, #120034, #1a1a2e);
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 1em;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.goal-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
-}
 
 .project-item {
   background: linear-gradient(180deg, #120034, #1a1a2e);
