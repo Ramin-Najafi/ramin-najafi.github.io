@@ -6,6 +6,7 @@
     <meta name="description" content="Linen — your personal memory app that remembers your life, understands context, and helps you think, recall, and decide.">
     <meta name="theme-color" content="#fafafa">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Linen">
     
@@ -13,6 +14,7 @@
     
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="manifest" href="./manifest.json">
     
     <!-- Fonts -->
@@ -24,6 +26,13 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Hamburger Icon for Mobile -->
+        <div id="linen-hamburger">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -36,13 +45,13 @@
                     <span class="nav-icon">✎</span>
                     <span class="nav-label">Capture</span>
                 </button>
-                <button class="nav-item" data-view="recall">
-                    <span class="nav-icon">⚲</span>
-                    <span class="nav-label">Recall</span>
+                <button class="nav-item" data-view="chat">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">Chat</span>
                 </button>
-                <button class="nav-item" data-view="insights">
-                    <span class="nav-icon">◊</span>
-                    <span class="nav-label">Insights</span>
+                <button class="nav-item" data-view="memories">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-label">Memories</span>
                 </button>
                 <button class="nav-item" data-view="settings">
                     <span class="nav-icon">⚙</span>
@@ -106,19 +115,48 @@
                 </form>
             </section>
             
-            <!-- Recall View -->
-            <section class="view" id="recall-view">
+            <!-- Chat View -->
+            <section class="view" id="chat-view">
                 <div class="view-header">
-                    <h2>What do you want to remember?</h2>
-                    <p class="view-subtitle">Search across your memories</p>
+                    <h2>Chat with your assistant</h2>
+                    <p class="view-subtitle">Ask about your memories, patterns, and decisions</p>
                 </div>
                 
-                <div class="recall-search">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message assistant-message">
+                            <p>Hi there. I'm here to listen, remember, and help you think through things. Ask me anything about your memories, or just share what's on your mind.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <input 
+                                type="text" 
+                                id="chat-input" 
+                                class="chat-input"
+                                placeholder="Ask me anything... 'What patterns do you notice?' 'Why did I feel regret?'"
+                            >
+                            <button class="chat-send-btn" id="chat-send">Send</button>
+                        </div>
+                        <div class="chat-hint">Your assistant reads through your memories to answer thoughtfully</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Memories View -->
+            <section class="view" id="memories-view">
+                <div class="view-header">
+                    <h2>Your Memories</h2>
+                    <p class="view-subtitle">Everything you've captured</p>
+                </div>
+                
+                <div class="search-bar">
                     <input 
                         type="text" 
-                        id="recall-input" 
-                        class="recall-search-input"
-                        placeholder="Ask me anything... 'What did I decide about X?' 'When did I feel overwhelmed?'"
+                        id="memory-search" 
+                        class="search-input"
+                        placeholder="Search memories..."
                     >
                 </div>
                 
@@ -130,37 +168,40 @@
                 </div>
             </section>
             
-            <!-- Insights View -->
-            <section class="view" id="insights-view">
-                <div class="view-header">
-                    <h2>Your Patterns</h2>
-                    <p class="view-subtitle">What's repeating in your life?</p>
-                </div>
-                
-                <div class="insights-container" id="insights-container">
-                    <div class="empty-state">
-                        <p>Insights coming soon</p>
-                        <span>Capture more memories to unlock patterns</span>
-                    </div>
-                </div>
-            </section>
-            
             <!-- Settings View -->
             <section class="view" id="settings-view">
                 <div class="view-header">
                     <h2>Settings</h2>
-                    <p class="view-subtitle">Control your butler</p>
+                    <p class="view-subtitle">Control your experience</p>
                 </div>
                 
                 <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>API Configuration</h3>
+                        <div class="settings-item">
+                            <div class="settings-label">
+                                <span>Gemini API Key</span>
+                                <span class="settings-hint">Your API key is stored locally only</span>
+                            </div>
+                        </div>
+                        <input 
+                            type="password" 
+                            id="api-key-input" 
+                            class="form-input"
+                            placeholder="Paste your Google Gemini API key here"
+                        >
+                        <button class="btn btn-secondary" id="save-api-key">Save API Key</button>
+                        <div class="settings-hint">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></div>
+                    </div>
+                    
                     <div class="settings-section">
                         <h3>Privacy & Data</h3>
                         <div class="settings-item">
                             <div class="settings-label">
                                 <span>All data stored locally</span>
-                                <span class="settings-hint">Nothing leaves your device</span>
+                                <span class="settings-hint">Memories stay on your device</span>
                             </div>
-                            <span class="settings-badge">✓ Encrypted</span>
+                            <span class="settings-badge">✓ Private</span>
                         </div>
                         <button class="btn btn-secondary" id="export-data">Export My Data</button>
                         <button class="btn btn-danger" id="clear-data">Clear All Memories</button>
@@ -172,7 +213,7 @@
                             <span>Version 1.0.0</span>
                         </div>
                         <div class="settings-item">
-                            <span>Personal Butler</span>
+                            <span>Linen</span>
                             <span class="settings-hint">A quiet presence, always listening</span>
                         </div>
                     </div>
@@ -184,6 +225,6 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast"></div>
     
-    <script src="./app.js"></script>script>
+    <script src="./app.js"></script>
 </body>
 </html>
