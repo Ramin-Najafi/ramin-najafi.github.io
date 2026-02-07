@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Linen — your personal memory app that remembers your life, understands context, and helps you think, recall, and decide.">
+    <meta name="theme-color" content="#fafafa">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Linen">
+    
+    <title>Linen — Your Memory</title>
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">Linen</h1>
+                <p class="app-tagline">Your memory, your context</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="capture">
+                    <span class="nav-icon">✎</span>
+                    <span class="nav-label">Capture</span>
+                </button>
+                <button class="nav-item" data-view="recall">
+                    <span class="nav-icon">⚲</span>
+                    <span class="nav-label">Recall</span>
+                </button>
+                <button class="nav-item" data-view="insights">
+                    <span class="nav-icon">◊</span>
+                    <span class="nav-label">Insights</span>
+                </button>
+                <button class="nav-item" data-view="settings">
+                    <span class="nav-icon">⚙</span>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="memory-count">
+                    <span class="count-label">Memories</span>
+                    <span class="count-number" id="memory-count">0</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Capture View -->
+            <section class="view active" id="capture-view">
+                <div class="view-header">
+                    <h2>What's on your mind?</h2>
+                    <p class="view-subtitle">Capture anything you want to remember</p>
+                </div>
+                
+                <form class="capture-form" id="capture-form">
+                    <div class="form-group">
+                        <textarea 
+                            id="memory-text" 
+                            class="memory-input" 
+                            placeholder="Think out loud. What happened? What did you decide? How did you feel?"
+                            rows="6"
+                        ></textarea>
+                        <div class="form-hint">💡 Be specific. Include context, people, emotions.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memory-tags" class="form-label">Tags (optional)</label>
+                        <input 
+                            type="text" 
+                            id="memory-tags" 
+                            class="form-input"
+                            placeholder="e.g. work, decision, john, regret"
+                        >
+                        <div class="form-hint">Separate tags with commas</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memory-emotion" class="form-label">How did this make you feel?</label>
+                        <div class="emotion-selector">
+                            <button type="button" class="emotion-btn" data-emotion="grateful">😌 Grateful</button>
+                            <button type="button" class="emotion-btn" data-emotion="stressed">😰 Stressed</button>
+                            <button type="button" class="emotion-btn" data-emotion="excited">🤩 Excited</button>
+                            <button type="button" class="emotion-btn" data-emotion="confused">🤔 Confused</button>
+                            <button type="button" class="emotion-btn" data-emotion="proud">😊 Proud</button>
+                            <button type="button" class="emotion-btn" data-emotion="regret">😔 Regret</button>
+                        </div>
+                        <input type="hidden" id="memory-emotion" value="">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Memory</button>
+                </form>
+            </section>
+            
+            <!-- Recall View -->
+            <section class="view" id="recall-view">
+                <div class="view-header">
+                    <h2>What do you want to remember?</h2>
+                    <p class="view-subtitle">Search across your memories</p>
+                </div>
+                
+                <div class="recall-search">
+                    <input 
+                        type="text" 
+                        id="recall-input" 
+                        class="recall-search-input"
+                        placeholder="Ask me anything... 'What did I decide about X?' 'When did I feel overwhelmed?'"
+                    >
+                </div>
+                
+                <div class="memories-list" id="memories-list">
+                    <div class="empty-state">
+                        <p>Your memories will appear here</p>
+                        <span>Start by capturing something in the Capture tab</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Insights View -->
+            <section class="view" id="insights-view">
+                <div class="view-header">
+                    <h2>Your Patterns</h2>
+                    <p class="view-subtitle">What's repeating in your life?</p>
+                </div>
+                
+                <div class="insights-container" id="insights-container">
+                    <div class="empty-state">
+                        <p>Insights coming soon</p>
+                        <span>Capture more memories to unlock patterns</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Settings View -->
+            <section class="view" id="settings-view">
+                <div class="view-header">
+                    <h2>Settings</h2>
+                    <p class="view-subtitle">Control your butler</p>
+                </div>
+                
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>Privacy & Data</h3>
+                        <div class="settings-item">
+                            <div class="settings-label">
+                                <span>All data stored locally</span>
+                                <span class="settings-hint">Nothing leaves your device</span>
+                            </div>
+                            <span class="settings-badge">✓ Encrypted</span>
+                        </div>
+                        <button class="btn btn-secondary" id="export-data">Export My Data</button>
+                        <button class="btn btn-danger" id="clear-data">Clear All Memories</button>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>About</h3>
+                        <div class="settings-item">
+                            <span>Version 1.0.0</span>
+                        </div>
+                        <div class="settings-item">
+                            <span>Personal Butler</span>
+                            <span class="settings-hint">A quiet presence, always listening</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+    
+    <script src="./app.js"></script>script>
+</body>
+</html>

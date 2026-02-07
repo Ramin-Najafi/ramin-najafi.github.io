@@ -93,6 +93,7 @@ p {
   padding-top: 145px;
   text-align: center;
   z-index: 75;
+  transition: right 0.3s ease-in-out; /* Smooth transition for menu sliding */
 }
 
 .mobile-nav.open {
@@ -121,6 +122,10 @@ p {
   color: #ffcc00;
 }
 
+.mobile-nav nav .menu-linen-app {
+  margin-top: 50px;
+}
+
 .nav-close {
   position: absolute;
   top: 30px;
@@ -135,7 +140,7 @@ p {
 .hero {
   padding-top: 60px;
   padding-bottom: 30px;
-  text-align: left;
+  text-align: center; /* Centered */
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   background-image: url('../assets/images/headerBkg.jpg');
   background-size: 80%;
@@ -152,6 +157,9 @@ p {
   font-size: 1.1em;
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 15px;
+  max-width: 800px; /* Ensure it doesn't stretch full width */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lead {
@@ -159,6 +167,8 @@ p {
   font-size: 1.15em;
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .container {
@@ -215,6 +225,7 @@ p {
   padding-top: 30px;
   padding-bottom: 30px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  text-align: center; /* Centered */
 }
 
 #currently-learning {
@@ -225,16 +236,22 @@ p {
   margin-top: 30px;
   margin-bottom: 10px;
   color: #ffcc00;
+  text-align: center;
 }
 
-.about-list {
+.about-list, .goals-list {
   margin-top: 20px;
-  padding-left: 12px;
+  padding-left: 0; /* Reset default list padding */
+  max-width: 800px; /* Limit width for centering */
+  margin-left: auto; /* Centered */
+  margin-right: auto; /* Centered */
+  text-align: left; /* Keep list items left aligned */
 }
 
-.about-list li {
+.about-list li, .goals-list li {
   margin: 12px 0;
   padding-left: 20px;
+  position: relative;
 }
 
 .about-list li::before {
@@ -245,20 +262,110 @@ p {
   margin-left: -20px;
 }
 
-.goals-list {
-  margin-top: 20px;
-  padding-left: 24px;
+.about-feature-list, .goals-list {
+  list-style: none;
+  padding: 0; /* Remove default padding from ul */
+  text-align: center; /* Center the content of the list */
+  max-width: 800px; /* Limit width for centering */
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.goals-list li {
-  margin: 18px 0;
+.about-feature-list li, .goals-list li {
+  margin: 15px auto; /* Add vertical margin and center block */
+  position: relative;
+  padding-bottom: 25px; /* Space for the line */
+  padding-top: 10px;
+  line-height: 1.5;
+  color: #d0d0d0;
+  font-size: 1.1em;
+}
+
+.about-feature-list li::before, .goals-list li::before {
+  content: none; /* Remove custom bullet */
+}
+
+/* Thinning out line separator */
+.about-feature-list li:not(:last-child)::after, .goals-list li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%; /* Adjust width as needed */
+  height: 1px;
+  background: linear-gradient(to right,
+    rgba(255, 204, 0, 0) 0%, /* Transparent left */
+    rgba(255, 204, 0, 0.7) 25%, /* Thinning in */
+    rgba(255, 204, 0, 1) 50%, /* Center point */
+    rgba(255, 204, 0, 0.7) 75%, /* Thinning out */
+    rgba(255, 204, 0, 0) 100% /* Transparent right */
+  );
 }
 
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 12px;
   margin-top: 20px;
+  justify-content: center;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.project-item {
+  background: linear-gradient(180deg, #120034, #1a1a2e);
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 24px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
+  max-width: 800px; /* Limit width for project items */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.project-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+.project-item h3 {
+  margin-bottom: 8px;
+  font-size: 1.3em;
+}
+
+.project-meta {
+  color: #ffcc00;
+  font-size: 0.95em;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.project-features {
+  margin-top: 15px;
+  padding-left: 0; /* Reset default list padding */
+  list-style: none;
+  max-width: fit-content; /* Center the ul itself */
+  margin: 0 auto; /* Center the ul itself */
+  text-align: left; /* Keep list items left aligned */
+}
+
+.project-features li {
+  margin: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.project-features li::before {
+  content: '✓';
+  color: #ffcc00;
+  display: inline-block;
+  width: 20px;
+  margin-left: -20px;
+  font-weight: bold;
 }
 
 .learning-tags {
@@ -266,6 +373,9 @@ p {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 20px;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .learning-tags span {
@@ -357,7 +467,7 @@ button:hover {
 }
 
 #contact {
-  text-align: center;
+  /* text-align: center; */
 }
 
 .contact-form {
@@ -383,7 +493,9 @@ footer {
 }
 
 #currently-learning .subheading {
+  display: block; /* Overwrite inline-block from .subheading */
   text-align: center;
+  width: 100%; /* Ensure it takes full width for centering */
 }
 
 #currently-learning .learning-tags {
@@ -428,7 +540,40 @@ footer {
     font-size: 1.3em;
   }
   
-  .skills-goals-grid {
+  .projects-goals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 30px;
+    padding: 0 35px; /* Add padding for distance from walls */
+    align-items: stretch; /* Ensure items stretch to equal height */
+  }
+  
+  .project-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 30px;
+    padding: 0 35px; /* Add padding for distance from walls */
+  }
+  
+  .project-item {
+    min-height: 250px; /* Make project boxes taller, adjust as needed */
+    max-width: none; /* Remove max-width to allow grid to control width */
+    margin-left: 0; /* Remove auto margin as grid handles centering */
+    margin-right: 0; /* Remove auto margin as grid handles centering */
+    text-align: center;
+    display: flex; /* Added for vertical alignment */
+    flex-direction: column; /* Added for vertical alignment */
+    justify-content: space-between; /* Added for vertical alignment */
+  }
+@media (max-width: 859px) {
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skills-goals-grid { /* Keep the old definition if it was used for something else, or remove if not */
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 40px;
