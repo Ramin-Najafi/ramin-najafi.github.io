@@ -1,181 +1,115 @@
-/* Reset */
+:root {
+    --bg: #fafafa;
+    --primary: #2a2a2a;
+    --accent: #d4a574;
+    --border: #e0e0e0;
+    --text-light: #6b6b6b;
+}
 
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
 }
-
 body {
-    font-family: system-ui, sans-serif;
-    background: #fafafa;
-    color: #222;
-}
-
-
-/* Layout */
-
-.app {
-    max-width: 680px;
-    margin: auto;
-    min-height: 100vh;
+    font-family: sans-serif;
+    background: var(--bg);
+    color: var(--primary);
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
 }
 
-.main {
+.main-content {
     flex: 1;
-    padding: 20px;
-    padding-bottom: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
 }
-
-
-/* Views */
-
 .view {
     display: none;
-    text-align: center;
+    width: 100%;
+    max-width: 500px;
 }
-
 .view.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
-
-h2 {
-    margin-bottom: 18px;
-    font-weight: 600;
-}
-
-
-/* Inputs */
-
+input,
 textarea {
     width: 100%;
-    min-height: 140px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    padding: 12px;
-    font-size: 15px;
-    resize: none;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
 }
-
-input {
-    width: 100%;
-    padding: 12px;
-    margin-top: 12px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-}
-
-
-/* Buttons */
-
 button {
-    cursor: pointer;
+    padding: 10px;
     border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 15px;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+}
+button:hover {
+    background: #b8905d;
 }
 
-.primary-btn {
-    background: #d4a574;
-    color: white;
-    margin-top: 14px;
-}
-
-.primary-btn:hover {
-    opacity: 0.9;
-}
-
-.danger {
-    background: #e05252;
-    color: white;
-}
-
-
-/* Emotion row */
-
-.emotion-row {
+.emotion-selector {
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 12px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
 }
-
-.emotion-btn {
-    font-size: 20px;
-    background: #f0f0f0;
-    padding: 8px 12px;
-}
-
-.emotion-btn.active {
-    background: #d4a574;
-    color: white;
-}
-
-
-/* Chat */
-
-.chat-box {
-    height: 300px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 12px;
-    overflow-y: auto;
-    text-align: left;
-    background: white;
-}
-
-.chat-input-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.chat-input-row input {
+.emotion-selector button {
     flex: 1;
+    background: #fff;
+    color: var(--primary);
+    border: 1px solid var(--border);
 }
-
-
-/* Bottom Navigation */
 
 .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    background: white;
-    border-top: 1px solid #ddd;
-
     display: flex;
     justify-content: space-around;
-    padding: 10px 0;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    background: #fff;
 }
-
-.nav-btn {
-    font-size: 22px;
+.bottom-nav button {
+    flex: 1;
+    font-size: 1.5rem;
     background: none;
-    padding: 10px 18px;
+    border: none;
+    cursor: pointer;
+    color: var(--primary);
 }
-
-.nav-btn.active {
-    color: #d4a574;
+.bottom-nav button.active {
+    color: var(--accent);
 }
-
-
-/* Memories */
 
 #memories-list {
-    margin-top: 15px;
-    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
-
 .memory-card {
-    background: white;
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #eee;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+}
+.assistant-message,
+.chat-message {
+    margin: 4px 0;
+    padding: 8px;
+    border-radius: 6px;
+    background: #f5f5f5;
+    width: fit-content;
+    max-width: 80%;
+}
+.chat-message {
+    align-self: flex-end;
+    background: #d4a574;
+    color: #fff;
 }

@@ -3,79 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Linen</title>
-
-<link rel="stylesheet" href="styles.css">
-<link rel="manifest" href="manifest.json">
+<meta name="description" content="Linen — your personal memory assistant, supporting memories, reminders, and mental health.">
+<meta name="theme-color" content="#fafafa">
+<title>Linen — Your Personal Assistant</title>
+<link rel="icon" href="./favicon.svg">
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="./styles.css">
 </head>
-
 <body>
-
-<div class="app">
-
-    <!-- MAIN CONTENT -->
-    <main class="main">
-
-        <!-- Capture -->
+<div class="app-container">
+    <!-- Main Content -->
+    <main class="main-content">
         <section class="view active" id="capture-view">
-            <h2>What's on your mind?</h2>
-
-            <textarea id="memory-text" placeholder="Write anything..."></textarea>
-
-            <div class="emotion-row">
-                <button class="emotion-btn" data-emotion="happy">🙂</button>
-                <button class="emotion-btn" data-emotion="calm">😌</button>
-                <button class="emotion-btn" data-emotion="sad">😔</button>
-                <button class="emotion-btn" data-emotion="stressed">😰</button>
-                <button class="emotion-btn" data-emotion="excited">🤩</button>
+            <textarea id="memory-text" placeholder="What's on your mind?"></textarea>
+            <input type="text" id="memory-tags" placeholder="Tags (optional)">
+            <div class="emotion-selector">
+                <button data-emotion="grateful">😌</button>
+                <button data-emotion="stressed">😰</button>
+                <button data-emotion="excited">🤩</button>
+                <button data-emotion="confused">🤔</button>
+                <button data-emotion="proud">😊</button>
+                <button data-emotion="regret">😔</button>
             </div>
-
-            <button class="primary-btn" id="save-memory">Save</button>
+            <button id="save-memory">Save Memory</button>
         </section>
 
-        <!-- Chat -->
         <section class="view" id="chat-view">
-            <h2>Assistant</h2>
-
-            <div id="chat-messages" class="chat-box"></div>
-
-            <div class="chat-input-row">
-                <input type="text" id="chat-input" placeholder="Talk to Linen...">
-                <button id="chat-send">Send</button>
+            <div id="chat-messages">
+                <div class="assistant-message">Hi! I'm here to help with your memories and decisions.</div>
             </div>
+            <input id="chat-input" placeholder="Ask me anything...">
+            <button id="chat-send">Send</button>
         </section>
 
-        <!-- Memories -->
         <section class="view" id="memories-view">
-            <h2>Memories</h2>
-            <div id="memories-list"></div>
+            <input id="memory-search" placeholder="Search memories...">
+            <div id="memories-list">No memories yet.</div>
         </section>
 
-        <!-- Settings -->
         <section class="view" id="settings-view">
-            <h2>Settings</h2>
-
-            <input type="password" id="api-key-input" placeholder="Gemini API key">
-            <button id="save-api-key">Save Key</button>
-
-            <button id="export-data">Export Data</button>
-            <button id="clear-data" class="danger">Clear All</button>
+            <input id="api-key-input" placeholder="Paste Gemini API key">
+            <button id="save-api-key">Save API Key</button>
+            <button id="export-data">Export Memories</button>
+            <button id="clear-data">Clear All</button>
         </section>
-
     </main>
 
-
-    <!-- BOTTOM NAV -->
+    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" data-view="capture-view">✎</button>
-        <button class="nav-btn" data-view="chat-view">💬</button>
-        <button class="nav-btn" data-view="memories-view">📚</button>
-        <button class="nav-btn" data-view="settings-view">⚙</button>
+        <button data-view="capture-view">✎</button>
+        <button data-view="chat-view">💬</button>
+        <button data-view="memories-view">📚</button>
+        <button data-view="settings-view">⚙</button>
     </nav>
-
 </div>
 
-<script src="app.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>
