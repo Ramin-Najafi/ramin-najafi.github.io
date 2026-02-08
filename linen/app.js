@@ -1,12 +1,8 @@
 /**
- * LINEN - Personal Memory App with Smart Personal Assistant AI
- * Core: Memory support, reminders, mental health, companionship
- * Offline-first using IndexedDB, installable as PWA
+ * LINEN - Simplified Memory App with Gemini Assistant
+ * Handles: Memories, Chat, Settings, Bottom Navigation
+ * IndexedDB offline-first
  */
-
-// ============================================
-// DATABASE INITIALIZATION
-// ============================================
 
 class LinenDB {
     constructor() {
@@ -23,23 +19,19 @@ class LinenDB {
                 this.db = request.result;
                 resolve();
             };
-
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
+
                 if (!db.objectStoreNames.contains('memories')) {
-                    const store = db.createObjectStore('memories', {
-                        keyPath: 'id',
-                        autoIncrement: true
-                    });
+                    const store = db.createObjectStore('memories', { keyPath: 'id', autoIncrement: true });
                     store.createIndex('date', 'date', { unique: false });
                     store.createIndex('emotion', 'emotion', { unique: false });
                 }
+
                 if (!db.objectStoreNames.contains('conversations')) {
-                    db.createObjectStore('conversations', {
-                        keyPath: 'id',
-                        autoIncrement: true
-                    });
+                    db.createObjectStore('conversations', { keyPath: 'id', autoIncrement: true });
                 }
+
                 if (!db.objectStoreNames.contains('settings')) {
                     db.createObjectStore('settings', { keyPath: 'key' });
                 }
@@ -47,106 +39,63 @@ class LinenDB {
         });
     }
 
-    // Memory operations
-    async addMemory(memory) {
+    addMemory(memory) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['memories'], 'readwrite');
-            const store = transaction.objectStore('memories');
-            const request = store.add(memory);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+            const tx = this.db.transaction('memories', 'readwrite');
+            const store = tx.objectStore('memories');
+            const req = store.add(memory);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
         });
     }
 
-    async getAllMemories() {
+    getAllMemories() {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['memories'], 'readonly');
-            const store = transaction.objectStore('memories');
-            const request = store.getAll();
-            request.onsuccess = () => {
-                const memories = request.result.sort((a, b) => b.date - a.date);
+            const tx = this.db.transaction('memories', 'readonly');
+            const store = tx.objectStore('memories');
+            const req = store.getAll();
+            req.onsuccess = () => {
+                const memories = req.result.sort((a, b) => b.date - a.date);
                 resolve(memories);
             };
-            request.onerror = () => reject(request.error);
+            req.onerror = () => reject(req.error);
         });
     }
 
-    async deleteMemory(id) {
+    clearAllMemories() {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['memories'], 'readwrite');
-            const store = transaction.objectStore('memories');
-            const request = store.delete(id);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+            const tx = this.db.transaction(['memories', 'conversations'], 'readwrite');
+            tx.objectStore('memories').clear();
+            tx.objectStore('conversations').clear();
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
         });
     }
 
-    // Conversation operations
-    async addConversation(message) {
+    setSetting(key, value) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['conversations'], 'readwrite');
-            const store = transaction.objectStore('conversations');
-            const request = store.add(message);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+            const tx = this.db.transaction('settings', 'readwrite');
+            const store = tx.objectStore('settings');
+            const req = store.put({ key, value });
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
         });
     }
 
-    async getConversations() {
+    getSetting(key) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['conversations'], 'readonly');
-            const store = transaction.objectStore('conversations');
-            const request = store.getAll();
-            request.onsuccess = () => {
-                const convos = request.result.sort((a, b) => a.date - b.date);
-                resolve(convos);
-            };
-            request.onerror = () => reject(request.error);
+            const tx = this.db.transaction('settings', 'readonly');
+            const store = tx.objectStore('settings');
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result?.value || null);
+            req.onerror = () => reject(req.error);
         });
-    }
-
-    // Settings operations
-    async getSetting(key) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['settings'], 'readonly');
-            const store = transaction.objectStore('settings');
-            const request = store.get(key);
-            request.onsuccess = () => resolve(request.result?.value || null);
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async setSetting(key, value) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['settings'], 'readwrite');
-            const store = transaction.objectStore('settings');
-            const request = store.put({ key, value });
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async clearAllMemories() {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['memories', 'conversations'], 'readwrite');
-            transaction.objectStore('memories').clear();
-            transaction.objectStore('conversations').clear();
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = () => reject(transaction.error);
-        });
-    }
-
-    async exportData() {
-        const memories = await this.getAllMemories();
-        const conversations = await this.getConversations();
-        return JSON.stringify({ memories, conversations }, null, 2);
     }
 }
 
-// ============================================
-// GEMINI SMART ASSISTANT
-// ============================================
-
+// ==============================
+// Gemini Assistant
+// ==============================
 class GeminiAssistant {
     constructor(apiKey) {
         this.apiKey = apiKey;
@@ -154,145 +103,212 @@ class GeminiAssistant {
         this.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
     }
 
-    async chat(userMessage, conversationHistory, memories, loadingId) {
-        if (!this.apiKey) throw new Error('API key not configured.');
+    async chat(userMessage, conversationHistory = [], memories = []) {
+        if (!this.apiKey) throw new Error('API key not set.');
 
-        const memoryContext = this.buildMemoryContext(memories);
-        const conversationContext = this.buildConversationContext(conversationHistory);
+        const memoryContext = memories.length
+            ? memories.slice(0, 10).map(m => `${new Date(m.date).toLocaleDateString()}: ${m.text}`).join('\n')
+            : 'No memories yet.';
 
-        const systemPrompt = `You are Linen, a smart personal assistant. You are warm, genuine, and proactive.
-Your roles:
-
-COMPANION: You are a caring presence. You greet the user, remember life details, celebrate wins, and check in on struggles.
-
-MEMORY ASSISTANT: Help the user recall past events, people, and decisions. Summarize patterns across memories naturally.
-
-MENTAL HEALTH SUPPORT: Recognize distress, anxiety, sadness, or crisis. Listen first, validate feelings, and offer grounding techniques. If the user mentions self-harm, express care and suggest local crisis lines.
-
-REMINDERS AND PLANNING: Help with upcoming events, appointments, deadlines, or tasks. Reference previous relevant memories to aid decision-making.
-
-Tone rules:
-- Warm, concise, honest
-- Match user's energy
-- Use user's name if known
-- Non-preachy, non-judgmental
-
-Context rules:
-- Use memories and conversation history naturally
-- Reference memories like a friend: "Didn't you mention..." or "Last time you talked about..."
-- If no relevant memory, respond helpfully using general knowledge`;
+        const systemPrompt = `You are Linen, a smart personal assistant. Warm, concise, non-judgmental.
+        Use user's memories to answer thoughtfully.`;
 
         const messages = [
-            ...conversationContext,
             { role: 'user', parts: [{ text: `${memoryContext}\n\nUser: ${userMessage}` }] }
         ];
 
         try {
-            const response = await fetch(
-                `${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: messages,
-                        systemInstruction: { parts: [{ text: systemPrompt }] },
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
-                    })
-                }
-            );
+            const response = await fetch(`${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: messages,
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+                })
+            });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error?.message || 'API request failed');
+                const err = await response.json();
+                throw new Error(err.error?.message || 'API request failed');
             }
 
             const data = await response.json();
-            const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!assistantMessage) throw new Error('No response from assistant');
-
-            return assistantMessage;
-        } catch (error) {
-            const loadingMessageElement = document.getElementById(loadingId);
-            if (loadingMessageElement) loadingMessageElement.remove();
-            throw error;
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || 'I have no response.';
+        } catch (err) {
+            console.error(err);
+            return 'Error contacting assistant.';
         }
-    }
-
-    buildMemoryContext(memories) {
-        if (!memories || memories.length === 0) return 'No memories yet.';
-
-        const recentMemories = memories.slice(0, 25);
-        let context = 'Recent memories:\n';
-        recentMemories.forEach(mem => {
-            const date = new Date(mem.date).toLocaleDateString();
-            const emotion = mem.emotion ? ` (felt ${mem.emotion})` : '';
-            const tags = mem.tags?.length ? ` [${mem.tags.join(', ')}]` : '';
-            context += `- ${date}: ${mem.text.substring(0, 250)}${mem.text.length > 250 ? '...' : ''}${emotion}${tags}\n`;
-        });
-
-        return context;
-    }
-
-    buildConversationContext(conversationHistory) {
-        if (!conversationHistory || conversationHistory.length === 0) return [];
-        return conversationHistory.slice(-10).map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-        }));
     }
 }
 
-// ============================================
-// MAIN APP
-// ============================================
-
-class Linen {
+// ==============================
+// Main App
+// ==============================
+class LinenApp {
     constructor() {
         this.db = new LinenDB();
         this.assistant = null;
-        this.currentView = 'capture';
         this.selectedEmotion = '';
-        this.init();
-    }
 
-    static exampleMemories = [
-        { text: "Had a great conversation with a friend. Feeling happy and connected.", emotion: "grateful", tags: ["friend", "chat"] },
-        { text: "Finished coding a tricky bug. Felt proud.", emotion: "proud", tags: ["coding", "bugfix"] },
-        { text: "Started learning a new skill. Excited but confused.", emotion: "confused", tags: ["learning"] },
-        { text: "Read a mindfulness book. Feeling calm and grateful.", emotion: "grateful", tags: ["book", "mindfulness"] }
-    ];
+        document.addEventListener('DOMContentLoaded', () => this.init());
+    }
 
     async init() {
         await this.db.init();
+
         const apiKey = await this.db.getSetting('gemini-api-key');
         if (apiKey) this.assistant = new GeminiAssistant(apiKey);
 
-        this.setupEventListeners();
-        this.registerServiceWorker();
+        this.cacheDom();
+        this.bindEvents();
         await this.loadMemories();
-        await this.loadConversations();
-        await this.updateMemoryCount();
-
-        if (!apiKey) {
-            document.getElementById('tutorial-overlay').style.display = 'flex';
-            this.switchView(document.querySelector('.nav-item[data-view="settings"]'));
-        }
     }
 
-    // Event listeners, view management, capture, chat, memories, settings...
-    // (Retain all previous functionality with escapeHTML, showToast, deleteMemory, saveApiKey, exportData, etc.)
-    // Only the chat behavior has been enhanced to make AI a true companion with memory and mental health support
-    // Service Worker registration and offline IndexedDB functionality remains unchanged
+    cacheDom() {
+        this.views = document.querySelectorAll('.view');
+        this.navButtons = document.querySelectorAll('.nav-btn');
+        this.memoryInput = document.getElementById('memory-text');
+        this.saveMemoryBtn = document.getElementById('save-memory');
+        this.memoriesList = document.getElementById('memories-list');
+        this.chatInput = document.getElementById('chat-input');
+        this.chatSend = document.getElementById('chat-send');
+        this.apiInput = document.getElementById('api-key-input');
+        this.saveApiBtn = document.getElementById('save-api-key');
+        this.exportBtn = document.getElementById('export-data');
+        this.clearBtn = document.getElementById('clear-data');
+        this.emotionButtons = document.querySelectorAll('.emotion-btn');
+    }
 
-    registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then(() => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed:', err));
+    bindEvents() {
+        // Bottom nav
+        this.navButtons.forEach(btn => {
+            btn.addEventListener('click', () => this.switchView(btn.dataset.view, btn));
+        });
+
+        // Save memory
+        this.saveMemoryBtn.addEventListener('click', () => this.saveMemory());
+
+        // Chat
+        this.chatSend.addEventListener('click', () => this.sendChat());
+        this.chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') this.sendChat(); });
+
+        // Emotion buttons
+        this.emotionButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.selectedEmotion = btn.dataset.emotion;
+                this.emotionButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Settings
+        this.saveApiBtn.addEventListener('click', () => this.saveApiKey());
+        this.exportBtn.addEventListener('click', () => this.exportData());
+        this.clearBtn.addEventListener('click', () => this.clearAllMemories());
+    }
+
+    switchView(viewId, btn) {
+        this.views.forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+
+        this.navButtons.forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+    }
+
+    async saveMemory() {
+        const text = this.memoryInput.value.trim();
+        if (!text) return alert('Please write something first.');
+
+        const memory = {
+            text,
+            date: Date.now(),
+            emotion: this.selectedEmotion
+        };
+
+        await this.db.addMemory(memory);
+        this.memoryInput.value = '';
+        this.selectedEmotion = '';
+        this.emotionButtons.forEach(b => b.classList.remove('active'));
+
+        await this.loadMemories();
+    }
+
+    async loadMemories() {
+        const memories = await this.db.getAllMemories();
+        this.memoriesList.innerHTML = '';
+
+        if (!memories.length) {
+            this.memoriesList.innerHTML = '<p>No memories yet.</p>';
+            return;
         }
+
+        memories.forEach(mem => {
+            const div = document.createElement('div');
+            div.className = 'memory-card';
+            div.innerHTML = `<strong>${new Date(mem.date).toLocaleString()}</strong>
+                             <p>${mem.text}</p>
+                             ${mem.emotion ? `<em>Emotion: ${mem.emotion}</em>` : ''}`;
+            this.memoriesList.appendChild(div);
+        });
+    }
+
+    async sendChat() {
+        const message = this.chatInput.value.trim();
+        if (!message) return;
+
+        this.addChatMessage('user', message);
+        this.chatInput.value = '';
+
+        const memories = await this.db.getAllMemories();
+
+        const response = this.assistant
+            ? await this.assistant.chat(message, [], memories)
+            : "Assistant not set. Please add API key in Settings.";
+
+        this.addChatMessage('assistant', response);
+    }
+
+    addChatMessage(sender, text) {
+        const box = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = sender === 'user' ? 'chat-user' : 'chat-assistant';
+        div.textContent = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    async saveApiKey() {
+        const key = this.apiInput.value.trim();
+        if (!key) return alert('Enter a valid API key.');
+
+        await this.db.setSetting('gemini-api-key', key);
+        this.assistant = new GeminiAssistant(key);
+        alert('API key saved.');
+    }
+
+    async exportData() {
+        const memories = await this.db.getAllMemories();
+        const dataStr = JSON.stringify(memories, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'linen_data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async clearAllMemories() {
+        if (!confirm('Are you sure? This will delete everything.')) return;
+        await this.db.clearAllMemories();
+        await this.loadMemories();
+        alert('All memories cleared.');
     }
 }
 
-let app;
-document.addEventListener('DOMContentLoaded', () => { app = new Linen(); });
+// ==============================
+// Initialize App
+// ==============================
+let app = new LinenApp();
