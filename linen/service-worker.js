@@ -1,3 +1,10 @@
+/**
+ * Linen — Personal AI Assistant
+ * Copyright (c) 2025-2026 Ramin Najafi. All Rights Reserved.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ * See LICENSE file for details.
+ */
+
 const CACHE_NAME = 'linen-v100';
 const BASE_PATH = '/linen';
 const urlsToCache = [
