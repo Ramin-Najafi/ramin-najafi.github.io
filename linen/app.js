@@ -160,7 +160,7 @@ class GeminiAssistant {
         this.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
     }
 
-    async chat(userMessage, conversationHistory, memories) {
+    async chat(userMessage, conversationHistory, memories, loadingId) {
         if (!this.apiKey) {
             throw new Error('API key not configured. Please add your Gemini API key in Settings.');
         }
@@ -221,7 +221,10 @@ Never be preachy or judgmental. Be genuine and supportive.`;
 
             return assistantMessage;
         } catch (error) {
-            document.getElementById(loadingId)?.remove(); // loadingId is not defined here
+            const loadingMessageElement = document.getElementById(loadingId);
+            if (loadingMessageElement) {
+                loadingMessageElement.remove();
+            }
             this.addChatMessage(`Sorry, I encountered an error: ${error.message}`, 'assistant');
             console.error(error);
         }
@@ -394,6 +397,11 @@ class Linen {
 
     async handleCapture(e) {
         e.preventDefault();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Saving...';
+        submitBtn.disabled = true;
 
         const text = document.getElementById('memory-text').value.trim();
         const tagsInput = document.getElementById('memory-tags').value.trim();
@@ -429,6 +437,9 @@ class Linen {
         } catch (error) {
             this.showToast('Error saving memory');
             console.error(error);
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
         }
     }
 
@@ -464,15 +475,21 @@ class Linen {
 
         // Show loading indicator
         const loadingId = this.addChatMessage('Thinking...', 'assistant', true);
+        const contextInfo = document.getElementById('chat-context-info');
 
         try {
             const memories = await this.db.getAllMemories();
             const conversations = await this.db.getConversations();
 
+            if (contextInfo) {
+                contextInfo.textContent = `Reading ${memories.length} memories for context...`;
+            }
+
             const assistantResponse = await this.assistant.chat(
                 userMessage,
                 conversations,
-                memories
+                memories,
+                loadingId
             );
 
             // Remove loading message
@@ -480,6 +497,11 @@ class Linen {
 
             // Add assistant response
             this.addChatMessage(assistantResponse, 'assistant');
+
+            if (contextInfo) {
+                contextInfo.textContent = `Assistant has access to ${memories.length} memories`;
+            }
+
 
             // Save conversation
             await this.db.addConversation({
@@ -553,8 +575,13 @@ class Linen {
         if (memories.length === 0) {
             memoriesList.innerHTML = `
                 <div class="empty-state">
-                    <p>Your memories will appear here</p>
-                    <span>Start by capturing something in the Capture tab</span>
+                    <p>No memories yet</p>
+                    <span>Tap the Capture tab to save your first thought, decision, or feeling</span>
+                    <div style="margin-top: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px; text-align: left;">
+                        <div style="font-size: 0.875rem; color: #6b6b6b; margin-bottom: 8px;">Example:</div>
+                        <div style="color: #2a2a2a;">"Had a great conversation with Sarah about the project. Feeling excited about the new direction we're taking."</div>
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: #a0a0a0;">😊 Proud · work, sarah, decision</div>
+                    </div>
                 </div>
             `;
             return;
@@ -601,10 +628,12 @@ class Linen {
         card.className = 'memory-card';
 
         const emotionEmoji = this.getEmotionEmoji(memory.emotion);
-        const dateString = new Date(memory.date).toLocaleDateString('en-US', {
+        const dateString = new Date(memory.date).toLocaleString('en-US', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
 
         let tagsHTML = '';
@@ -669,12 +698,18 @@ class Linen {
             this.showToast('Please enter an API key');
             return;
         }
+        
+        // Validate API key format (basic check)
+        if (!apiKey.startsWith('AIza') || apiKey.length < 30) {
+            this.showToast('Invalid API key format. Should start with AIza');
+            return;
+        }
 
         try {
             await this.db.setSetting('gemini-api-key', apiKey);
             this.assistant = new GeminiAssistant(apiKey);
             keyInput.value = '';
-            this.showToast('API key saved');
+            this.showToast('API key saved ✓');
         } catch (error) {
             this.showToast('Error saving API key');
             console.error(error);
@@ -747,7 +782,7 @@ class Linen {
 
     registerServiceWorker() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
+            navigator.serviceWorker.register('./service-worker.js')
                 .then(registration => {
                     console.log('Service Worker registered');
                 })
