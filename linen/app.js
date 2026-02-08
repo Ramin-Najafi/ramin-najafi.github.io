@@ -162,6 +162,9 @@ class GeminiAssistant {
             if (res.status === 403) {
                 return { valid: false, error: msg || 'Access denied to Gemini API. Please check your API key permissions.' };
             }
+            if (res.status === 429) {
+                return { valid: false, error: msg || 'Too many requests. Please wait a moment and try again.' };
+            }
             return { valid: false, error: `Something went wrong (HTTP ${res.status}). Please try again.` };
         } catch (e) {
             console.error("Key validation failed:", e);
