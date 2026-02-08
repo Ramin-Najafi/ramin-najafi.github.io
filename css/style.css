@@ -649,6 +649,7 @@ footer {
 .skills-column,
 .goals-column {
   padding: 0 15px; /* Add some horizontal padding inside the columns */
+  text-align: center; /* Center align titles within columns */
 }
 
 @media (max-width: 767px) {
