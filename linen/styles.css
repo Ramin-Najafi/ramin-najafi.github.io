@@ -240,6 +240,25 @@ button:hover {
 
 #toast.show {
     bottom: 30px;
+    display: flex; /* Ensure flexbox for positioning button */
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 10px; /* Adjust padding for button */
+}
+
+#toast .close-toast {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0;
+    line-height: 1; /* Ensure button text aligns vertically */
+}
+
+#toast .close-toast:hover {
+    opacity: 0.7;
 }
 
 #onboarding-overlay {

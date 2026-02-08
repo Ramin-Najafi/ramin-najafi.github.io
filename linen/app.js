@@ -821,9 +821,20 @@ class Linen {
     showToast(message) {
         const toast = document.getElementById('toast');
         if (!toast) return;
-        toast.textContent = message;
+
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button class="close-toast">×</button>
+        `;
         toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
+
+        const closeButton = toast.querySelector('.close-toast');
+        if (closeButton) {
+            closeButton.onclick = () => {
+                toast.classList.remove('show');
+                toast.innerHTML = ''; // Clear content after hiding
+            };
+        }
     }
 }
 
