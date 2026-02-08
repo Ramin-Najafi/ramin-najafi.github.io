@@ -119,32 +119,19 @@ class GeminiAssistant {
 
     async validateKey() {
         try {
+            // Use the models.list endpoint — free, no tokens consumed
             const res = await fetch(
-                `${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ role: 'user', parts: [{ text: 'Hello' }] }]
-                    })
-                }
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`
             );
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                const status = res.status;
-                const msg = err.error?.message || '';
-
-                // 429 = rate limited, 403 can be quota — key is valid, just throttled
-                if (status === 429 || (status === 403 && msg.toLowerCase().includes('quota'))) {
-                    return { valid: true };
-                }
-                // 400 with API_KEY_INVALID or 403 without quota = bad key
-                if (status === 400 || status === 401 || status === 403) {
-                    return { valid: false, error: 'Invalid API key. Please check and try again.' };
-                }
-                return { valid: false, error: `Something went wrong (HTTP ${status}). Please try again.` };
+            if (res.ok) {
+                return { valid: true };
             }
-            return { valid: true };
+            const err = await res.json().catch(() => ({}));
+            const msg = err.error?.message || '';
+            if (res.status === 400 || res.status === 401 || res.status === 403) {
+                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            }
+            return { valid: false, error: `Something went wrong (HTTP ${res.status}). Please try again.` };
         } catch (e) {
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
