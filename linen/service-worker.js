@@ -3,7 +3,7 @@
  * Handles /linen/ subdirectory on GitHub Pages
  */
 
-const CACHE_NAME = 'linen-v2';
+const CACHE_NAME = 'linen-v3';
 const BASE_PATH = '/linen';
 const urlsToCache = [
     BASE_PATH + '/',
