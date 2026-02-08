@@ -1,35 +1,75 @@
-# Linen PWA - Personal Memory App
+# Linen PWA – Smart Personal Memory Assistant
 
-Linen is a privacy-focused Progressive Web Application (PWA) designed to help you capture, organize, and recall your personal memories and thoughts. It acts as a personal assistant that listens, remembers, and helps you notice patterns in your life.
+**Linen** is a privacy-focused Progressive Web Application (PWA) designed to help you **capture, organize, and recall your personal memories** while acting as a smart, supportive companion. Linen is more than a journal—it’s a **personal assistant** that listens, remembers, helps with reminders, and provides guidance during stressful moments.
+
+---
 
 ## Features
 
-- **Memory Capture:** Easily capture thoughts, events, and feelings with associated emotions and tags.
-- **AI Assistant (powered by Google Gemini API):** Chat with your personal assistant to gain insights from your memories, understand patterns, and support decision-making.
-- **Offline-First:** Works entirely offline thanks to Service Workers and local IndexedDB storage, ensuring your data remains private and always accessible.
-- **Secure Local Data:** All your memories and conversations are stored securely on your device, with nothing leaving your local environment.
-- **Intuitive UI:** A clean and minimal interface designed for seamless interaction.
-- **Cross-Platform:** Installable on mobile and desktop for a native-like experience.
+- **Memory Capture:** Record thoughts, events, and feelings with associated emotions and tags.  
+- **Smart AI Assistant (powered by Google Gemini API):**  
+  - Helps recall important details and patterns from your memories.  
+  - Provides gentle support for mental health challenges (stress, anxiety, overwhelm).  
+  - Offers reminders, follow-ups, and context-aware suggestions based on your past inputs.  
+  - Acts as a consistent companion, remembering key details about your life.  
+- **Offline-First:** Fully functional without internet, thanks to Service Workers and IndexedDB.  
+- **Secure Local Data:** Everything is stored **locally on your device**—your memories never leave your device.  
+- **Cross-Platform PWA:** Installable on mobile or desktop with a native-app-like experience.  
+- **Intuitive UI:** Minimal and accessible design for smooth interaction.
+
+---
 
 ## Tech Stack
 
-- HTML5
-- CSS3 (with responsive design)
-- Vanilla JavaScript
-- IndexedDB (for local storage)
-- Service Workers (for offline capabilities)
-- Google Gemini API (for AI assistant functionality)
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript  
+- **Storage:** IndexedDB for local persistence  
+- **Offline Support:** Service Workers  
+- **AI Assistant:** Google Gemini API integration  
+- **Deployment:** GitHub Pages (supports `/linen/` subdirectory)
+
+---
 
 ## Installation & Usage
 
-1.  Access the Linen App directly via its URL.
-2.  (Optional) Install the PWA to your home screen/desktop for a native app experience.
-3.  Start capturing your memories and interact with your AI assistant!
+1. **Access the app** via `https://ramin-najafi.github.io/linen/`.  
+2. **Install as PWA:** Add to home screen or desktop for offline, native-like use.  
+3. **Start capturing memories** and interact with your AI assistant for guidance and reminders.  
 
-## Privacy
+---
 
-Your data is paramount. All information captured and processed by Linen is stored **locally on your device only**. No data is transmitted to external servers (except for anonymous API calls to Google Gemini if configured, which process data transiently and do not store it). Your memories remain private.
+## Deployment on GitHub Pages
 
-## Development
+To deploy Linen under `/linen/` in your GitHub Pages site:
 
-This app is developed as a showcase of modern web technologies, PWA capabilities, and AI integration.
+ramin-najafi.github.io/
+└── linen/
+├── index.html
+├── styles.css
+├── app.js
+├── service-worker.js
+├── manifest.json
+└── favicon.svg
+
+1. Commit the `/linen/` folder to your GitHub repository.  
+2. Push to GitHub:
+   ```bash
+   git add linen/
+   git commit -m "Add Linen PWA"
+   git push origin main
+
+	3.	Visit https://ramin-najafi.github.io/linen/ to verify it works.
+	4.	Test PWA install and offline functionality.
+
+⸻
+
+Privacy & Security
+	•	Local Storage Only: All data remains on your device.
+	•	Anonymous AI Calls: AI assistance calls Google Gemini only if configured; no personal data is stored externally.
+	•	Offline Support: You can access memories and assistant features without internet.
+
+⸻
+
+Contribution & Development
+	•	Designed for: Personal memory assistance, mental health support, and reminders.
+	•	Built with modern web standards and PWA best practices.
+	•	Open to improvements: Add features, improve AI prompts, or enhance offline caching.
