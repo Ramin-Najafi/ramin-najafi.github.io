@@ -540,6 +540,9 @@ footer {
   .form-row {
     flex-direction: column;
   }
+  .skills-grid { /* Added for broader mobile responsiveness */
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (min-width: 1422px) {
@@ -633,6 +636,9 @@ footer {
 
 /* Mobile adjustments for Skills & Goals section */
 @media (max-width: 480px) {
+  .container {
+    padding: 20px 10px; /* Reduce vertical padding, add minimal horizontal padding */
+  }
   .skills-goals-container {
     gap: 20px; /* Reduce gap between stacked columns */
   }
