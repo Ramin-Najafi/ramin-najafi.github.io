@@ -4,13 +4,77 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Linen — your personal memory assistant, supporting memories, reminders, and mental health.">
-<meta name="theme-color" content="#e8d5c0">
+<meta name="theme-color" content="#000000">
 <title>Linen — Your Personal Assistant</title>
 <link rel="icon" href="./favicon.svg">
 <link rel="manifest" href="./manifest.json">
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+
+<div id="onboarding-overlay">
+    <div id="onboarding-wizard">
+        <div class="step" id="step-1">
+            <img src="./logo.png" alt="Linen Logo" class="onboarding-logo">
+            <h1>Linen</h1>
+            <p>Your AI companion that remembers everything.</p>
+            <button id="get-started">Get Started</button>
+        </div>
+        <div class="step" id="step-2">
+            <h2>API Key Setup</h2>
+            <p>Linen uses Google Gemini AI. You need a free API key to get started.</p>
+            <ol>
+                <li>Tap the button below to open Google AI Studio</li>
+                <li>Sign in with your Google account</li>
+                <li>Click 'Create API Key'</li>
+                <li>Copy the key and paste it below</li>
+            </ol>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="button">Go to Google AI Studio</a>
+            <input type="password" id="onboarding-api-key" placeholder="Paste your API key here">
+            <button id="save-onboarding-api-key">Save and Continue</button>
+            <p class="error-message" id="onboarding-error"></p>
+        </div>
+        <div class="step" id="step-3">
+            <h2>Install as App</h2>
+            <p>What device are you using?</p>
+            <div class="device-selector">
+                <button data-device="android">Android</button>
+                <button data-device="ios">iOS</button>
+            </div>
+            <div id="android-instructions" class="instructions">
+                <ol>
+                    <li>Tap the three-dot menu (⋮) in the top-right of Chrome</li>
+                    <li>Tap "Add to Home screen" or "Install app"</li>
+                    <li>Tap "Install" to confirm</li>
+                </ol>
+            </div>
+            <div id="ios-instructions" class="instructions">
+                <ol>
+                    <li>Tap the Share button (□↑) at the bottom of Safari</li>
+                    <li>Scroll down and tap "Add to Home Screen"</li>
+                    <li>Tap "Add" in the top-right corner</li>
+                </ol>
+            </div>
+            <div class="onboarding-nav">
+                <button id="finish-onboarding">Done</button>
+            </div>
+        </div>
+        <div class="step-indicator">
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    </div>
+</div>
+
+<div id="re-enter-key-modal" class="modal">
+    <h2>Invalid API Key</h2>
+    <p>Your API key is no longer working. Please enter a new one to continue.</p>
+    <input type="password" id="re-enter-api-key" placeholder="Paste your new API key here">
+    <button id="save-re-enter-api-key">Save Key</button>
+    <p class="error-message" id="re-enter-error"></p>
+</div>
+
 <div id="app-container">
     <header>
         <button id="settings-button">⚙</button>
@@ -18,49 +82,24 @@
         <button id="memories-button">📚</button>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <section id="capture-view">
-            <textarea id="memory-text" placeholder="What's on your mind?"></textarea>
-            <input type="text" id="memory-tags" placeholder="Tags (optional)">
-            <div class="emotion-selector">
-                <button data-emotion="grateful">😌</button>
-                <button data-emotion="stressed">😰</button>
-                <button data-emotion="excited">🤩</button>
-                <button data-emotion="confused">🤔</button>
-                <button data-emotion="proud">😊</button>
-                <button data-emotion="regret">😔</button>
-            </div>
-            <button id="save-memory">Save Memory</button>
-        </section>
+    <main class="main-content" id="chat-view">
+        <div id="chat-messages"></div>
     </main>
 
-    <!-- Chat FAB -->
-    <button id="chat-fab">💬</button>
-
-    <!-- Chat Panel -->
-    <aside id="chat-panel">
-        <button class="close-panel" id="close-chat">×</button>
-        <div id="chat-messages">
-            <div class="assistant-message">Hi! I'm here to help with your memories and decisions.</div>
-        </div>
-        <div id="chat-input-area">
-            <input id="chat-input" placeholder="Ask me anything...">
-            <button id="chat-send">Send</button>
-        </div>
-    </aside>
-
-    <!-- Modal Backdrop -->
-    <div id="modal-backdrop"></div>
-
-    <!-- Memories Modal -->
-    <div class="modal" id="memories-modal">
-        <button class="close-modal" id="close-memories-modal">×</button>
-        <input id="memory-search" placeholder="Search memories...">
-        <div id="memories-list">No memories yet.</div>
+    <div id="chat-input-area">
+        <textarea id="chat-input" placeholder="Ask me anything..."></textarea>
+        <button id="chat-send">Send</button>
     </div>
 
-    <!-- Settings Modal -->
+    <!-- Modals and Panels -->
+    <div id="modal-backdrop"></div>
+
+    <aside id="memories-panel">
+        <button class="close-panel" id="close-memories">×</button>
+        <input id="memory-search" placeholder="Search memories...">
+        <div id="memories-list">No memories yet.</div>
+    </aside>
+
     <div class="modal" id="settings-modal">
         <button class="close-modal" id="close-settings-modal">×</button>
         <input id="api-key-input" placeholder="Paste Gemini API key">
@@ -69,6 +108,8 @@
         <button id="clear-data">Clear All</button>
     </div>
 </div>
+
+<div id="toast"></div>
 
 <script src="./app.js"></script>
 </body>

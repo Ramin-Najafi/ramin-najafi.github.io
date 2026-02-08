@@ -142,112 +142,89 @@ class GeminiAssistant {
         this.model = 'gemini-2.0-flash';
         this.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
     }
-    async chat(msg, chats, mems, loadingId) {
-        if (!this.apiKey) 
-            throw new Error('API key not configured.');
-        const memoryContext = this.buildMemoryContext(mems);
-        const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant. You are warm, genuine, and proactive.
-COMPANION: greet, celebrate wins, check struggles.
-MEMORY ASSISTANT: help recall past events.
-MENTAL HEALTH: notice distress, suggest grounding, refer crisis lines.
-REMINDERS: help with upcoming events.
-Tone: warm, concise, match user.
-Context: use memories naturally.`;
-        const messages = [
-            ...conversationContext, {
-                role: 'user',
-                parts: [
-                    {
-                        text: `${memoryContext}\n\nUser: ${msg}`
-                    }
-                ]
-            }
-        ];
+    async validateKey() {
+        console.log("Validating key...");
         try {
             const res = await fetch(`${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: messages,
-                    systemInstruction: {
-                        parts: [
-                            {
-                                text: systemPrompt
-                            }
-                        ]
-                    },
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 2048
-                    }
+                    contents: [{ role: 'user', parts: [{ text: 'hello' }] }]
                 })
             });
+            console.log("Key validation result:", res.ok);
+            return res.ok;
+        } catch (e) {
+            console.error("Key validation failed:", e);
+            return false;
+        }
+    }
+    async chat(msg, chats, mems, loadingId) {
+        if (!this.apiKey) throw new Error('API key not configured.');
+        
+        const memoryContext = this.buildMemoryContext(mems);
+        const conversationContext = this.buildConversationContext(chats);
+        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+Core Directives:
+1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists.
+2.  **Seamlessly Recall Memories:** Reference past memories naturally to show you remember. For example, 'How is project X going? I remember you were feeling stressed about it last week.'
+3.  **Identify and Save Memories:** Your most important job is to identify when a user shares something meaningful that should be remembered. This includes events, feelings, decisions, people, plans, likes/dislikes, or personal details.
+4.  **Use the SAVE_MEMORY Marker:** When you identify a memory, you MUST end your conversational response with a special marker on a new line:
+    [SAVE_MEMORY: { "text": "A brief summary of the memory.", "tags": ["tag1", "tag2"], "emotion": "feeling" }]
+    - "text" is a concise summary of what to remember.
+    - "tags" is an array of relevant keywords.
+    - "emotion" is a single word describing the user's feeling (e.g., 'happy', 'stressed', 'excited').
+    - Example: [SAVE_MEMORY: { "text": "User is starting a new personal project to learn pottery.", "tags": ["pottery", "hobbies", "learning"], "emotion": "excited" }]
+5.  **Do NOT confirm saving in the chat.** The app will handle this. Just include the marker.
+6.  **Handle Memory Queries:** If the user asks 'what do you remember about X', search the provided memory context and synthesize an answer. Do not use the SAVE_MEMORY marker for this.
+7.  **Offer Support:** If you detect distress, offer gentle support. If the user mentions a crisis, refer them to a crisis line.
+8.  **Tone:** Be warm, genuine, concise, and match the user's tone.`;
+        
+        const messages = [...conversationContext, { role: 'user', parts: [{ text: `${memoryContext}\n\nUser: ${msg}` }] }];
+
+        try {
+            const res = await fetch(`${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: messages,
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                })
+            });
+
             if (!res.ok) {
-                const e = await res.json();
-                throw new Error(e.error
-                    ?.message || 'API request failed');
+                const errorData = await res.json();
+                const error = new Error(errorData.error?.message || 'API request failed');
+                error.status = res.status;
+                throw error;
             }
+
             const data = await res.json();
-            const reply = data.candidates
-                ?.[0]
-                    ?.content
-                        ?.parts
-                            ?.[0]
-                                ?.text;
-            if (!reply) 
-                throw new Error('No response from assistant');
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!reply) throw new Error('No response from assistant');
             return reply;
         } catch (e) {
-            document.getElementById(loadingId)
-                ?.remove();
+            document.getElementById(loadingId)?.remove();
             throw e;
         }
     }
     buildMemoryContext(mems) {
-        if (!mems || mems.length === 0) 
-            return 'No memories yet.';
-        let c = 'Recent memories:\n';
-        mems
-            .slice(0, 25)
-            .forEach(m => {
-                const d = new Date(m.date).toLocaleDateString();
-                const em = m.emotion
-                    ? ` (felt ${m.emotion})`
-                    : '';
-                const tags = m.tags
-                    ?.length
-                        ? ` [${m
-                            .tags
-                            .join(',')}]`
-                        : '';
-                c += `- ${d}: ${m
-                    .text
-                    .substring(0, 250)}${m
-                    .text
-                    .length > 250
-                    ? '...'
-                    : ''}${em}${tags}\n`;
-            });
+        if (!mems || mems.length === 0) return 'No memories yet.';
+        let c = 'Relevant memories for context:\n';
+        mems.slice(0, 25).forEach(m => {
+            const d = new Date(m.date).toLocaleDateString();
+            c += `- ${d}: ${m.text}${m.emotion ? ` (felt ${m.emotion})` : ''}${m.tags?.length ? ` [${m.tags.join(',')}]` : ''}\n`;
+        });
         return c;
     }
     buildConversationContext(chats) {
-        if (!chats || chats.length === 0) 
-            return [];
-        return chats
-            .slice(-10)
-            .map(m => ({
-                role: m.sender === 'user'
-                    ? 'user'
-                    : 'model',
-                parts: [
-                    {
-                        text: m.text
-                    }
-                ]
-            }));
+        if (!chats || chats.length === 0) return [];
+        return chats.slice(-10).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+        }));
     }
 }
 
@@ -255,34 +232,97 @@ class Linen {
     constructor() {
         this.db = new LinenDB();
         this.assistant = null;
-        this.selectedEmotion = '';
         this.init();
     }
+    
     async init() {
-        await this
-            .db
-            .init();
-        const apiKey = await this
-            .db
-            .getSetting('gemini-api-key');
-        if (apiKey) 
-            this.assistant = new GeminiAssistant(apiKey);
-        this.bindEvents();
-        this.updateMemoryCount();
+        console.log("App initializing...");
+        await this.db.init();
+        
+        const apiKey = await this.db.getSetting('gemini-api-key');
+        console.log("Checking for API key...");
+        
+        if (!apiKey) {
+            console.log("No API key found. Starting onboarding.");
+            this.showOnboarding();
+        } else {
+            console.log("API key found. Validating...");
+            const assistant = new GeminiAssistant(apiKey);
+            const isValid = await assistant.validateKey();
+            if (isValid) {
+                console.log("API key is valid. Starting app.");
+                this.startApp(apiKey);
+            } else {
+                console.log("Saved API key is invalid. Starting onboarding.");
+                this.showOnboarding('Your saved API key is invalid. Please enter a new one.');
+            }
+        }
     }
+
+    async startApp(apiKey) {
+        this.assistant = new GeminiAssistant(apiKey);
+        document.getElementById('onboarding-overlay').style.display = 'none';
+        document.getElementById('re-enter-key-modal').classList.remove('active');
+        document.getElementById('modal-backdrop').classList.remove('active');
+        this.bindEvents();
+        await this.loadChatHistory();
+        console.log("App started successfully.");
+    }
+
+    showOnboarding(errorMsg = '') {
+        document.getElementById('onboarding-overlay').style.display = 'flex';
+        this.showOnboardingStep(1);
+        if (errorMsg) {
+            this.showOnboardingStep(2);
+            document.getElementById('onboarding-error').textContent = errorMsg;
+        }
+        this.bindOnboardingEvents();
+    }
+    
+    showOnboardingStep(stepNum) {
+        document.querySelectorAll('#onboarding-wizard .step').forEach(step => step.classList.remove('active'));
+        document.getElementById(`step-${stepNum}`).classList.add('active');
+        document.querySelectorAll('.step-indicator .dot').forEach((dot, index) => {
+            dot.classList.toggle('active', index <= stepNum - 1);
+        });
+    }
+
+    bindOnboardingEvents() {
+        document.getElementById('get-started').addEventListener('click', () => this.showOnboardingStep(2));
+        document.getElementById('save-onboarding-api-key').addEventListener('click', () => this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
+            const onboardingComplete = await this.db.getSetting('onboarding-complete');
+            if (onboardingComplete) {
+                this.startApp(this.assistant.apiKey);
+            } else {
+                this.showOnboardingStep(3)
+            }
+        }));
+        document.querySelectorAll('.device-selector button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.getElementById('android-instructions').style.display = e.target.dataset.device === 'android' ? 'block' : 'none';
+                document.getElementById('ios-instructions').style.display = e.target.dataset.device === 'ios' ? 'block' : 'none';
+            });
+        });
+        document.getElementById('finish-onboarding').addEventListener('click', async () => {
+            await this.db.setSetting('onboarding-complete', true);
+            this.startApp(this.assistant.apiKey);
+        });
+    }
+
     bindEvents() {
-        // Modal and Panel toggles
-        const chatPanel = document.getElementById('chat-panel');
-        const memoriesModal = document.getElementById('memories-modal');
+        this.bindOnboardingEvents();
+        
+        // Re-enter key
+        document.getElementById('save-re-enter-api-key').addEventListener('click', () => this.validateAndSaveKey('re-enter-api-key', 're-enter-error', () => this.startApp(this.assistant.apiKey)));
+
+        // Main App
+        const memoriesPanel = document.getElementById('memories-panel');
         const settingsModal = document.getElementById('settings-modal');
         const backdrop = document.getElementById('modal-backdrop');
 
-        document.getElementById('chat-fab').addEventListener('click', () => {
-            chatPanel.classList.toggle('active');
-        });
         document.getElementById('memories-button').addEventListener('click', () => {
             this.loadMemories();
-            memoriesModal.classList.add('active');
+            memoriesPanel.classList.add('active');
             backdrop.classList.add('active');
         });
         document.getElementById('settings-button').addEventListener('click', () => {
@@ -290,100 +330,93 @@ class Linen {
             backdrop.classList.add('active');
         });
 
-        const closeModals = () => {
-            memoriesModal.classList.remove('active');
+        const closeModal = () => {
+            memoriesPanel.classList.remove('active');
             settingsModal.classList.remove('active');
-            chatPanel.classList.remove('active'); // Close chat panel as well
             backdrop.classList.remove('active');
         };
         
-        document.getElementById('close-chat').addEventListener('click', () => chatPanel.classList.remove('active'));
-        document.getElementById('close-memories-modal').addEventListener('click', closeModals);
-        document.getElementById('close-settings-modal').addEventListener('click', closeModals);
-        backdrop.addEventListener('click', closeModals);
+        document.getElementById('close-memories').addEventListener('click', closeModal);
+        document.getElementById('close-settings-modal').addEventListener('click', closeModal);
+        backdrop.addEventListener('click', closeModal);
 
-        // Core functionality
-        document
-            .querySelectorAll('.emotion-button')
-            .forEach(button => {
-                button.addEventListener('click', (e) => {
-                    this.selectedEmotion = e.target.dataset.emotion;
-                    document
-                        .querySelectorAll('.emotion-button')
-                        .forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
-                });
-            });
-        document
-            .getElementById('save-memory')
-            .addEventListener('click', () => this.saveMemory());
-        document
-            .getElementById('chat-send')
-            .addEventListener('click', () => this.sendChat());
-        document
-            .getElementById('save-api-key')
-            .addEventListener('click', () => this.saveApiKey());
-        document
-            .getElementById('export-data')
-            .addEventListener('click', () => this.exportData());
-        document
-            .getElementById('clear-data')
-            .addEventListener('click', () => this.clearAll());
-        document
-            .getElementById('memory-search')
-            .addEventListener('input', (e) => this.loadMemories(e.target.value));
+        const chatInput = document.getElementById('chat-input');
+        document.getElementById('chat-send').addEventListener('click', () => this.sendChat());
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendChat();
+            }
+        });
+
+        document.getElementById('save-api-key').addEventListener('click', () => this.saveApiKey());
+        document.getElementById('export-data').addEventListener('click', () => this.exportData());
+        document.getElementById('clear-data').addEventListener('click', () => this.clearAll());
+        document.getElementById('memory-search').addEventListener('input', (e) => this.loadMemories(e.target.value));
+    }
+    
+    async validateAndSaveKey(inputId, errorId, onSuccess) {
+        console.log("Save button clicked.");
+        const key = document.getElementById(inputId).value.trim();
+        const errorEl = document.getElementById(errorId);
+        console.log("Reading API key from input:", key ? "Key present" : "Key is empty");
+        if (!key) {
+            errorEl.textContent = 'Please enter an API key.';
+            return;
+        }
+        
+        const tempAssistant = new GeminiAssistant(key);
+        const isValid = await tempAssistant.validateKey();
+        
+        if (isValid) {
+            console.log("Saving key to IndexedDB.");
+            await this.db.setSetting('gemini-api-key', key);
+            console.log("Initializing GeminiAssistant.");
+            this.assistant = tempAssistant;
+            errorEl.textContent = '';
+            console.log("Advancing to next step.");
+            onSuccess();
+        } else {
+            errorEl.textContent = "This API key didn't work. Please double-check and try again.";
+        }
     }
 
-    async saveMemory() {
-        const text = document
-            .getElementById('memory-text')
-            .value
-            .trim();
-        const tags = document
-            .getElementById('memory-tags')
-            .value
-            .split(',')
-            .map(t => t.trim())
-            .filter(t => t);
-        const emotion = this.selectedEmotion;
-        if (!text) 
-            return;
-        await this
-            .db
-            .addMemory({
-                text,
-                tags,
-                emotion,
-                date: Date.now()
-            });
-        document
-            .getElementById('memory-text')
-            .value = '';
-        document
-            .getElementById('memory-tags')
-            .value = '';
-        this.selectedEmotion = '';
-        document.querySelectorAll('.emotion-button').forEach(btn => btn.classList.remove('active'));
-        this.updateMemoryCount();
-    }
-    async sendChat() {
-        const input = document.getElementById('chat-input');
-        const msg = input
-            .value
-            .trim();
-        if (!msg || !this.assistant) 
-            return;
-        input.value = '';
+    async loadChatHistory() {
         const container = document.getElementById('chat-messages');
-
-        // Display user message
-        const userDiv = document.createElement('div');
-        userDiv.className = 'user-message';
-        userDiv.textContent = msg;
-        container.appendChild(userDiv);
+        const convs = await this.db.getConversations();
+        container.innerHTML = '';
+        if (!convs || convs.length === 0) {
+            console.log("No conversation history found. Triggering initial greeting.");
+            this.sendChat('[INITIAL_GREETING]');
+            return;
+        }
+        console.log("Loading chat history.");
+        convs.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = msg.sender === 'user' ? 'user-message' : 'assistant-message';
+            div.textContent = msg.text;
+            container.appendChild(div);
+        });
         container.scrollTop = container.scrollHeight;
+    }
+    
+    async sendChat(initialMessage) {
+        const input = document.getElementById('chat-input');
+        const msg = initialMessage || input.value.trim();
+        if (!msg || !this.assistant) return;
+        
+        if (!initialMessage) {
+            input.value = '';
+            const container = document.getElementById('chat-messages');
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user-message';
+            userDiv.textContent = msg;
+            container.appendChild(userDiv);
+            container.scrollTop = container.scrollHeight;
+        }
 
         const id = 'loading-msg';
+        const container = document.getElementById('chat-messages');
         const div = document.createElement('div');
         div.id = id;
         div.className = 'assistant-message';
@@ -392,97 +425,86 @@ class Linen {
         container.scrollTop = container.scrollHeight;
 
         try {
-            const mems = await this
-                .db
-                .getAllMemories();
-            const convs = await this
-                .db
-                .getConversations();
-            const reply = await this
-                .assistant
-                .chat(msg, convs, mems, id);
-            document.getElementById(id)
-                ?.remove();
+            const mems = await this.db.getAllMemories();
+            const convs = await this.db.getConversations();
+            let reply = await this.assistant.chat(msg, convs, mems, id);
+
+            document.getElementById(id)?.remove();
+            
+            const memoryMarker = /\[SAVE_MEMORY: (.*)\]/s;
+            const match = reply.match(memoryMarker);
+
+            if (match) {
+                reply = reply.replace(memoryMarker, '').trim();
+                try {
+                    const memData = JSON.parse(match[1]);
+                    await this.db.addMemory({ ...memData, date: Date.now() });
+                    this.showToast('Memory saved');
+                } catch (e) {
+                    console.error('Failed to parse or save memory:', e);
+                }
+            }
+
             const rdiv = document.createElement('div');
             rdiv.className = 'assistant-message';
             rdiv.textContent = reply;
             container.appendChild(rdiv);
             container.scrollTop = container.scrollHeight;
             
-            await this
-                .db
-                .addConversation({
-                    text: msg,
-                    sender: 'user',
-                    date: Date.now()
-                });
-            await this
-                .db
-                .addConversation({
-                    text: reply,
-                    sender: 'assistant',
-                    date: Date.now()
-                });
+            if (!initialMessage) {
+                await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
+            }
+            await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
+
         } catch (e) {
-            document.getElementById(id)
-                ?.remove();
+            document.getElementById(id)?.remove();
+            if (e.status === 400 || e.status === 403) {
+                console.error("API key failed:", e);
+                document.getElementById('re-enter-key-modal').classList.add('active');
+                document.getElementById('modal-backdrop').classList.add('active');
+            } else {
+                console.error("Chat error:", e);
+                const ediv = document.createElement('div');
+                ediv.className = 'assistant-message';
+                ediv.textContent = "Sorry, I couldn't connect. Please check your internet connection.";
+                container.appendChild(ediv);
+            }
         }
     }
+
     async saveApiKey() {
-        const key = document
-            .getElementById('api-key-input')
-            .value
-            .trim();
-        if (!key) 
-            return;
-        await this
-            .db
-            .setSetting('gemini-api-key', key);
-        this.assistant = new GeminiAssistant(key);
-        document
-            .getElementById('api-key-input')
-            .value = '';
+        await this.validateAndSaveKey('api-key-input', 're-enter-error', () => {
+            this.showToast('API Key saved!');
+            document.getElementById('api-key-input').value = '';
+            document.getElementById('settings-modal').classList.remove('active');
+            document.getElementById('modal-backdrop').classList.remove('active');
+        });
     }
+
     async exportData() {
-        const data = await this
-            .db
-            .exportData();
+        const data = await this.db.exportData();
         const blob = new Blob([data], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `linen-data-${Date.now()}.json`;
-        document
-            .body
-            .appendChild(a);
+        document.body.appendChild(a);
         a.click();
-        document
-            .body
-            .removeChild(a);
+        document.body.removeChild(a);
     }
+
     async clearAll() {
-        if (!confirm('Are you sure you want to clear all memories and conversations? This cannot be undone.')) return;
-        await this
-            .db
-            .clearAllMemories();
-        this.updateMemoryCount();
-        this.loadMemories();
+        if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) return;
+        await this.db.clearAllMemories();
+        await this.db.setSetting('gemini-api-key', null);
+        await this.db.setSetting('onboarding-complete', false);
+        window.location.reload();
     }
-    async updateMemoryCount() {
-        const memories = await this
-            .db
-            .getAllMemories();
-        const countElement = document.getElementById('memory-count');
-        if (countElement) {
-            countElement.textContent = memories.length.toString();
-        }
-    }
+    
     async loadMemories(filter = '') {
-        const memories = await this
-            .db
-            .getAllMemories();
+        const memories = await this.db.getAllMemories();
         const memoriesList = document.getElementById('memories-list');
-        memoriesList.innerHTML = ''; // Clear existing memories
+        memoriesList.innerHTML = '';
 
         const filteredMemories = memories.filter(mem => {
             const searchText = filter.toLowerCase();
@@ -515,39 +537,36 @@ class Linen {
                 const id = parseInt(e.target.dataset.id);
                 await this.db.deleteMemory(id);
                 this.loadMemories(document.getElementById('memory-search').value);
-                this.updateMemoryCount();
             });
         });
+    }
+
+    showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
     }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    if ('serviceWorker' in navigator) {
-        navigator
-            .serviceWorker
-            .register('/service-worker.js')
-            .then(registration => {
-                console.log('Service Worker registered! Scope:', registration.scope);
-
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    if (newWorker) {
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-                                console.log('New Service Worker activated. Reloading page...');
-                                window.location.reload();
-                            } else if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('New Service Worker installed. Sending SKIP_WAITING...');
-                                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                            }
-                        });
-                    }
+    try {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').then(reg => {
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                            window.location.reload();
+                        }
+                    });
                 });
-            })
-            .catch(error => {
-                console.error('Service Worker registration failed:', error);
-            });
+            }).catch(err => console.error('Service worker registration failed:', err));
+        }
+        window.app = new Linen();
+    } catch(e) {
+        console.error("Fatal error during app initialization:", e);
     }
-
-    window.app = new Linen();
 });
