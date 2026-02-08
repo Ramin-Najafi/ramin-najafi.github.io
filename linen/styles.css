@@ -51,14 +51,19 @@ header button {
 
 .main-content {
     flex: 1;
-    overflow-y: auto;
-    padding: 20px;
+    display: flex; /* Added to make it a flex container for its children */
+    flex-direction: column; /* Added to stack children vertically */
+    /* Removed overflow-y: auto; as scrolling will be handled by #chat-messages */
+    padding: 0; /* Adjusted padding to be handled by chat-messages itself */
 }
 
 #chat-messages {
+    flex: 1; /* Make it take all available space */
+    overflow-y: auto; /* Make it scrollable */
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding: 20px; /* Added padding here */
 }
 
 #chat-input-area {
