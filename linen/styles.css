@@ -101,7 +101,7 @@ input, textarea, button {
 
 .main-content {
             overflow-y: auto;
-            max-height: 880px;
+            max-height: 880px; /* Updated main-content max-height */
             overflow-x: hidden;
             background-color: var(--color-bg-primary);
         }
