@@ -225,10 +225,8 @@ Never be preachy or judgmental. Be genuine and supportive.`;
             if (loadingMessageElement) {
                 loadingMessageElement.remove();
             }
-            this.addChatMessage(`Sorry, I encountered an error: ${error.message}`, 'assistant');
-            console.error(error);
-        }
-    }
+            throw error;
+        }    }
 
     buildMemoryContext(memories) {
         if (!memories || memories.length === 0) {
