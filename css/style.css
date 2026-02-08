@@ -54,11 +54,16 @@ p {
     position: static; /* Remove absolute positioning */
     display: block; /* Allows margin auto for centering */
     margin: 20px auto 0; /* Center horizontally, add top margin */
-    max-width: 80%; /* Make it responsive, adjust as needed */
+    max-width: 100px; /* Make it smaller for mobile, adjust as needed */
     width: auto; /* Ensure width adjusts */
     height: auto; /* Maintain aspect ratio */
     left: auto; /* Remove fixed left position */
     top: auto; /* Remove fixed top position */
+  }
+
+  .hero {
+    padding-top: 30px; /* Reduced top padding for mobile */
+    padding-bottom: 15px; /* Reduced bottom padding for mobile */
   }
 }
 
