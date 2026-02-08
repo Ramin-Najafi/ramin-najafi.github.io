@@ -120,7 +120,8 @@ class LinenDB {
 class GeminiAssistant {
     constructor(apiKey) {
         this.apiKey = apiKey;
-        this.model = 'gemini-2.0-flash';
+        this.model = 'gemini-2.5-flash';
+        this.fallbackModel = 'gemini-2.0-flash-lite';
         this.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
     }
 
@@ -166,41 +167,59 @@ Core Directives:
             { role: 'user', parts: [{ text: `${memoryContext}\n\nUser: ${msg}` }] }
         ];
 
-        try {
-            console.log('Sending chat to:', `${this.endpoint}/${this.model}:generateContent?key=***`);
-            const res = await fetch(
-                `${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: messages,
-                        systemInstruction: { parts: [{ text: systemPrompt }] },
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
-                    })
+        const requestBody = {
+            contents: messages,
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+        };
+
+        // Try primary model, then fallback
+        const modelsToTry = [this.model, this.fallbackModel];
+
+        for (const model of modelsToTry) {
+            try {
+                console.log(`Trying model: ${model}`);
+                const res = await fetch(
+                    `${this.endpoint}/${model}:generateContent?key=${this.apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    }
+                );
+
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    console.warn(`Model ${model} failed:`, res.status, errorData.error?.message);
+
+                    // If rate limited, try next model
+                    if (res.status === 429) continue;
+
+                    const error = new Error(errorData.error?.message || 'API request failed');
+                    error.status = res.status;
+                    throw error;
                 }
-            );
 
-            console.log('Chat response status:', res.status);
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                console.error('Chat API error:', res.status, errorData);
-                const error = new Error(errorData.error?.message || 'API request failed');
-                error.status = res.status;
-                throw error;
+                const data = await res.json();
+                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!reply) throw new Error('No response from assistant');
+                return reply;
+            } catch (e) {
+                // If it's a rate limit and we have more models to try, continue
+                if (e.status === 429 || (e.message && e.message.includes('quota'))) {
+                    console.warn(`Model ${model} rate limited, trying next...`);
+                    continue;
+                }
+                document.getElementById(loadingId)?.remove();
+                throw e;
             }
-
-            const data = await res.json();
-            console.log('Chat response received:', data.candidates ? 'has candidates' : 'no candidates');
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!reply) throw new Error('No response from assistant');
-            return reply;
-        } catch (e) {
-            console.error('Chat catch block:', e.message, 'status:', e.status, 'full error:', e);
-            document.getElementById(loadingId)?.remove();
-            throw e;
         }
+
+        // All models failed
+        const error = new Error('All models are currently rate-limited. Please wait a minute and try again.');
+        error.status = 429;
+        document.getElementById(loadingId)?.remove();
+        throw error;
     }
 
     buildMemoryContext(mems) {
