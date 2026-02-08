@@ -286,6 +286,11 @@ class Linen {
         await this.loadMemories();
         await this.loadConversations();
         await this.updateMemoryCount();
+
+        // Show tutorial if it's the first time
+        if (!localStorage.getItem('linen_tutorial_shown')) {
+            document.getElementById('tutorial-overlay').style.display = 'flex';
+        }
     }
 
     // ============================================
@@ -364,6 +369,12 @@ class Linen {
         document.getElementById('save-api-key').addEventListener('click', () => this.saveApiKey());
         document.getElementById('export-data').addEventListener('click', () => this.exportData());
         document.getElementById('clear-data').addEventListener('click', () => this.confirmClearData());
+
+        // Tutorial
+        document.getElementById('tutorial-ok').addEventListener('click', () => {
+            document.getElementById('tutorial-overlay').style.display = 'none';
+            localStorage.setItem('linen_tutorial_shown', 'true');
+        });
     }
 
     // ============================================
