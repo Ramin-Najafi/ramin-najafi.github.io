@@ -18,12 +18,14 @@ document.querySelectorAll('#mobileNav nav a').forEach(item => {
     });
 });
 
-// Lightbox functionality
-const skillsLightbox = document.getElementById('skillsLightbox');
-const openSkillsGoalsBtn = document.getElementById('openSkillsGoals');
-const closeLightboxBtn = skillsLightbox.querySelector('.close-button');
+// Lightbox functionality - elements declared globally, initialized in DOMContentLoaded
+let skillsLightbox;
+let openSkillsGoalsBtn;
+let closeLightboxBtn;
 
 function openSkillsLightbox() {
+    const originalSkillsGoalsContent = document.getElementById('skills-and-goals').innerHTML;
+    document.getElementById('lightbox-skills-goals-content').innerHTML = originalSkillsGoalsContent;
     skillsLightbox.style.display = 'flex'; // Use flex to center content
     document.body.style.overflow = 'hidden'; // Prevent scrolling on body
 }
@@ -31,23 +33,10 @@ function openSkillsLightbox() {
 function closeSkillsLightbox() {
     skillsLightbox.style.display = 'none';
     document.body.style.overflow = ''; // Restore scrolling on body
+    document.getElementById('lightbox-skills-goals-content').innerHTML = ''; // Clear content when closing
 }
 
-// Event listeners for lightbox
-if (openSkillsGoalsBtn) {
-    openSkillsGoalsBtn.addEventListener('click', openSkillsLightbox);
-}
 
-if (closeLightboxBtn) {
-    closeLightboxBtn.addEventListener('click', closeSkillsLightbox);
-}
-
-// Close lightbox if clicked outside content
-window.addEventListener('click', function(event) {
-    if (event.target === skillsLightbox) {
-        closeSkillsLightbox();
-    }
-});
 
 
 // Existing code...
@@ -64,6 +53,28 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleMenu(); // Close the menu
         }
     });
+
+    // Lightbox initialization and event listeners - MOVED HERE
+    skillsLightbox = document.getElementById('skillsLightbox'); // Initialize globally declared variable
+    openSkillsGoalsBtn = document.getElementById('openSkillsGoals'); // Initialize globally declared variable
+    closeLightboxBtn = skillsLightbox ? skillsLightbox.querySelector('.close-button') : null; // Initialize globally declared variable
+
+    // Event listeners for lightbox
+    if (openSkillsGoalsBtn) {
+        openSkillsGoalsBtn.addEventListener('click', openSkillsLightbox);
+    }
+
+    if (closeLightboxBtn) {
+        closeLightboxBtn.addEventListener('click', closeSkillsLightbox);
+    }
+
+    if (skillsLightbox) { // Only attach if lightbox exists
+        window.addEventListener('click', function(event) {
+            if (event.target === skillsLightbox) {
+                closeSkillsLightbox();
+            }
+        });
+    }
 
     // Add click functionality to Linen Project Box
     const linenProjectBox = document.getElementById('linen-project-box');
