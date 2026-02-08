@@ -51,19 +51,20 @@ header button {
 
 .main-content {
     flex: 1;
-    display: flex; /* Added to make it a flex container for its children */
-    flex-direction: column; /* Added to stack children vertically */
-    /* Removed overflow-y: auto; as scrolling will be handled by #chat-messages */
-    padding: 0; /* Adjusted padding to be handled by chat-messages itself */
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 0; /* Ensures it can shrink if needed within flex context */
 }
 
 #chat-messages {
-    flex: 1; /* Make it take all available space */
-    overflow-y: auto; /* Make it scrollable */
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 20px; /* Added padding here */
+    padding: 20px;
+    min-height: 0; /* Allows it to shrink if necessary without pushing input area */
 }
 
 #chat-input-area {
@@ -71,6 +72,7 @@ header button {
     padding: 10px;
     background-color: var(--header-bg);
     border-top: 1px solid var(--border);
+    margin-top: auto; /* Pushes the input area to the bottom */
 }
 
 #chat-input {
