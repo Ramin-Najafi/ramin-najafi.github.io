@@ -3,121 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Linen — Your Memory</title>
-<meta name="description" content="Linen — a calm, personal memory assistant.">
-<meta name="theme-color" content="#fafafa">
 
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Linen</title>
 
-<!-- Favicon -->
-<link rel="icon" href="./favicon.svg" type="image/svg+xml">
-
-<!-- CSS -->
-<link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.json">
 </head>
+
 <body>
 
-<div class="app-container">
+<div class="app">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <button class="nav-item active" data-view="capture"><span>✎</span><span>Capture</span></button>
-    <button class="nav-item" data-view="chat"><span>💬</span><span>Chat</span></button>
-    <button class="nav-item" data-view="memories"><span>📚</span><span>Memories</span></button>
-  </aside>
+    <!-- MAIN CONTENT -->
+    <main class="main">
 
-  <!-- Main Content -->
-  <main class="main-content">
+        <!-- Capture -->
+        <section class="view active" id="capture-view">
+            <h2>What's on your mind?</h2>
 
-    <!-- Capture -->
-    <section class="view active" id="capture-view">
-      <div class="view-header">
-        <h2>What’s on your mind?</h2>
-        <p>Capture anything you want to remember</p>
-      </div>
-      <form class="capture-form" id="capture-form">
-        <div class="form-group">
-          <textarea id="memory-text" rows="5" placeholder="Write your memory…"></textarea>
-        </div>
-        <div class="form-group">
-          <div class="emotion-selector">
-            <button type="button" class="emotion-btn" data-emotion="grateful">😌</button>
-            <button type="button" class="emotion-btn" data-emotion="stressed">😰</button>
-            <button type="button" class="emotion-btn" data-emotion="excited">🤩</button>
-            <button type="button" class="emotion-btn" data-emotion="confused">🤔</button>
-            <button type="button" class="emotion-btn" data-emotion="proud">😊</button>
-            <button type="button" class="emotion-btn" data-emotion="regret">😔</button>
-          </div>
-        </div>
-        <button type="submit" class="btn">Save</button>
-      </form>
-    </section>
+            <textarea id="memory-text" placeholder="Write anything..."></textarea>
 
-    <!-- Chat -->
-    <section class="view" id="chat-view">
-      <div class="view-header">
-        <h2>Chat with Linen</h2>
-        <p>Ask about your memories or decisions</p>
-      </div>
-      <div class="chat-container">
-        <div class="chat-messages" id="chat-messages">
-          <div class="message assistant-message">Hi there! I'm Linen. How can I help you today?</div>
-        </div>
-        <div class="chat-input-wrapper">
-          <input type="text" id="chat-input" class="chat-input" placeholder="Ask me anything…">
-          <button id="chat-send" class="btn">Send</button>
-        </div>
-      </div>
-    </section>
+            <div class="emotion-row">
+                <button class="emotion-btn" data-emotion="happy">🙂</button>
+                <button class="emotion-btn" data-emotion="calm">😌</button>
+                <button class="emotion-btn" data-emotion="sad">😔</button>
+                <button class="emotion-btn" data-emotion="stressed">😰</button>
+                <button class="emotion-btn" data-emotion="excited">🤩</button>
+            </div>
 
-    <!-- Memories -->
-    <section class="view" id="memories-view">
-      <div class="view-header">
-        <h2>Your Memories</h2>
-        <p>Everything you’ve captured</p>
-      </div>
-      <div class="memories-list" id="memories-list">
-        <div class="memory-card">
-          <div class="date">Feb 8, 2026</div>
-          <div class="text">Had a great conversation with a friend. Feeling happy and connected.</div>
-        </div>
-      </div>
-    </section>
+            <button class="primary-btn" id="save-memory">Save</button>
+        </section>
 
-  </main>
+        <!-- Chat -->
+        <section class="view" id="chat-view">
+            <h2>Assistant</h2>
+
+            <div id="chat-messages" class="chat-box"></div>
+
+            <div class="chat-input-row">
+                <input type="text" id="chat-input" placeholder="Talk to Linen...">
+                <button id="chat-send">Send</button>
+            </div>
+        </section>
+
+        <!-- Memories -->
+        <section class="view" id="memories-view">
+            <h2>Memories</h2>
+            <div id="memories-list"></div>
+        </section>
+
+        <!-- Settings -->
+        <section class="view" id="settings-view">
+            <h2>Settings</h2>
+
+            <input type="password" id="api-key-input" placeholder="Gemini API key">
+            <button id="save-api-key">Save Key</button>
+
+            <button id="export-data">Export Data</button>
+            <button id="clear-data" class="danger">Clear All</button>
+        </section>
+
+    </main>
+
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-view="capture-view">✎</button>
+        <button class="nav-btn" data-view="chat-view">💬</button>
+        <button class="nav-btn" data-view="memories-view">📚</button>
+        <button class="nav-btn" data-view="settings-view">⚙</button>
+    </nav>
+
 </div>
 
-<!-- Tutorial Modal -->
-<div id="tutorial-overlay" class="tutorial-overlay" style="display:none;">
-  <div class="tutorial-modal">
-    <h2>Welcome to Linen!</h2>
-    <p>To get started, add your API key in Settings. Then start capturing your memories!</p>
-    <button id="tutorial-ok" class="btn">Got it!</button>
-  </div>
-</div>
-
-<!-- JS -->
-<script>
-// SIMPLE JS FOR VIEW SWITCHING
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const view = btn.dataset.view;
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(view + '-view').classList.add('active');
-  });
-});
-
-// SIMPLE EMOTION SELECT
-document.querySelectorAll('.emotion-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-  });
-});
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
