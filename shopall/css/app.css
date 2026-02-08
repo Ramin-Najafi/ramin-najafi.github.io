@@ -42,6 +42,8 @@ body {
 }
 #logo > img {
   width: 150px;
+  max-width: 100%; /* Make image responsive */
+  height: auto; /* Maintain aspect ratio */
 }
 #social {
   position: absolute;
@@ -86,10 +88,10 @@ nav {
   position: fixed;
   top: 0;
   right: -226px;
-  width: 150px;
+  width: 210px; /* Adjusted width for mobile menu */
   height: 100vh;
   background: rgba(0,0,0,0.8);
-  padding-top: 145px;
+  padding-top: 155px; /* Adjusted padding-top for mobile menu */
   text-align: left;
   z-index: 30;
 }
@@ -726,6 +728,35 @@ footer {
     font-size: .8em;
   }
 }
+
+@media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Decrease base font size for mobile */
+  }
+
+  #logo {
+    width: 80px; /* Make it smaller for mobile */
+    top: 10px; /* Adjust top position for mobile */
+    left: 10px; /* Adjust left position for mobile */
+  }
+
+  #hamburger {
+    top: 30px; /* Adjust top position for mobile */
+    right: 20px; /* Adjust right position for mobile */
+  }
+
+  header {
+    min-height: 100px; /* Reduced min-height for mobile header */
+    padding-top: 15px; /* Reduced top padding for mobile header */
+    font-size: 1em; /* Adjusted font size for mobile header */
+  }
+
+  header h1 {
+    font-size: 1em; /* Adjusted h1 font size for mobile */
+    padding-top: 20px; /* Adjusted h1 top padding for mobile */
+  }
+}
+
 @media (max-width: 480px) {
   header h1 {
     font-size: .3em;
