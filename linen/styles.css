@@ -100,11 +100,11 @@ input, textarea, button {
 }
 
 .main-content {
-    overflow-y: auto;
-    overflow-x: hidden;
-    background-color: var(--color-bg-primary);
-}
-
+            overflow-y: auto;
+            max-height: 800px;
+            overflow-x: hidden;
+            background-color: var(--color-bg-primary);
+        }
 /* ============================================
    HAMBURGER ICON (MOBILE)
    ============================================ */
@@ -386,7 +386,7 @@ input, textarea, button {
 
 .memory-input {
     resize: vertical;
-    min-height: 150px;
+    min-height: 225px;
     font-family: var(--font-body);
 }
 
