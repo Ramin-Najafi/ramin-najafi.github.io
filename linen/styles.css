@@ -322,3 +322,31 @@ button:hover {
     color: #e74c3c;
     margin-top: 10px;
 }
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+}
+#version-info {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-top: 15px;
+}
+#contact-form h3 {
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+#contact-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+#contact-form input,
+#contact-form textarea {
+    border-radius: 6px;
+}
+#contact-form button {
+    background: #8e44ad;
+}

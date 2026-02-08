@@ -274,9 +274,55 @@ Core Directives:
     }
 }
 
+class Analytics {
+    constructor() {
+        this.analyticsFormId = 'maqdnyzg';
+    }
+    get pageViews() {
+        return parseInt(localStorage.getItem('pageViews') || '0');
+    }
+    set pageViews(val) {
+        localStorage.setItem('pageViews', val);
+    }
+    get pwaInstalls() {
+        return parseInt(localStorage.getItem('pwaInstalls') || '0');
+    }
+    set pwaInstalls(val) {
+        localStorage.setItem('pwaInstalls', val);
+    }
+
+    trackPageView() {
+        this.pageViews++;
+        if (this.pageViews % 10 === 0) {
+            this.sendAnalytics();
+        }
+    }
+
+    trackPWAInstall() {
+        this.pwaInstalls++;
+        this.sendAnalytics();
+    }
+
+    async sendAnalytics() {
+        const data = {
+            pageViews: this.pageViews,
+            pwaInstalls: this.pwaInstalls,
+        };
+        try {
+            await fetch(`https://formspree.io/f/${this.analyticsFormId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+        } catch (e) {
+            console.error('Failed to send analytics:', e);
+        }
+    }
+}
 class Linen {
     constructor() {
         this.db = new LinenDB();
+        this.analytics = new Analytics();
         this.assistant = null;
         this._onboardingBound = false;
         this._eventsBound = false;
@@ -284,6 +330,7 @@ class Linen {
 
     async init() {
         try {
+            this.analytics.trackPageView();
             await this.db.init();
             const apiKey = await this.db.getSetting('gemini-api-key');
 
@@ -656,6 +703,9 @@ class Linen {
 
 window.addEventListener('DOMContentLoaded', () => {
     try {
+        window.addEventListener('appinstalled', () => {
+            window.app.analytics.trackPWAInstall();
+        });
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./service-worker.js').then(reg => {
                 reg.addEventListener('updatefound', () => {
