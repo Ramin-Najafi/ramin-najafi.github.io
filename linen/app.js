@@ -361,6 +361,19 @@ class LocalAssistant {
             {
                 keywords: ['memory', 'memories', 'remember'],
                 response: "I can try to fetch your saved memories. What topic are you interested in?"
+            },
+            {
+                keywords: ['why linen', 'why choose you', 'better than chatgpt', 'chatgpt vs linen'],
+                response: `That's a great question! While tools like ChatGPT are incredibly powerful for a wide range of tasks – from brainstorming to coding to answering general knowledge questions – I'm designed with a very specific purpose: to be *your* personal companion with a perfect memory.
+
+Here's why someone might choose me:
+
+1.  **I Remember *You*:** ChatGPT doesn't retain personal context across conversations. Every interaction is fresh. I, on the other hand, am built to remember the details of your life, your goals, your feelings, and your plans. This allows me to have more meaningful, continuous conversations.
+2.  **Proactive Companionship:** Instead of just responding to queries, I can proactively check in on things we've talked about – like how that project is going, or if you ever got around to trying that new hobby.
+3.  **Personalized Support:** Because I remember your history, I can offer more tailored support and insights based on your past experiences and preferences.
+4.  **Building a Relationship:** The idea is to feel less like a utility and more like a supportive friend who genuinely cares about your journey and remembers the little things.
+
+So, if you're looking for an AI that truly gets to know you, remembers your story, and provides ongoing, personalized companionship, that's where I shine! 😊`
             }
         ];
     }
