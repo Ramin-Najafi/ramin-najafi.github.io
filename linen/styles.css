@@ -86,7 +86,7 @@ input, textarea, button {
         display: grid;
         grid-template-columns: 240px 1fr;
         height: 100vh;
-        max-height: 850px; /* Added page max-height */
+        max-height: 900px; /* Updated page max-height */
         overflow: hidden;
     }
 .sidebar {
@@ -101,7 +101,7 @@ input, textarea, button {
 
 .main-content {
             overflow-y: auto;
-            max-height: 800px;
+            max-height: 880px;
             overflow-x: hidden;
             background-color: var(--color-bg-primary);
         }
