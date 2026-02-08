@@ -110,6 +110,14 @@ class LinenDB {
             t.onerror = () => j(t.error);
         });
     }
+    async clearConversations() {
+        return new Promise((r, j) => {
+            const t = this.db.transaction(['conversations'], 'readwrite');
+            t.objectStore('conversations').clear();
+            t.oncomplete = () => r();
+            t.onerror = () => j(t.error);
+        });
+    }
     async exportData() {
         const m = await this.getAllMemories();
         const c = await this.getConversations();
@@ -398,6 +406,7 @@ class Linen {
 
         document.getElementById('export-data').addEventListener('click', () => this.exportData());
         document.getElementById('clear-data').addEventListener('click', () => this.clearAll());
+        document.getElementById('clear-chat-history').addEventListener('click', () => this.clearChatHistory());
         document.getElementById('memory-search').addEventListener('input', (e) => this.loadMemories(e.target.value));
     }
 
@@ -473,19 +482,27 @@ class Linen {
             let reply = await this.assistant.chat(msg, convs, mems, id);
 
             document.getElementById(id)?.remove();
+            
+            console.log("Raw AI Reply:", reply); // Log raw reply
 
             // Parse and strip memory markers
             const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
             const match = reply.match(memoryMarker);
             if (match) {
+                const originalReplyLength = reply.length;
                 reply = reply.replace(memoryMarker, '').trim();
+                console.log("Reply after stripping marker:", reply); // Log stripped reply
+                console.log("Memory marker detected. Original length:", originalReplyLength, "Stripped length:", reply.length);
                 try {
                     const memData = JSON.parse(match[1]);
                     await this.db.addMemory({ ...memData, date: Date.now() });
                     this.showToast('Memory saved');
                 } catch (e) {
-                    console.error('Failed to parse memory:', e);
+                    console.error('Failed to parse memory JSON:', e); // Specific error for JSON parsing
+                    this.showToast('Error saving memory.');
                 }
+            } else {
+                console.log("No SAVE_MEMORY marker detected.");
             }
 
             const rdiv = document.createElement('div');
@@ -556,11 +573,17 @@ class Linen {
     }
 
     async clearAll() {
-        if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) return;
+        if (!confirm('Are you sure you want to clear ALL data (memories and settings)? This cannot be undone.')) return;
         await this.db.clearAllMemories();
         await this.db.setSetting('gemini-api-key', null);
         await this.db.setSetting('onboarding-complete', false);
         window.location.reload();
+    }
+    async clearChatHistory() {
+        if (!confirm('Are you sure you want to clear all chat history? This cannot be undone.')) return;
+        await this.db.clearConversations();
+        this.loadChatHistory();
+        this.showToast('Chat history cleared.');
     }
 
     async loadMemories(filter = '') {
