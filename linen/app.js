@@ -131,12 +131,21 @@ class GeminiAssistant {
             );
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                console.error('Key validation failed:', res.status, err.error?.message || 'Unknown error');
-                return { valid: false, error: err.error?.message || `HTTP ${res.status}` };
+                const status = res.status;
+                const msg = err.error?.message || '';
+
+                // 429 = rate limited, 403 can be quota — key is valid, just throttled
+                if (status === 429 || (status === 403 && msg.toLowerCase().includes('quota'))) {
+                    return { valid: true };
+                }
+                // 400 with API_KEY_INVALID or 403 without quota = bad key
+                if (status === 400 || status === 401 || status === 403) {
+                    return { valid: false, error: 'Invalid API key. Please check and try again.' };
+                }
+                return { valid: false, error: `Something went wrong (HTTP ${status}). Please try again.` };
             }
             return { valid: true };
         } catch (e) {
-            console.error('Key validation network error:', e);
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
