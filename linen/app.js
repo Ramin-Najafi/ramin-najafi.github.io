@@ -274,6 +274,29 @@ class Linen {
         this.init();
     }
 
+    static exampleMemories = [
+        {
+            text: "Had a great conversation with John about the project. Feeling excited about the new direction we're taking.",
+            emotion: "excited",
+            tags: "work, john, decision"
+        },
+        {
+            text: "Spent the afternoon coding, debugging a tricky CSS layout. Felt a bit stressed but proud once it was solved.",
+            emotion: "proud",
+            tags: "coding, css, debugging"
+        },
+        {
+            text: "Decided to start learning React today. Feeling a mix of excitement and confusion with all the new concepts.",
+            emotion: "confused",
+            tags: "react, learning, frontend"
+        },
+        {
+            text: "Finished reading a book on mindful productivity. Feeling grateful for new insights and a clearer focus.",
+            emotion: "grateful",
+            tags: "book, productivity, self-improvement"
+        }
+    ];
+
     async init() {
         await this.db.init();
         const apiKey = await this.db.getSetting('gemini-api-key');
@@ -584,14 +607,17 @@ class Linen {
         memoriesList.innerHTML = '';
 
         if (memories.length === 0) {
+            const randomIndex = Math.floor(Math.random() * Linen.exampleMemories.length);
+            const example = Linen.exampleMemories[randomIndex];
+            
             memoriesList.innerHTML = `
                 <div class="empty-state">
                     <p>No memories yet</p>
                     <span>Tap the Capture tab to save your first thought, decision, or feeling</span>
                     <div style="margin-top: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px; text-align: left;">
                         <div style="font-size: 0.875rem; color: #6b6b6b; margin-bottom: 8px;">Example:</div>
-                        <div style="color: #2a2a2a;">"Had a great conversation with Sarah about the project. Feeling excited about the new direction we're taking."</div>
-                        <div style="margin-top: 8px; font-size: 0.85rem; color: #a0a0a0;">😊 Proud · work, sarah, decision</div>
+                        <div style="color: #2a2a2a;">"${example.text}"</div>
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: #a0a0a0;">${this.getEmotionEmoji(example.emotion)} ${example.emotion} · ${example.tags}</div>
                     </div>
                 </div>
             `;
