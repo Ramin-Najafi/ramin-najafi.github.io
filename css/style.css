@@ -51,14 +51,9 @@ p {
 /* New media query for mobile responsiveness */
 @media (max-width: 768px) {
   #logo {
-    position: static; /* Remove absolute positioning */
-    display: block; /* Allows margin auto for centering */
-    margin: 20px auto 0; /* Center horizontally, add top margin */
-    max-width: 100px; /* Make it smaller for mobile, adjust as needed */
-    width: auto; /* Ensure width adjusts */
-    height: auto; /* Maintain aspect ratio */
-    left: auto; /* Remove fixed left position */
-    top: auto; /* Remove fixed top position */
+    width: 80px; /* Make it smaller for mobile */
+    top: 20px; /* Adjust top position for mobile */
+    left: 20px; /* Adjust left position for mobile */
   }
 
   .hero {
