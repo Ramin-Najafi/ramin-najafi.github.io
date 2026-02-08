@@ -109,7 +109,7 @@ p {
   position: fixed;
   top: 0;
   right: -300px;
-  width: 190px;
+  width: 210px;
   height: 100vh;
   background: #1a1a2e;
   padding-top: 85px;
@@ -261,6 +261,7 @@ p {
   border: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 1em;
   transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center; /* Center align text inside skill cards */
 }
 
 .card:hover,
@@ -699,7 +700,7 @@ footer {
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto; /* Enable scroll if content is too tall */
+  overflow: hidden; /* Scrolling handled by lightbox-content */
   background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
   justify-content: center;
   align-items: center;
@@ -707,17 +708,21 @@ footer {
 
 .lightbox-content {
   background-color: #1a1a2e; /* Dark background */
-  margin: 5% auto; /* 5% from the top and centered */
+  margin: 20px auto; /* Adjusted margin for better control */
   padding: 20px;
   border: 1px solid #888;
   width: 90%; /* Responsive width */
   max-width: 600px; /* Max width for larger screens */
+  max-height: 90vh; /* Max height for scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
   border-radius: 10px;
   position: relative;
+  display: flex; /* Use flex for content centering */
+  flex-direction: column; /* Stack content vertically */
 }
 
 .close-button {
-  color: #aaa;
+  color: #ffcc00; /* More visible color */
   float: right;
   font-size: 28px;
   font-weight: bold;
@@ -725,6 +730,7 @@ footer {
   top: 10px;
   right: 20px;
   cursor: pointer;
+  z-index: 110; /* Ensure it's above content */
 }
 
 .close-button:hover,
