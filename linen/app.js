@@ -293,6 +293,7 @@ class Linen {
         const closeModals = () => {
             memoriesModal.classList.remove('active');
             settingsModal.classList.remove('active');
+            chatPanel.classList.remove('active'); // Close chat panel as well
             backdrop.classList.remove('active');
         };
         
