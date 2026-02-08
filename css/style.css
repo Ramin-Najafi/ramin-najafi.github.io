@@ -50,6 +50,10 @@ p {
 
 /* New media query for mobile responsiveness */
 @media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Decrease base font size for mobile */
+  }
+
   #logo {
     width: 80px; /* Make it smaller for mobile */
     top: 20px; /* Adjust top position for mobile */
@@ -59,6 +63,10 @@ p {
   .hero {
     padding-top: 30px; /* Reduced top padding for mobile */
     padding-bottom: 15px; /* Reduced bottom padding for mobile */
+  }
+
+  #skills-and-goals {
+    display: none; /* Hide Skills & Goals section on mobile */
   }
 }
 
@@ -101,10 +109,10 @@ p {
   position: fixed;
   top: 0;
   right: -300px;
-  width: 170px;
+  width: 190px;
   height: 100vh;
   background: #1a1a2e;
-  padding-top: 145px;
+  padding-top: 85px;
   text-align: center;
   z-index: 75;
   transition: right 0.3s ease-in-out; /* Smooth transition for menu sliding */
@@ -670,4 +678,58 @@ footer {
   .skill-card {
     padding: 10px; /* Adjust padding for skill cards */
   }
+}
+
+.mobile-only-button {
+  display: none; /* Hidden by default */
+}
+
+@media (max-width: 768px) {
+  .mobile-only-button {
+    display: block; /* Display on mobile */
+  }
+}
+
+/* Lightbox Styles */
+.lightbox {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 100; /* High z-index to appear on top */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto; /* Enable scroll if content is too tall */
+  background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+  justify-content: center;
+  align-items: center;
+}
+
+.lightbox-content {
+  background-color: #1a1a2e; /* Dark background */
+  margin: 5% auto; /* 5% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 90%; /* Responsive width */
+  max-width: 600px; /* Max width for larger screens */
+  border-radius: 10px;
+  position: relative;
+}
+
+.close-button {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: #ffcc00;
+  text-decoration: none;
+  cursor: pointer;
 }

@@ -18,6 +18,39 @@ document.querySelectorAll('#mobileNav nav a').forEach(item => {
     });
 });
 
+// Lightbox functionality
+const skillsLightbox = document.getElementById('skillsLightbox');
+const openSkillsGoalsBtn = document.getElementById('openSkillsGoals');
+const closeLightboxBtn = skillsLightbox.querySelector('.close-button');
+
+function openSkillsLightbox() {
+    skillsLightbox.style.display = 'flex'; // Use flex to center content
+    document.body.style.overflow = 'hidden'; // Prevent scrolling on body
+}
+
+function closeSkillsLightbox() {
+    skillsLightbox.style.display = 'none';
+    document.body.style.overflow = ''; // Restore scrolling on body
+}
+
+// Event listeners for lightbox
+if (openSkillsGoalsBtn) {
+    openSkillsGoalsBtn.addEventListener('click', openSkillsLightbox);
+}
+
+if (closeLightboxBtn) {
+    closeLightboxBtn.addEventListener('click', closeSkillsLightbox);
+}
+
+// Close lightbox if clicked outside content
+window.addEventListener('click', function(event) {
+    if (event.target === skillsLightbox) {
+        closeSkillsLightbox();
+    }
+});
+
+
+// Existing code...
 document.addEventListener('DOMContentLoaded', function() {
     const mobileNav = document.getElementById('mobileNav');
     const hamburger = document.getElementById('hamburger');
@@ -97,4 +130,12 @@ async function submitContact(event) {
     }
 
     return false; // Prevent page reload
+}
+
+// Function to open lightbox and close mobile menu
+function openSkillsLightboxAndCloseMenu() {
+    openSkillsLightbox();
+    if (menuOpen) { // Check if menu is open before closing
+        toggleMenu(); // Close the menu
+    }
 }
