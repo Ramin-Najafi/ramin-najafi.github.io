@@ -630,3 +630,24 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+/* Mobile adjustments for Skills & Goals section */
+@media (max-width: 480px) {
+  .skills-goals-container {
+    gap: 20px; /* Reduce gap between stacked columns */
+  }
+
+  .skills-column,
+  .goals-column {
+    padding: 0 5px; /* Reduce horizontal padding inside columns */
+  }
+
+  .skills-grid {
+    grid-template-columns: 1fr; /* Force single column for skill cards */
+    gap: 10px; /* Adjust gap for single column */
+  }
+
+  .skill-card {
+    padding: 10px; /* Adjust padding for skill cards */
+  }
+}
