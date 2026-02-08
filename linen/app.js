@@ -134,21 +134,37 @@ class GeminiAssistant {
     }
 
     async validateKey() {
+        console.log("Validating key...");
         try {
-            // Use the models.list endpoint — free, no tokens consumed
+            // Use generateContent endpoint for validation, as requested
             const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`
+                `${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: 'user', parts: [{ text: 'Hello' }] }]
+                    })
+                }
             );
+            console.log("Key validation result:", res.ok);
             if (res.ok) {
                 return { valid: true };
             }
             const err = await res.json().catch(() => ({}));
             const msg = err.error?.message || '';
-            if (res.status === 400 || res.status === 401 || res.status === 403) {
-                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            if (res.status === 400 || res.status === 401) {
+                return { valid: false, error: msg || 'Invalid API key. Please check and try again.' };
+            }
+            // For 403, if it's quota related, provide specific message
+            if (res.status === 403 && msg.toLowerCase().includes('quota')) {
+                return { valid: false, error: msg || 'Quota exceeded. Please check your plan and billing details.' };
+            }
+            if (res.status === 403) {
+                return { valid: false, error: msg || 'Access denied to Gemini API. Please check your API key permissions.' };
             }
             return { valid: false, error: `Something went wrong (HTTP ${res.status}). Please try again.` };
         } catch (e) {
+            console.error("Key validation failed:", e);
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
@@ -528,8 +544,8 @@ class Linen {
                 ediv.textContent = "I'm temporarily rate-limited. Please wait a minute and try again.";
                 container.appendChild(ediv);
             }
-            // Bad key — prompt re-entry
-            else if (status === 400 || status === 401 || (status === 403 && !msg.toLowerCase().includes('quota'))) {
+            // Bad key or quota issue — prompt re-entry
+            else if ((status === 403 && msg.toLowerCase().includes('quota')) || status === 400 || status === 401) {
                 document.getElementById('re-enter-key-modal').classList.add('active');
                 document.getElementById('modal-backdrop').classList.add('active');
             }
