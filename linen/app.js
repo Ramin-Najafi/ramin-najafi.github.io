@@ -173,6 +173,7 @@ Core Directives:
         ];
 
         try {
+            console.log('Sending chat to:', `${this.endpoint}/${this.model}:generateContent?key=***`);
             const res = await fetch(
                 `${this.endpoint}/${this.model}:generateContent?key=${this.apiKey}`,
                 {
@@ -186,18 +187,23 @@ Core Directives:
                 }
             );
 
+            console.log('Chat response status:', res.status);
+
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
+                console.error('Chat API error:', res.status, errorData);
                 const error = new Error(errorData.error?.message || 'API request failed');
                 error.status = res.status;
                 throw error;
             }
 
             const data = await res.json();
+            console.log('Chat response received:', data.candidates ? 'has candidates' : 'no candidates');
             const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!reply) throw new Error('No response from assistant');
             return reply;
         } catch (e) {
+            console.error('Chat catch block:', e.message, 'status:', e.status, 'full error:', e);
             document.getElementById(loadingId)?.remove();
             throw e;
         }
@@ -476,15 +482,36 @@ class Linen {
 
         } catch (e) {
             document.getElementById(id)?.remove();
-            if (e.status === 400 || e.status === 403) {
-                document.getElementById('re-enter-key-modal').classList.add('active');
-                document.getElementById('modal-backdrop').classList.add('active');
-            } else {
+            const msg = e.message || '';
+            const status = e.status || 0;
+
+            // Rate limit / quota — tell user to wait
+            if (status === 429 || (status === 403 && msg.toLowerCase().includes('quota'))) {
                 const ediv = document.createElement('div');
-                ediv.className = 'assistant-message';
-                ediv.textContent = "Sorry, I couldn't connect. Please check your internet connection.";
+                ediv.className = 'assistant-message error-message';
+                ediv.textContent = "I'm temporarily rate-limited. Please wait a minute and try again.";
                 container.appendChild(ediv);
             }
+            // Bad key — prompt re-entry
+            else if (status === 400 || status === 401 || (status === 403 && !msg.toLowerCase().includes('quota'))) {
+                document.getElementById('re-enter-key-modal').classList.add('active');
+                document.getElementById('modal-backdrop').classList.add('active');
+            }
+            // Actual network error
+            else if (!navigator.onLine) {
+                const ediv = document.createElement('div');
+                ediv.className = 'assistant-message error-message';
+                ediv.textContent = "You're offline. Please check your internet connection.";
+                container.appendChild(ediv);
+            }
+            // Unknown error — show the actual message
+            else {
+                const ediv = document.createElement('div');
+                ediv.className = 'assistant-message error-message';
+                ediv.textContent = `Something went wrong: ${msg || 'Unknown error'}. Please try again.`;
+                container.appendChild(ediv);
+            }
+            container.scrollTop = container.scrollHeight;
         }
     }
 
