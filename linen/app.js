@@ -84,21 +84,36 @@ class LinenDB {
         });
     }
     async getSetting(key) {
+        console.log(`LinenDB: Attempting to get setting for key: ${key}`);
         return new Promise((r, j) => {
             const t = this.db.transaction(['settings'], 'readonly');
             const s = t.objectStore('settings');
             const req = s.get(key);
-            req.onsuccess = () => r(req.result?.value ?? null);
-            req.onerror = () => j(req.error);
+            req.onsuccess = () => {
+                const value = req.result?.value ?? null;
+                console.log(`LinenDB: Got setting for key: ${key}, value: ${value ? '[REDACTED]' : 'null'}`);
+                r(value);
+            };
+            req.onerror = () => {
+                console.error(`LinenDB: Failed to get setting for key: ${key}`, req.error);
+                j(req.error);
+            };
         });
     }
     async setSetting(key, val) {
+        console.log(`LinenDB: Attempting to set setting for key: ${key}, value: ${val ? '[REDACTED]' : 'null'}`);
         return new Promise((r, j) => {
             const t = this.db.transaction(['settings'], 'readwrite');
             const s = t.objectStore('settings');
             const req = s.put({ key, value: val });
-            req.onsuccess = () => r();
-            req.onerror = () => j(req.error);
+            req.onsuccess = () => {
+                console.log(`LinenDB: Successfully set setting for key: ${key}`);
+                r();
+            };
+            req.onerror = () => {
+                console.error(`LinenDB: Failed to set setting for key: ${key}`, req.error);
+                j(req.error);
+            };
         });
     }
     async clearAllMemories() {
@@ -329,38 +344,46 @@ class Linen {
     }
 
     async init() {
+        console.log("Linen: Initializing app...");
         try {
             this.analytics.trackPageView();
             await this.db.init();
             const apiKey = await this.db.getSetting('gemini-api-key');
+            console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}`);
 
             if (!apiKey) {
+                console.log("Linen: No API Key found, showing onboarding.");
                 this.showOnboarding();
             } else {
                 const assistant = new GeminiAssistant(apiKey);
                 const result = await assistant.validateKey();
                 if (result.valid) {
+                    console.log("Linen: API Key validated successfully, starting app.");
                     this.startApp(apiKey);
                 } else {
+                    console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
                     this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
                 }
             }
         } catch (e) {
-            console.error('Init error:', e);
+            console.error('Linen: Init error:', e);
             this.showOnboarding('Something went wrong during startup. Please enter your API key.');
         }
     }
 
     async startApp(apiKey) {
+        console.log("Linen: Starting app with API Key.");
         this.assistant = new GeminiAssistant(apiKey);
         document.getElementById('onboarding-overlay').style.display = 'none';
         document.getElementById('re-enter-key-modal').classList.remove('active');
         document.getElementById('modal-backdrop').classList.remove('active');
         this.bindEvents();
         await this.loadChatHistory();
+        console.log("Linen: App started.");
     }
 
     showOnboarding(errorMsg = '') {
+        console.log(`Linen: Showing onboarding, error message: ${errorMsg}`);
         document.getElementById('onboarding-overlay').style.display = 'flex';
         this.showOnboardingStep(1);
         if (errorMsg) {
@@ -477,26 +500,31 @@ class Linen {
     }
 
     async validateAndSaveKey(inputId, errorId, onSuccess) {
+        console.log(`Linen: Validating and saving key from input: ${inputId}`);
         const input = document.getElementById(inputId);
         const errorEl = document.getElementById(errorId);
         const key = input.value.trim();
 
         if (!key) {
             errorEl.textContent = 'Please enter an API key.';
+            console.warn("Linen: API key input is empty.");
             return;
         }
 
         errorEl.textContent = 'Validating...';
+        console.log("Linen: Validating API key...");
 
         const tempAssistant = new GeminiAssistant(key);
         const result = await tempAssistant.validateKey();
 
         if (result.valid) {
+            console.log("Linen: API key validated successfully. Saving to DB.");
             await this.db.setSetting('gemini-api-key', key);
             this.assistant = tempAssistant;
             errorEl.textContent = '';
             onSuccess();
         } else {
+            console.error(`Linen: API key validation failed: ${result.error}`);
             errorEl.textContent = `Key validation failed: ${result.error}`;
         }
     }
