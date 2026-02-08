@@ -4,17 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Linen — your personal memory assistant, supporting memories, reminders, and mental health.">
-<meta name="theme-color" content="#fafafa">
+<meta name="theme-color" content="#e8d5c0">
 <title>Linen — Your Personal Assistant</title>
 <link rel="icon" href="./favicon.svg">
 <link rel="manifest" href="./manifest.json">
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<div class="app-container">
+<div id="app-container">
+    <header>
+        <button id="settings-button">⚙</button>
+        <img src="./logo.png" alt="Linen Logo" id="logo">
+        <button id="memories-button">📚</button>
+    </header>
+
     <!-- Main Content -->
     <main class="main-content">
-        <section class="view active" id="capture-view">
+        <section id="capture-view">
             <textarea id="memory-text" placeholder="What's on your mind?"></textarea>
             <input type="text" id="memory-tags" placeholder="Tags (optional)">
             <div class="emotion-selector">
@@ -27,35 +33,41 @@
             </div>
             <button id="save-memory">Save Memory</button>
         </section>
-
-        <section class="view" id="chat-view">
-            <div id="chat-messages">
-                <div class="assistant-message">Hi! I'm here to help with your memories and decisions.</div>
-            </div>
-            <input id="chat-input" placeholder="Ask me anything...">
-            <button id="chat-send">Send</button>
-        </section>
-
-        <section class="view" id="memories-view">
-            <input id="memory-search" placeholder="Search memories...">
-            <div id="memories-list">No memories yet.</div>
-        </section>
-
-        <section class="view" id="settings-view">
-            <input id="api-key-input" placeholder="Paste Gemini API key">
-            <button id="save-api-key">Save API Key</button>
-            <button id="export-data">Export Memories</button>
-            <button id="clear-data">Clear All</button>
-        </section>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <button data-view="capture-view">✎</button>
-        <button data-view="chat-view">💬</button>
-        <button data-view="memories-view">📚</button>
-        <button data-view="settings-view">⚙</button>
-    </nav>
+    <!-- Chat FAB -->
+    <button id="chat-fab">💬</button>
+
+    <!-- Chat Panel -->
+    <aside id="chat-panel">
+        <button class="close-panel" id="close-chat">×</button>
+        <div id="chat-messages">
+            <div class="assistant-message">Hi! I'm here to help with your memories and decisions.</div>
+        </div>
+        <div id="chat-input-area">
+            <input id="chat-input" placeholder="Ask me anything...">
+            <button id="chat-send">Send</button>
+        </div>
+    </aside>
+
+    <!-- Modal Backdrop -->
+    <div id="modal-backdrop"></div>
+
+    <!-- Memories Modal -->
+    <div class="modal" id="memories-modal">
+        <button class="close-modal" id="close-memories-modal">×</button>
+        <input id="memory-search" placeholder="Search memories...">
+        <div id="memories-list">No memories yet.</div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <button class="close-modal" id="close-settings-modal">×</button>
+        <input id="api-key-input" placeholder="Paste Gemini API key">
+        <button id="save-api-key">Save API Key</button>
+        <button id="export-data">Export Memories</button>
+        <button id="clear-data">Clear All</button>
+    </div>
 </div>
 
 <script src="./app.js"></script>

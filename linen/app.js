@@ -255,7 +255,6 @@ class Linen {
     constructor() {
         this.db = new LinenDB();
         this.assistant = null;
-        this.currentView = 'capture-view';
         this.selectedEmotion = '';
         this.init();
     }
@@ -270,18 +269,39 @@ class Linen {
             this.assistant = new GeminiAssistant(apiKey);
         this.bindEvents();
         this.updateMemoryCount();
-        // Set capture-view nav button as active on page load
-        document
-            .querySelector('[data-view="capture-view"]')
-            .classList
-            .add('active');
     }
     bindEvents() {
-        document
-            .querySelectorAll('.bottom-nav button')
-            .forEach(b => b.addEventListener('click', e => {
-                this.switchView(e.target.dataset.view);
-            }));
+        // Modal and Panel toggles
+        const chatPanel = document.getElementById('chat-panel');
+        const memoriesModal = document.getElementById('memories-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const backdrop = document.getElementById('modal-backdrop');
+
+        document.getElementById('chat-fab').addEventListener('click', () => {
+            chatPanel.classList.toggle('active');
+        });
+        document.getElementById('memories-button').addEventListener('click', () => {
+            this.loadMemories();
+            memoriesModal.classList.add('active');
+            backdrop.classList.add('active');
+        });
+        document.getElementById('settings-button').addEventListener('click', () => {
+            settingsModal.classList.add('active');
+            backdrop.classList.add('active');
+        });
+
+        const closeModals = () => {
+            memoriesModal.classList.remove('active');
+            settingsModal.classList.remove('active');
+            backdrop.classList.remove('active');
+        };
+        
+        document.getElementById('close-chat').addEventListener('click', () => chatPanel.classList.remove('active'));
+        document.getElementById('close-memories-modal').addEventListener('click', closeModals);
+        document.getElementById('close-settings-modal').addEventListener('click', closeModals);
+        backdrop.addEventListener('click', closeModals);
+
+        // Core functionality
         document
             .querySelectorAll('.emotion-button')
             .forEach(button => {
@@ -312,26 +332,7 @@ class Linen {
             .getElementById('memory-search')
             .addEventListener('input', (e) => this.loadMemories(e.target.value));
     }
-    switchView(viewId) {
-        document
-            .querySelectorAll('.view')
-            .forEach(v => v.classList.remove('active'));
-        document
-            .querySelector(`#${viewId}`)
-            .classList
-            .add('active');
-        document
-            .querySelectorAll('.bottom-nav button')
-            .forEach(b => b.classList.remove('active'));
-        document
-            .querySelector(`[data-view="${viewId}"]`)
-            .classList
-            .add('active');
 
-        if (viewId === 'memories-view') {
-            this.loadMemories();
-        }
-    }
     async saveMemory() {
         const text = document
             .getElementById('memory-text')
@@ -361,6 +362,7 @@ class Linen {
             .getElementById('memory-tags')
             .value = '';
         this.selectedEmotion = '';
+        document.querySelectorAll('.emotion-button').forEach(btn => btn.classList.remove('active'));
         this.updateMemoryCount();
     }
     async sendChat() {
@@ -371,12 +373,6 @@ class Linen {
         if (!msg || !this.assistant) 
             return;
         input.value = '';
-        const mems = await this
-            .db
-            .getAllMemories();
-        const convs = await this
-            .db
-            .getConversations();
         const container = document.getElementById('chat-messages');
 
         // Display user message
@@ -384,6 +380,7 @@ class Linen {
         userDiv.className = 'user-message';
         userDiv.textContent = msg;
         container.appendChild(userDiv);
+        container.scrollTop = container.scrollHeight;
 
         const id = 'loading-msg';
         const div = document.createElement('div');
@@ -391,7 +388,15 @@ class Linen {
         div.className = 'assistant-message';
         div.textContent = 'Thinking...';
         container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+
         try {
+            const mems = await this
+                .db
+                .getAllMemories();
+            const convs = await this
+                .db
+                .getConversations();
             const reply = await this
                 .assistant
                 .chat(msg, convs, mems, id);
@@ -401,6 +406,8 @@ class Linen {
             rdiv.className = 'assistant-message';
             rdiv.textContent = reply;
             container.appendChild(rdiv);
+            container.scrollTop = container.scrollHeight;
+            
             await this
                 .db
                 .addConversation({
@@ -453,13 +460,12 @@ class Linen {
             .removeChild(a);
     }
     async clearAll() {
+        if (!confirm('Are you sure you want to clear all memories and conversations? This cannot be undone.')) return;
         await this
             .db
             .clearAllMemories();
         this.updateMemoryCount();
-        document
-            .getElementById('memories-list')
-            .innerHTML = 'No memories yet.';
+        this.loadMemories();
     }
     async updateMemoryCount() {
         const memories = await this
@@ -480,7 +486,7 @@ class Linen {
         const filteredMemories = memories.filter(mem => {
             const searchText = filter.toLowerCase();
             return mem.text.toLowerCase().includes(searchText) ||
-                   mem.tags.some(tag => tag.toLowerCase().includes(searchText));
+                   (mem.tags && mem.tags.some(tag => tag.toLowerCase().includes(searchText)));
         });
 
         if (filteredMemories.length === 0) {
@@ -495,7 +501,7 @@ class Linen {
                 <p>${mem.text}</p>
                 <p class="memory-meta">
                     ${mem.emotion ? `<span class="emotion">${mem.emotion}</span>` : ''}
-                    ${mem.tags.length ? `<span class="tags">${mem.tags.map(tag => `#${tag}`).join(' ')}</span>` : ''}
+                    ${mem.tags && mem.tags.length ? `<span class="tags">${mem.tags.map(tag => `#${tag}`).join(' ')}</span>` : ''}
                     <span class="date">${new Date(mem.date).toLocaleDateString()}</span>
                 </p>
                 <button class="delete-memory" data-id="${mem.id}">Delete</button>
@@ -507,7 +513,7 @@ class Linen {
             button.addEventListener('click', async (e) => {
                 const id = parseInt(e.target.dataset.id);
                 await this.db.deleteMemory(id);
-                this.loadMemories();
+                this.loadMemories(document.getElementById('memory-search').value);
                 this.updateMemoryCount();
             });
         });
@@ -527,11 +533,9 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-                                // New service worker activated, reload page to load new content
                                 console.log('New Service Worker activated. Reloading page...');
                                 window.location.reload();
                             } else if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New service worker installed, but waiting. Send skipWaiting message.
                                 console.log('New Service Worker installed. Sending SKIP_WAITING...');
                                 newWorker.postMessage({ type: 'SKIP_WAITING' });
                             }
