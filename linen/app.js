@@ -305,7 +305,7 @@ class Linen {
         }
 
         this.setupEventListeners();
-        this.registerServiceWorker();
+        this.registerServiceWorker(); // Call the method here
         await this.loadMemories();
         await this.loadConversations();
         await this.updateMemoryCount();
