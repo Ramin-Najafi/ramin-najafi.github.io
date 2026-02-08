@@ -515,5 +515,34 @@ class Linen {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+        navigator
+            .serviceWorker
+            .register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered! Scope:', registration.scope);
+
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                                // New service worker activated, reload page to load new content
+                                console.log('New Service Worker activated. Reloading page...');
+                                window.location.reload();
+                            } else if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New service worker installed, but waiting. Send skipWaiting message.
+                                console.log('New Service Worker installed. Sending SKIP_WAITING...');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+    }
+
     window.app = new Linen();
 });
