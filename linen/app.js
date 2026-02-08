@@ -310,9 +310,11 @@ class Linen {
         await this.loadConversations();
         await this.updateMemoryCount();
 
-        // Show tutorial if it's the first time
-        if (!localStorage.getItem('linen_tutorial_shown')) {
+        // Show tutorial if no API key is set
+        if (!apiKey) { // Use the already fetched apiKey
             document.getElementById('tutorial-overlay').style.display = 'flex';
+            // Also, switch to settings view if tutorial is shown
+            this.switchView(document.querySelector('.nav-item[data-view="settings"]'));
         }
     }
 
@@ -396,7 +398,6 @@ class Linen {
         // Tutorial
         document.getElementById('tutorial-ok').addEventListener('click', () => {
             document.getElementById('tutorial-overlay').style.display = 'none';
-            localStorage.setItem('linen_tutorial_shown', 'true');
         });
     }
 
@@ -747,6 +748,8 @@ class Linen {
             this.assistant = new GeminiAssistant(apiKey);
             keyInput.value = '';
             this.showToast('API key saved ✓');
+            localStorage.setItem('linen_tutorial_shown', 'true');
+            document.getElementById('tutorial-overlay').style.display = 'none';
         } catch (error) {
             this.showToast('Error saving API key');
             console.error(error);
