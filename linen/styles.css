@@ -299,6 +299,40 @@ input, textarea, button {
 }
 
 /* ============================================
+   CHAT VIEW - Custom Styles
+   ============================================ */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--spacing-2xl) - var(--spacing-2xl) - 1.75rem - var(--spacing-md) - var(--spacing-md)); /* dynamic height for chatbox */
+    background-color: var(--color-bg-secondary);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+}
+
+.chat-messages {
+    flex: 1; /* Take available vertical space */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding-right: var(--spacing-sm); /* Space for scrollbar */
+    margin-bottom: var(--spacing-md); /* Space before input area */
+}
+
+.chat-input-area {
+    margin-top: auto; /* Push to the bottom of the flex container */
+}
+
+.chat-input-wrapper {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.chat-input {
+    flex: 1; /* Take available width */
+}
+
+
+
+/* ============================================
    FORM STYLES
    ============================================ */
 
