@@ -1,72 +1,53 @@
-const CACHE_NAME = 'linen-v4';
+const CACHE_NAME = 'linen-v100';
+const BASE_PATH = '/linen';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/manifest.json',
-    '/favicon.svg'
+    `${BASE_PATH}/`,
+    `${BASE_PATH}/index.html`,
+    `${BASE_PATH}/styles.css`,
+    `${BASE_PATH}/app.js`,
+    `${BASE_PATH}/manifest.json`,
+    `${BASE_PATH}/favicon.svg`,
+    `${BASE_PATH}/logo.png`
 ];
+
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).catch(err => console.error(err)));
+    e.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(c => c.addAll(urlsToCache))
+            .catch(err => console.error('Cache install error:', err))
+    );
     self.skipWaiting();
 });
+
 self.addEventListener('activate', e => {
-    e.waitUntil(caches.keys().then(names => Promise.all(names.map(n => n !== CACHE_NAME
-        ? caches.delete(n)
-        : null))));
-    self
-        .clients
-        .claim();
+    e.waitUntil(
+        caches.keys().then(names =>
+            Promise.all(names.map(n => n !== CACHE_NAME ? caches.delete(n) : null))
+        )
+    );
+    self.clients.claim();
 });
+
+// Network-first strategy: always try network, fall back to cache
 self.addEventListener('fetch', e => {
-    const { request } = e;
-    const url = new URL(request.url);
+    if (e.request.method !== 'GET') return;
+    if (!e.request.url.includes(BASE_PATH)) return;
 
-    // Always go to network for non-GET requests
-    if (request.method !== 'GET') {
-        e.respondWith(fetch(request));
-        return;
-    }
+    // Skip API calls
+    if (e.request.url.includes('googleapis.com')) return;
 
-    // Network-first for HTML, JS, CSS
-    if (url.pathname === '/index.html' || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
-        e.respondWith(
-            fetch(request)
-                .then(response => {
-                    // If network request succeeds, update cache and return response
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(request, responseClone);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    // If network request fails, try to serve from cache
-                    return caches.match(request).then(response => {
-                        return response || caches.match('/index.html'); // Fallback to index.html
-                    });
-                })
-        );
-        return;
-    }
-
-    // Cache-first for other static assets (e.g., manifest, favicon)
     e.respondWith(
-        caches.match(request).then(response => {
-            return response || fetch(request).then(networkResponse => {
-                const networkResponseClone = networkResponse.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(request, networkResponseClone);
-                });
-                return networkResponse;
-            });
-        })
+        fetch(e.request)
+            .then(response => {
+                if (!response || response.status !== 200) return response;
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+                return response;
+            })
+            .catch(() => caches.match(e.request).then(r => r || caches.match(`${BASE_PATH}/index.html`)))
     );
 });
+
 self.addEventListener('message', e => {
-    if (e.data
-        ?.type === 'SKIP_WAITING') 
-        self.skipWaiting();
-    }
-);
+    if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
