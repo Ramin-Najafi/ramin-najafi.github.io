@@ -386,7 +386,7 @@ input, textarea, button {
 
 .memory-input {
     resize: vertical;
-    min-height: 225px;
+    min-height: 150px; /* Reverted to original min-height */
     font-family: var(--font-body);
 }
 
