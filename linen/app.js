@@ -25,8 +25,9 @@ class LinenDB {
                         keyPath: 'id',
                         autoIncrement: true
                     });
-                if (!db.objectStoreNames.contains('settings')) 
+                if (!db.objectStoreNames.contains('settings')) {
                     db.createObjectStore('settings', {keyPath: 'key'});
+                }
                 }
             });
     }
@@ -103,7 +104,7 @@ class LinenDB {
                 .db
                 .transaction(['settings'], 'readwrite');
             const s = t.objectStore('settings');
-            const req = s.put({key, val});
+            const req = s.put({key, value: val});
             req.onsuccess = () => r();
             req.onerror = () => j(req.error);
         });
@@ -269,6 +270,11 @@ class Linen {
             this.assistant = new GeminiAssistant(apiKey);
         this.bindEvents();
         this.updateMemoryCount();
+        // Set capture-view nav button as active on page load
+        document
+            .querySelector('[data-view="capture-view"]')
+            .classList
+            .add('active');
     }
     bindEvents() {
         document
@@ -276,6 +282,17 @@ class Linen {
             .forEach(b => b.addEventListener('click', e => {
                 this.switchView(e.target.dataset.view);
             }));
+        document
+            .querySelectorAll('.emotion-button')
+            .forEach(button => {
+                button.addEventListener('click', (e) => {
+                    this.selectedEmotion = e.target.dataset.emotion;
+                    document
+                        .querySelectorAll('.emotion-button')
+                        .forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                });
+            });
         document
             .getElementById('save-memory')
             .addEventListener('click', () => this.saveMemory());
@@ -291,6 +308,9 @@ class Linen {
         document
             .getElementById('clear-data')
             .addEventListener('click', () => this.clearAll());
+        document
+            .getElementById('memory-search')
+            .addEventListener('input', (e) => this.loadMemories(e.target.value));
     }
     switchView(viewId) {
         document
@@ -307,6 +327,10 @@ class Linen {
             .querySelector(`[data-view="${viewId}"]`)
             .classList
             .add('active');
+
+        if (viewId === 'memories-view') {
+            this.loadMemories();
+        }
     }
     async saveMemory() {
         const text = document
@@ -353,8 +377,15 @@ class Linen {
         const convs = await this
             .db
             .getConversations();
-        const id = 'loading-msg';
         const container = document.getElementById('chat-messages');
+
+        // Display user message
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user-message';
+        userDiv.textContent = msg;
+        container.appendChild(userDiv);
+
+        const id = 'loading-msg';
         const div = document.createElement('div');
         div.id = id;
         div.className = 'assistant-message';
@@ -429,6 +460,57 @@ class Linen {
         document
             .getElementById('memories-list')
             .innerHTML = 'No memories yet.';
+    }
+    async updateMemoryCount() {
+        const memories = await this
+            .db
+            .getAllMemories();
+        const countElement = document.getElementById('memory-count');
+        if (countElement) {
+            countElement.textContent = memories.length.toString();
+        }
+    }
+    async loadMemories(filter = '') {
+        const memories = await this
+            .db
+            .getAllMemories();
+        const memoriesList = document.getElementById('memories-list');
+        memoriesList.innerHTML = ''; // Clear existing memories
+
+        const filteredMemories = memories.filter(mem => {
+            const searchText = filter.toLowerCase();
+            return mem.text.toLowerCase().includes(searchText) ||
+                   mem.tags.some(tag => tag.toLowerCase().includes(searchText));
+        });
+
+        if (filteredMemories.length === 0) {
+            memoriesList.innerHTML = '<p>No memories yet.</p>';
+            return;
+        }
+
+        filteredMemories.forEach(mem => {
+            const card = document.createElement('div');
+            card.className = 'memory-card';
+            card.innerHTML = `
+                <p>${mem.text}</p>
+                <p class="memory-meta">
+                    ${mem.emotion ? `<span class="emotion">${mem.emotion}</span>` : ''}
+                    ${mem.tags.length ? `<span class="tags">${mem.tags.map(tag => `#${tag}`).join(' ')}</span>` : ''}
+                    <span class="date">${new Date(mem.date).toLocaleDateString()}</span>
+                </p>
+                <button class="delete-memory" data-id="${mem.id}">Delete</button>
+            `;
+            memoriesList.appendChild(card);
+        });
+
+        document.querySelectorAll('.delete-memory').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const id = parseInt(e.target.dataset.id);
+                await this.db.deleteMemory(id);
+                this.loadMemories();
+                this.updateMemoryCount();
+            });
+        });
     }
 }
 

@@ -30,7 +30,7 @@ self.addEventListener('fetch', e => {
             .open(CACHE_NAME)
             .then(c => c.put(e.request, n.clone()));
         return n;
-    }).catch(() => caches.match(`${BASE_PATH}/index.html`))));
+    }).catch(() => caches.match(BASE_PATH + '/index.html'))));
 });
 self.addEventListener('message', e => {
     if (e.data
