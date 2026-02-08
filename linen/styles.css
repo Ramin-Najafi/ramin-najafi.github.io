@@ -83,12 +83,12 @@ input, textarea, button {
    ============================================ */
 
 .app-container {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    height: 100vh;
-    overflow: hidden;
-}
-
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        height: 100vh;
+        max-height: 850px; /* Added page max-height */
+        overflow: hidden;
+    }
 .sidebar {
     background-color: #ffffff; /* Use primary bg color */
     border-right: 1px solid var(--color-border);
@@ -148,7 +148,7 @@ input, textarea, button {
    ============================================ */
 
 .sidebar-header {
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: 15px;
 }
 
 .app-title {
@@ -280,7 +280,7 @@ input, textarea, button {
 }
 
 .view-header {
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: 15px;
 }
 
 .view-header h2 {
@@ -340,6 +340,7 @@ input, textarea, button {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xl);
+    height: 150px;
 }
 
 .form-group {
