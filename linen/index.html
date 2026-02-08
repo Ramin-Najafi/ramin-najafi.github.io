@@ -225,6 +225,35 @@
         </main>
     </div>
     
+    <!-- First-Time User Tutorial Modal -->
+    <div id="tutorial-overlay" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-modal">
+            <h2>Welcome to Linen!</h2>
+            <p>To get started, you'll need a Google Gemini API key. Here's how to get one:</p>
+            
+            <div class="tutorial-step">
+                <span>1. Go to the Settings tab</span>
+                <div class="arrow" id="arrow-settings">→</div>
+            </div>
+            
+            <div class="tutorial-step">
+                <span>2. Follow the link to Google AI Studio</span>
+                <div class="arrow" id="arrow-link">→</div>
+            </div>
+
+            <div class="tutorial-step">
+                <span>3. Follow Google's on-screen directions to create your API key</span>
+            </div>
+            
+            <div class="tutorial-step">
+                <span>4. Paste your key in the designated area and save</span>
+                <div class="arrow" id="arrow-input">→</div>
+            </div>
+            
+            <button id="tutorial-ok" class="btn btn-primary">OK!</button>
+        </div>
+    </div>
+    
     <!-- Toast Notification -->
     <div class="toast" id="toast"></div>
     
