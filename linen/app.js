@@ -334,11 +334,53 @@ class Analytics {
         }
     }
 }
+
+class LocalAssistant {
+    constructor() {
+        this.rules = [
+            {
+                keywords: ['hello', 'hi', 'hey'],
+                response: "Hi there! I'm your local assistant. It seems we're having trouble connecting to Gemini at the moment, but I'm here to help with basic tasks. How can I assist you?"
+            },
+            {
+                keywords: ['offline', 'internet', 'network'],
+                response: "It looks like we're offline or experiencing network issues. I can only provide limited assistance right now."
+            },
+            {
+                keywords: ['quota', 'limit', 'gemini problem'],
+                response: "The Gemini API seems to have reached its quota limits. I've taken over to provide basic support until the main AI is back online."
+            },
+            {
+                keywords: ['help', 'commands'],
+                response: "I'm a simple local assistant. I can respond to greetings, tell you about my status (offline/quota), and try to retrieve your memories if you ask for them specifically. You can also try asking about your saved memories (e.g., 'What do you remember about my projects?')."
+            },
+            {
+                keywords: ['who are you', 'what are you'],
+                response: "I am Linen's local assistant. I step in when the main Gemini AI is unavailable."
+            },
+            {
+                keywords: ['memory', 'memories', 'remember'],
+                response: "I can try to fetch your saved memories. What topic are you interested in?"
+            }
+        ];
+    }
+
+    async chat(msg) {
+        const lowerMsg = msg.toLowerCase();
+        for (const rule of this.rules) {
+            if (rule.keywords.some(keyword => lowerMsg.includes(keyword))) {
+                return rule.response;
+            }
+        }
+        return "I'm the local assistant. I can only provide limited responses. It seems I don't understand that request. Try asking for 'help'.";
+    }
+}
 class Linen {
     constructor() {
         this.db = new LinenDB();
         this.analytics = new Analytics();
-        this.assistant = null;
+        this.assistant = null; // Will be GeminiAssistant or LocalAssistant
+        this.isLocalMode = false;
         this._onboardingBound = false;
         this._eventsBound = false;
     }
@@ -355,19 +397,42 @@ class Linen {
                 console.log("Linen: No API Key found, showing onboarding.");
                 this.showOnboarding();
             } else {
-                const assistant = new GeminiAssistant(apiKey);
-                const result = await assistant.validateKey();
+                const geminiAssistant = new GeminiAssistant(apiKey);
+                const result = await geminiAssistant.validateKey();
                 if (result.valid) {
-                    console.log("Linen: API Key validated successfully, starting app.");
+                    console.log("Linen: API Key validated successfully, starting app with Gemini.");
+                    this.assistant = geminiAssistant;
+                    this.isLocalMode = false;
                     this.startApp(apiKey);
                 } else {
-                    console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
-                    this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
+                    // Check if the error is due to network or quota, in which case we can fallback to local.
+                    // Otherwise, the key is truly invalid and requires re-entry via onboarding.
+                    const isRecoverableError = (result.error && (
+                        result.error.toLowerCase().includes('quota') ||
+                        result.error.toLowerCase().includes('network error') ||
+                        result.error.toLowerCase().includes('too many requests')
+                    ));
+
+                    if (isRecoverableError) {
+                        console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
+                        this.assistant = new LocalAssistant();
+                        this.isLocalMode = true;
+                        this.startApp(apiKey); // Start app without showing onboarding
+                        this.showToast(`Gemini API unavailable: ${result.error}. Using local assistant.`);
+                    } else {
+                        console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
+                        this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
+                    }
                 }
             }
         } catch (e) {
             console.error('Linen: Init error:', e);
-            this.showOnboarding('Something went wrong during startup. Please enter your API key.');
+            // If init fails, always offer local mode if possible, otherwise show onboarding.
+            this.assistant = new LocalAssistant();
+            this.isLocalMode = true;
+            this.startApp(null); // Start in local mode without API key
+            this.showToast(`Linen failed to initialize: ${e.message}. Using local assistant.`);
+            console.error('Linen: Fatal error during init, starting in local-only mode.', e);
         }
     }
 
@@ -570,33 +635,45 @@ class Linen {
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
 
+        let reply = '';
         try {
             const mems = await this.db.getAllMemories();
             const convs = await this.db.getConversations();
-            let reply = await this.assistant.chat(msg, convs, mems, id);
+            
+            // If in local mode, directly use local assistant
+            if (this.isLocalMode) {
+                console.log("Linen: Currently in local mode. Using LocalAssistant.");
+                reply = await this.assistant.chat(msg); // LocalAssistant doesn't need convs, mems, loadingId
+            } else {
+                // Try GeminiAssistant
+                console.log("Linen: Attempting to use GeminiAssistant.");
+                reply = await this.assistant.chat(msg, convs, mems, id);
+            }
 
             document.getElementById(id)?.remove();
             
             console.log("Raw AI Reply:", reply); // Log raw reply
 
-            // Parse and strip memory markers
-            const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
-            const match = reply.match(memoryMarker);
-            if (match) {
-                const originalReplyLength = reply.length;
-                reply = reply.replace(memoryMarker, '').trim();
-                console.log("Reply after stripping marker:", reply); // Log stripped reply
-                console.log("Memory marker detected. Original length:", originalReplyLength, "Stripped length:", reply.length);
-                try {
-                    const memData = JSON.parse(match[1]);
-                    await this.db.addMemory({ ...memData, date: Date.now() });
-                    this.showToast('Memory saved');
-                } catch (e) {
-                    console.error('Failed to parse memory JSON:', e); // Specific error for JSON parsing
-                    this.showToast('Error saving memory.');
+            // Parse and strip memory markers (only if using GeminiAssistant)
+            if (!this.isLocalMode) {
+                const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
+                const match = reply.match(memoryMarker);
+                if (match) {
+                    const originalReplyLength = reply.length;
+                    reply = reply.replace(memoryMarker, '').trim();
+                    console.log("Reply after stripping marker:", reply); // Log stripped reply
+                    console.log("Memory marker detected. Original length:", originalReplyLength, "Stripped length:", reply.length);
+                    try {
+                        const memData = JSON.parse(match[1]);
+                        await this.db.addMemory({ ...memData, date: Date.now() });
+                        this.showToast('Memory saved');
+                    } catch (e) {
+                        console.error('Failed to parse memory JSON:', e); // Specific error for JSON parsing
+                        this.showToast('Error saving memory.');
+                    }
+                } else {
+                    console.log("No SAVE_MEMORY marker detected.");
                 }
-            } else {
-                console.log("No SAVE_MEMORY marker detected.");
             }
 
             const rdiv = document.createElement('div');
@@ -612,33 +689,54 @@ class Linen {
 
         } catch (e) {
             document.getElementById(id)?.remove();
-            const msg = e.message || '';
+            const msgText = e.message || '';
             const status = e.status || 0;
 
-            // Rate limit / quota — tell user to wait
-            if (status === 429 || (status === 403 && msg.toLowerCase().includes('quota'))) {
-                const ediv = document.createElement('div');
-                ediv.className = 'assistant-message error-message';
-                ediv.textContent = "I'm temporarily rate-limited. Please wait a minute and try again.";
-                container.appendChild(ediv);
+            console.error(`Linen: sendChat failed (Status: ${status}, Message: ${msgText}). Attempting fallback to LocalAssistant.`, e);
+
+            // Determine if we should fall back to LocalAssistant
+            const canFallback = (status === 0 && !navigator.onLine) || // Offline
+                                (status === 429) || // Rate limited
+                                (status === 403 && msgText.toLowerCase().includes('quota')); // Quota exceeded
+
+            if (canFallback && !this.isLocalMode) {
+                console.log("Linen: Falling back to LocalAssistant.");
+                this.assistant = new LocalAssistant();
+                this.isLocalMode = true;
+                const localReply = await this.assistant.chat(msg);
+                const rdiv = document.createElement('div');
+                rdiv.className = 'assistant-message error-message'; // Using error-message class for visual distinction
+                rdiv.innerHTML = `**Gemini API Unavailable:** ${msgText || "Network or quota issue."}<br>Switching to local assistant: ${localReply}`;
+                container.appendChild(rdiv);
+                container.scrollTop = container.scrollHeight;
+                this.showToast("Switched to local assistant due to API issue.");
+
+                if (!initialMessage) {
+                    await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
+                }
+                await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
+
+            } else if (canFallback && this.isLocalMode) {
+                 // Already in local mode, just respond with local assistant's reply
+                 console.log("Linen: Already in local mode. LocalAssistant responding to error.");
+                 const localReply = await this.assistant.chat(msg);
+                 const rdiv = document.createElement('div');
+                 rdiv.className = 'assistant-message error-message';
+                 rdiv.textContent = localReply;
+                 container.appendChild(rdiv);
+                 container.scrollTop = container.scrollHeight;
             }
-            // Bad key or quota issue — prompt re-entry
-            else if ((status === 403 && msg.toLowerCase().includes('quota')) || status === 400 || status === 401) {
-                document.getElementById('re-enter-key-modal').classList.add('active');
-                document.getElementById('modal-backdrop').classList.add('active');
-            }
-            // Actual network error
             else if (!navigator.onLine) {
                 const ediv = document.createElement('div');
                 ediv.className = 'assistant-message error-message';
                 ediv.textContent = "You're offline. Please check your internet connection.";
                 container.appendChild(ediv);
             }
-            // Unknown error — show the actual message
+            // All other non-recoverable errors
             else {
                 const ediv = document.createElement('div');
                 ediv.className = 'assistant-message error-message';
-                ediv.textContent = `Something went wrong: ${msg || 'Unknown error'}. Please try again.`;
+                ediv.textContent = `Something went wrong: ${msgText || 'Unknown error'}. Please try again.`;
                 container.appendChild(ediv);
             }
             container.scrollTop = container.scrollHeight;
