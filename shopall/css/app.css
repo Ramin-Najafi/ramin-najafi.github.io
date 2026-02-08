@@ -740,9 +740,21 @@ footer {
     left: 10px; /* Adjust left position for mobile */
   }
 
+  #social {
+    width: auto; /* Allow social icons to scale */
+    top: 100px; /* Position below logo */
+    left: 10px; /* Align with logo */
+    padding-top: 0; /* Remove unnecessary padding */
+  }
+
   #hamburger {
     top: 30px; /* Adjust top position for mobile */
     right: 20px; /* Adjust right position for mobile */
+  }
+
+  #cart {
+    top: 120px; /* Position below hamburger */
+    right: 20px; /* Align with hamburger */
   }
 
   header {
