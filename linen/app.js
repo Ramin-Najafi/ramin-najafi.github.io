@@ -399,6 +399,27 @@ class Linen {
         document.getElementById('tutorial-ok').addEventListener('click', () => {
             document.getElementById('tutorial-overlay').style.display = 'none';
         });
+
+        // PWA Install Tutorials
+        document.getElementById('select-ios')?.addEventListener('click', () => {
+            document.getElementById('os-select-modal').style.display = 'none';
+            document.getElementById('ios-tutorial-modal').style.display = 'flex';
+        });
+
+        document.getElementById('select-android')?.addEventListener('click', () => {
+            document.getElementById('os-select-modal').style.display = 'none';
+            document.getElementById('android-tutorial-modal').style.display = 'flex';
+        });
+
+        document.getElementById('ios-tutorial-ok')?.addEventListener('click', () => {
+            document.getElementById('ios-tutorial-modal').style.display = 'none';
+            localStorage.setItem('linen_pwa_install_tutorial_shown', 'true');
+        });
+
+        document.getElementById('android-tutorial-ok')?.addEventListener('click', () => {
+            document.getElementById('android-tutorial-modal').style.display = 'none';
+            localStorage.setItem('linen_pwa_install_tutorial_shown', 'true');
+        });
     }
 
     // ============================================
@@ -748,8 +769,13 @@ class Linen {
             this.assistant = new GeminiAssistant(apiKey);
             keyInput.value = '';
             this.showToast('API key saved ✓');
-            localStorage.setItem('linen_tutorial_shown', 'true');
+            localStorage.setItem('linen_tutorial_shown', 'true'); // General tutorial dismissed
             document.getElementById('tutorial-overlay').style.display = 'none';
+
+            // Check if PWA install tutorial needs to be shown
+            if (!localStorage.getItem('linen_pwa_install_tutorial_shown')) {
+                this.showPWAInstallTutorial();
+            }
         } catch (error) {
             this.showToast('Error saving API key');
             console.error(error);
@@ -798,6 +824,10 @@ class Linen {
     // ============================================
     // UTILITIES
     // ============================================
+
+    showPWAInstallTutorial() {
+        document.getElementById('os-select-modal').style.display = 'flex';
+    }
 
     async updateMemoryCount() {
         const memories = await this.db.getAllMemories();

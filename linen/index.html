@@ -251,6 +251,47 @@
         </div>
     </div>
     
+    <!-- Choose OS Modal -->
+    <div id="os-select-modal" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-modal">
+            <h2>Install Linen to your Home Screen</h2>
+            <p>For the best experience, add Linen to your phone's home screen.</p>
+            <p>Which type of phone do you have?</p>
+            <div class="os-selection-buttons">
+                <button id="select-ios" class="btn btn-secondary">iOS</button>
+                <button id="select-android" class="btn btn-secondary">Android</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS Install Tutorial Modal -->
+    <div id="ios-tutorial-modal" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-modal">
+            <h2>Add to Home Screen (iOS)</h2>
+            <p>Follow these steps on your iPhone/iPad using Safari:</p>
+            <ol style="text-align: left; max-width: 300px; margin: 0 auto 20px auto;">
+                <li>Tap the <span style="font-weight: bold;">Share button</span> (square with an arrow pointing up)</li>
+                <li>Scroll down and tap <span style="font-weight: bold;">"Add to Home Screen"</span></li>
+                <li>Tap <span style="font-weight: bold;">"Add"</span> in the top right corner</li>
+            </ol>
+            <button id="ios-tutorial-ok" class="btn btn-primary">Got It!</button>
+        </div>
+    </div>
+
+    <!-- Android Install Tutorial Modal -->
+    <div id="android-tutorial-modal" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-modal">
+            <h2>Add to Home Screen (Android)</h2>
+            <p>Follow these steps on your Android device using Chrome:</p>
+            <ol style="text-align: left; max-width: 300px; margin: 0 auto 20px auto;">
+                <li>Tap the <span style="font-weight: bold;">Menu button</span> (three dots in the top right)</li>
+                <li>Tap <span style="font-weight: bold;">"Install app"</span> or <span style="font-weight: bold;">"Add to Home screen"</span></li>
+                <li>Confirm by tapping <span style="font-weight: bold;">"Install"</span> or <span style="font-weight: bold;">"Add"</span></li>
+            </ol>
+            <button id="android-tutorial-ok" class="btn btn-primary">Got It!</button>
+        </div>
+    </div>
+    
     <!-- Toast Notification -->
     <div class="toast" id="toast"></div>
     
