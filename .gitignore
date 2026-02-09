@@ -38,3 +38,5 @@ build/
 tmp/
 .tmp/
 .vscode/
+cypress/
+cypress.config.js
