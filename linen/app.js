@@ -337,55 +337,191 @@ class Analytics {
 
 class LocalAssistant {
     constructor() {
-        this.rules = [
-            {
-                keywords: ['hello', 'hi', 'hey'],
-                response: "Hi there! I'm your local assistant. It seems we're having trouble connecting to Gemini at the moment, but I'm here to help with basic tasks. How can I assist you?"
-            },
-            {
-                keywords: ['offline', 'internet', 'network'],
-                response: "It looks like we're offline or experiencing network issues. I can only provide limited assistance right now."
-            },
-            {
-                keywords: ['quota', 'limit', 'gemini problem'],
-                response: "The Gemini API seems to have reached its quota limits. I've taken over to provide basic support until the main AI is back online."
-            },
-            {
-                keywords: ['help', 'commands'],
-                response: "I'm a simple local assistant. I can respond to greetings, tell you about my status (offline/quota), and try to retrieve your memories if you ask for them specifically. You can also try asking about your saved memories (e.g., 'What do you remember about my projects?')."
-            },
-            {
-                keywords: ['who are you', 'what are you'],
-                response: "I am Linen's local assistant. I step in when the main Gemini AI is unavailable."
-            },
-            {
-                keywords: ['memory', 'memories', 'remember'],
-                response: "I can try to fetch your saved memories. What topic are you interested in?"
-            },
-            {
-                keywords: ['why linen', 'why choose you', 'better than chatgpt', 'chatgpt vs linen'],
-                response: `That's a great question! While tools like ChatGPT are incredibly powerful for a wide range of tasks – from brainstorming to coding to answering general knowledge questions – I'm designed with a very specific purpose: to be *your* personal companion with a perfect memory.
-
-Here's why someone might choose me:
-
-1.  **I Remember *You*:** ChatGPT doesn't retain personal context across conversations. Every interaction is fresh. I, on the other hand, am built to remember the details of your life, your goals, your feelings, and your plans. This allows me to have more meaningful, continuous conversations.
-2.  **Proactive Companionship:** Instead of just responding to queries, I can proactively check in on things we've talked about – like how that project is going, or if you ever got around to trying that new hobby.
-3.  **Personalized Support:** Because I remember your history, I can offer more tailored support and insights based on your past experiences and preferences.
-4.  **Building a Relationship:** The idea is to feel less like a utility and more like a supportive friend who genuinely cares about your journey and remembers the little things.
-
-So, if you're looking for an AI that truly gets to know you, remembers your story, and provides ongoing, personalized companionship, that's where I shine! 😊`
-            }
-        ];
+        this.sessionMemory = []; // Conversation history for this session
+        this.userProfile = {
+            name: null,
+            mood: 'neutral',
+            topics: [], // Topics user talks about
+            preferences: {}
+        };
+        this.responses = {
+            greeting: [
+                "Hey! I'm Linen, your local assistant. I'm here to listen and chat. What's on your mind?",
+                "Hi there! I'm running locally right now, but I'm still here to talk with you. What would you like to discuss?",
+                "Welcome! I'm in local mode, but don't worry—I'm still a good listener. Tell me what's going on.",
+            ],
+            listening: [
+                "That sounds important. Tell me more.",
+                "I'm here and listening. Keep going.",
+                "I hear you. What else?",
+                "That makes sense. How are you feeling about it?",
+            ],
+            support: [
+                "I'm here for you. You're not alone in this.",
+                "That's a lot to handle. You're doing great dealing with it.",
+                "I appreciate you sharing that with me.",
+                "Your feelings are valid. What do you need right now?",
+            ],
+            reflection: [
+                "So what I'm hearing is that...",
+                "If I understand correctly, you're...",
+                "It sounds like you...",
+            ],
+            positive: [
+                "That's wonderful! I'm happy for you.",
+                "That's great to hear!",
+                "You should feel proud of that.",
+                "That's a great way to think about it.",
+            ],
+            closing: [
+                "I'm always here if you need to talk.",
+                "Feel free to come back anytime you want to chat.",
+                "Remember, you've got this.",
+                "Take care of yourself.",
+            ]
+        };
     }
 
-    async chat(msg) {
-        const lowerMsg = msg.toLowerCase();
-        for (const rule of this.rules) {
-            if (rule.keywords.some(keyword => lowerMsg.includes(keyword))) {
-                return rule.response;
+    // Detect what the user is talking about
+    detectTopic(message) {
+        const msg = message.toLowerCase();
+        const topics = {
+            work: ['work', 'job', 'boss', 'project', 'deadline', 'meeting', 'office'],
+            health: ['tired', 'sick', 'sleep', 'exercise', 'health', 'doctor', 'pain'],
+            relationships: ['friend', 'family', 'partner', 'mom', 'dad', 'brother', 'sister', 'girlfriend', 'boyfriend', 'love'],
+            mental_health: ['stressed', 'anxious', 'depressed', 'sad', 'overwhelmed', 'scared', 'worried'],
+            goals: ['want', 'goal', 'dream', 'learn', 'achieve', 'trying', 'plan'],
+            hobbies: ['hobby', 'play', 'music', 'read', 'game', 'art', 'write', 'draw', 'cook'],
+        };
+
+        const detected = [];
+        for (const [topic, keywords] of Object.entries(topics)) {
+            if (keywords.some(k => msg.includes(k))) {
+                detected.push(topic);
             }
         }
-        return "I'm the local assistant. I can only provide limited responses. It seems I don't understand that request. Try asking for 'help'.";
+        return detected.length > 0 ? detected[0] : null;
+    }
+
+    // Detect user's emotional tone
+    detectMood(message) {
+        const msg = message.toLowerCase();
+        
+        const moods = {
+            distressed: ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'emergency', 'angry', 'furious', 'frustrated', 'devastated'],
+            anxious: ['anxious', 'nervous', 'worried', 'scared', 'afraid', 'panic'],
+            positive: ['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful'],
+            neutral: []
+        };
+
+        for (const [mood, keywords] of Object.entries(moods)) {
+            if (keywords.some(k => msg.includes(k))) {
+                return mood;
+            }
+        }
+        return 'neutral';
+    }
+
+    // Extract user's name if mentioned
+    extractName(message) {
+        const nameMatch = message.match(/(?:call me|i'm|i am|name is|i go by)\s+(\w+)/i);
+        if (nameMatch) {
+            return nameMatch[1];
+        }
+        return null;
+    }
+
+    // Generate a contextual response
+    async chat(message) {
+        // Update user profile
+        const topic = this.detectTopic(message);
+        const mood = this.detectMood(message);
+        const name = this.extractName(message);
+
+        if (topic && !this.userProfile.topics.includes(topic)) {
+            this.userProfile.topics.push(topic);
+        }
+        if (mood !== 'neutral') {
+            this.userProfile.mood = mood;
+        }
+        if (name) {
+            this.userProfile.name = name;
+        }
+
+        // Add to session memory
+        this.sessionMemory.push({
+            role: 'user',
+            content: message,
+            mood: mood,
+            topic: topic,
+            timestamp: Date.now()
+        });
+
+        // Generate response based on mood and context
+        let response = '';
+
+        // Initial greeting
+        if (this.sessionMemory.length === 1) {
+            response = this.responses.greeting[Math.floor(Math.random() * this.responses.greeting.length)];
+        }
+        // Distressed user - prioritize support
+        else if (mood === 'distressed') {
+            response = this.responses.support[Math.floor(Math.random() * this.responses.support.length)];
+            // Add follow-up question
+            if (message.length < 30) {
+                response += " What's troubling you?";
+            } else {
+                response += " How are you feeling right now?";
+            }
+        }
+        // Anxious user - normalize and support
+        else if (mood === 'anxious') {
+            response = "It's natural to feel that way. ";
+            response += this.responses.listening[Math.floor(Math.random() * this.responses.listening.length)]?.toLowerCase();
+        }
+        // Positive mood - celebrate
+        else if (mood === 'positive') {
+            response = this.responses.positive[Math.floor(Math.random() * this.responses.positive.length)];
+        }
+        // Neutral/normal conversation
+        else {
+            // Reflect back what they said
+            if (Math.random() > 0.5 && message.length > 20) {
+                const reflection = this.responses.reflection[Math.floor(Math.random() * this.responses.reflection.length)];
+                // Create a shortened reflection
+                const keywords = message.split(' ').filter(w => w.length > 4).slice(0, 3).join(' ');
+                response = `${reflection} ${keywords}. `;
+                response += this.responses.listening[Math.floor(Math.random() * this.responses.listening.length)];
+            } else {
+                response = this.responses.listening[Math.floor(Math.random() * this.responses.listening.length)];
+            }
+        }
+
+        // Store the assistant's response
+        this.sessionMemory.push({
+            role: 'assistant',
+            content: response,
+            timestamp: Date.now()
+        });
+
+        return response;
+    }
+
+    // Get session summary (for context handoff to Gemini later if API comes back)
+    getSessionSummary() {
+        const summary = {
+            userProfile: this.userProfile,
+            messageCount: this.sessionMemory.length,
+            topics: this.userProfile.topics,
+            lastMood: this.userProfile.mood,
+            conversationLength: this.sessionMemory.length
+        };
+        return summary;
+    }
+
+    // Clear session (when switching to Gemini)
+    clearSession() {
+        this.sessionMemory = [];
     }
 }
 class Linen {
@@ -472,6 +608,19 @@ class Linen {
         console.log("Linen: App started.");
     }
 
+    startTrialMode() {
+        this.trialMode = true;
+        this.trialCount = 0;
+        localStorage.setItem('linen-trial', 'true');
+        localStorage.setItem('linen-trial-exchanges', '0');
+        
+        // Use LocalAssistant for trial mode (no API key needed)
+        this.assistant = new LocalAssistant();
+        this.isLocalMode = true;
+        this.startApp(null);
+        this.sendChat('[INITIAL_GREETING]');
+    }
+
     showPitchModal() {
         const modal = document.getElementById('pitch-modal');
         const backdrop = document.getElementById('modal-backdrop');
@@ -488,13 +637,9 @@ class Linen {
         
         if (tryFreeBtn) {
             tryFreeBtn.addEventListener('click', () => {
-                this.trialMode = true;
-                this.trialCount = 0;
-                localStorage.setItem('linen-trial', 'true');
                 modal.classList.remove('active');
                 backdrop.classList.remove('active');
-                this.startApp(null);
-                setTimeout(() => this.sendChat('[INITIAL_GREETING]'), 500);
+                this.startTrialMode();
             });
         }
         
@@ -703,7 +848,7 @@ class Linen {
             // If in local mode, directly use local assistant
             if (this.isLocalMode) {
                 console.log("Linen: Currently in local mode. Using LocalAssistant.");
-                reply = await this.assistant.chat(msg); // LocalAssistant doesn't need convs, mems, loadingId
+                reply = await this.assistant.chat(msg);
             } else {
                 // Try GeminiAssistant
                 console.log("Linen: Attempting to use GeminiAssistant.");
@@ -757,26 +902,32 @@ class Linen {
             document.getElementById(id)?.remove();
             const msgText = e.message || '';
             const status = e.status || 0;
-
+        
             console.error(`Linen: sendChat failed (Status: ${status}, Message: ${msgText}). Attempting fallback to LocalAssistant.`, e);
-
+        
             // Determine if we should fall back to LocalAssistant
             const canFallback = (status === 0 && !navigator.onLine) || // Offline
                                 (status === 429) || // Rate limited
-                                (status === 403 && msgText.toLowerCase().includes('quota')); // Quota exceeded
-
+                                (status === 403 && msgText.toLowerCase().includes('quota')) || // Quota exceeded
+                                (msgText.includes('API key not configured')); // No API key
+        
             if (canFallback && !this.isLocalMode) {
                 console.log("Linen: Falling back to LocalAssistant.");
                 this.assistant = new LocalAssistant();
                 this.isLocalMode = true;
                 const localReply = await this.assistant.chat(msg);
                 const rdiv = document.createElement('div');
-                rdiv.className = 'assistant-message error-message'; // Using error-message class for visual distinction
-                rdiv.innerHTML = `**Gemini API Unavailable:** ${msgText || "Network or quota issue."}<br>Switching to local assistant: ${localReply}`;
+                rdiv.className = 'assistant-message';
+                rdiv.textContent = localReply;
                 container.appendChild(rdiv);
                 container.scrollTop = container.scrollHeight;
-                this.showToast("Switched to local assistant due to API issue.");
-
+                
+                // Show toast based on why we switched
+                if (msgText.includes('API key not configured') || this.trialMode) {
+                    this.showToast("Using local assistant for free trial.");
+                } else {
+                    this.showToast("API temporarily unavailable. Using local assistant.");
+                }
                 if (!initialMessage) {
                     await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
                 }
