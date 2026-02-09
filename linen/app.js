@@ -679,6 +679,9 @@ class Linen {
                     }
                 }
 
+            if (!this.isLocalMode && !initialMessage) {
+                reply = this.filterEmojis(reply, msg);
+            }
             const rdiv = document.createElement('div');
             rdiv.className = 'assistant-message';
             rdiv.textContent = reply;
@@ -819,6 +822,26 @@ class Linen {
                 this.loadMemories(document.getElementById('memory-search').value);
             });
         });
+    }
+
+    detectUserSentiment(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const distress = ['sad', 'depressed', 'hopeless', 'suicidal', 'die', 'crisis', 'emergency', 'angry', 'frustrated', 'trauma'];
+        const positive = ['happy', 'excited', 'great', 'wonderful', 'good'];
+        
+        if (distress.some(k => msg.includes(k))) return 'distressed';
+        if (positive.some(k => msg.includes(k))) return 'positive';
+        return 'neutral';
+    }
+
+    filterEmojis(reply, userMessage) {
+        if (this.detectUserSentiment(userMessage) === 'distressed') {
+            const happyEmojis = ['😊', '😄', '😃', '🎉', '🎊', '😆', '😂'];
+            happyEmojis.forEach(e => {
+                reply = reply.split(e).join('');
+            });
+        }
+        return reply;
     }
 
     showToast(message) {
