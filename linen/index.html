@@ -69,21 +69,24 @@
 
 <div id="pitch-modal" class="modal">
     <h2>Welcome to Linen</h2>
-    <p>Linen is a personal AI assistant that respects your privacy. Unlike ChatGPT, everything stays on your device—we don't sell your data. It learns who you are and helps with reminders, planning, and support.</p>
-    <h3>Why Linen?</h3>
+    <p>Linen is a personal AI assistant that actually respects your privacy. Unlike ChatGPT or other apps, everything you talk to Linen about stays on your device—we don't sell your data or train on your conversations. It learns who you are over time, remembers what matters to you, and helps with reminders, planning, or just being there when you need support. Think of it as an AI that's actually on your side.</p>
+    <h3>Key Differentiators:</h3>
     <ul>
         <li>🔒 Privacy First</li>
-        <li>🧠 Remembers You</li>
+        <li>🧠 Personalized</li>
         <li>👤 You Own Your Data</li>
     </ul>
-    <button id="try-free-btn" class="button-primary">Try Free (3 chats)</button>
-    <button id="add-api-key-btn" class="button-secondary">Add API Key</button>
+    <div class="pitch-buttons">
+        <button id="try-free-btn" class="button-primary">Try Free (3 chats)</button>
+        <button id="add-api-key-btn" class="button-secondary">Add My API Key</button>
+    </div>
 </div>
 
 <div id="trial-limit-modal" class="modal">
     <h2>Free Preview Complete</h2>
-    <p>You've used 3 chats. Get your own API key to continue.</p>
+    <p>You've used your 3 free chats. Get your own API key to continue chatting unlimitedly.</p>
     <a href="https://aistudio.google.com/app/apikey" target="_blank" class="button-primary">Get Free API Key</a>
+    <button id="close-trial-modal" class="button-primary">Close</button>
 </div>
 
 <div id="re-enter-key-modal" class="modal">

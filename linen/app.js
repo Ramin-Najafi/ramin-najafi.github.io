@@ -475,26 +475,36 @@ class Linen {
     showPitchModal() {
         const modal = document.getElementById('pitch-modal');
         const backdrop = document.getElementById('modal-backdrop');
-        if (!modal) return;
+        if (!modal) {
+            console.warn("Pitch modal not found in HTML");
+            return;
+        }
         
         modal.classList.add('active');
         backdrop.classList.add('active');
         
-        document.getElementById('try-free-btn')?.addEventListener('click', () => {
-            this.trialMode = true;
-            this.trialCount = 0;
-            localStorage.setItem('linen-trial', 'true');
-            modal.classList.remove('active');
-            backdrop.classList.remove('active');
-            this.startApp(null);
-            setTimeout(() => this.sendChat('[INITIAL_GREETING]'), 500);
-        });
+        const tryFreeBtn = document.getElementById('try-free-btn');
+        const addKeyBtn = document.getElementById('add-api-key-btn');
         
-        document.getElementById('add-api-key-btn')?.addEventListener('click', () => {
-            modal.classList.remove('active');
-            backdrop.classList.remove('active');
-            this.showOnboarding();
-        });
+        if (tryFreeBtn) {
+            tryFreeBtn.addEventListener('click', () => {
+                this.trialMode = true;
+                this.trialCount = 0;
+                localStorage.setItem('linen-trial', 'true');
+                modal.classList.remove('active');
+                backdrop.classList.remove('active');
+                this.startApp(null);
+                setTimeout(() => this.sendChat('[INITIAL_GREETING]'), 500);
+            });
+        }
+        
+        if (addKeyBtn) {
+            addKeyBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                backdrop.classList.remove('active');
+                this.showOnboarding();
+            });
+        }
     }
 
     showOnboarding(errorMsg = '') {
