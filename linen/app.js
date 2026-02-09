@@ -665,29 +665,19 @@ class Linen {
 
             document.getElementById(id)?.remove();
             
-            console.log("Raw AI Reply:", reply); // Log raw reply
-
-            // Parse and strip memory markers (only if using GeminiAssistant)
-            if (!this.isLocalMode) {
-                const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
-                const match = reply.match(memoryMarker);
-                if (match) {
-                    const originalReplyLength = reply.length;
-                    reply = reply.replace(memoryMarker, '').trim();
-                    console.log("Reply after stripping marker:", reply); // Log stripped reply
-                    console.log("Memory marker detected. Original length:", originalReplyLength, "Stripped length:", reply.length);
-                    try {
-                        const memData = JSON.parse(match[1]);
-                        await this.db.addMemory({ ...memData, date: Date.now() });
-                        this.showToast('Memory saved');
-                    } catch (e) {
-                        console.error('Failed to parse memory JSON:', e); // Specific error for JSON parsing
-                        this.showToast('Error saving memory.');
+                if (!this.isLocalMode) {
+                    const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
+                    const match = reply.match(memoryMarker);
+                    if (match) {
+                        reply = reply.replace(memoryMarker, '').trim();
+                        try {
+                            const memData = JSON.parse(match[1]);
+                            await this.db.addMemory({ ...memData, date: Date.now() });
+                        } catch (e) {
+                            console.error('Failed to parse memory:', e);
+                        }
                     }
-                } else {
-                    console.log("No SAVE_MEMORY marker detected.");
                 }
-            }
 
             const rdiv = document.createElement('div');
             rdiv.className = 'assistant-message';
