@@ -406,8 +406,9 @@ hr {
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
-    margin: 0.5rem;
+    margin: 0.5rem auto;
     font-weight: 600;
+    transition: background 0.3s;
 }
 
 .button-primary:hover {
@@ -421,27 +422,23 @@ hr {
     border: 2px solid #4a9eff;
     border-radius: 0.5rem;
     cursor: pointer;
-    margin: 0.5rem;
+    margin: 0.5rem auto;
     font-weight: 600;
+    transition: all 0.3s;
 }
 
 .button-secondary:hover {
     background: #4a9eff;
     color: white;
-}/* Pitch Modal Styles */
-#pitch-modal {
-    max-width: 500px;
-    padding: 2rem;
-    text-align: center;
 }
 
-#pitch-modal h2 {
+#pitch-modal h2, #trial-limit-modal h2 {
     font-size: 1.8rem;
     margin-bottom: 1rem;
     color: #fff;
 }
 
-#pitch-modal p {
+#pitch-modal p, #trial-limit-modal p {
     font-size: 1rem;
     line-height: 1.6;
     margin-bottom: 2rem;
@@ -471,53 +468,115 @@ hr {
     flex-direction: column;
     gap: 1rem;
 }
-
-.button-primary {
-    background: #4a9eff;
-    color: white;
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    margin: 0.5rem auto;
-    font-weight: 600;
-    transition: background 0.3s;
+/* Memory Modal Styles */
+.memory-modal {
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
-.button-primary:hover {
-    background: #357abd;
+.memory-modal-content {
+    position: relative;
+    padding: 20px;
 }
 
-.button-secondary {
-    background: transparent;
-    color: #4a9eff;
-    padding: 0.8rem 1.5rem;
-    border: 2px solid #4a9eff;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    margin: 0.5rem auto;
-    font-weight: 600;
-    transition: all 0.3s;
-}
-
-.button-secondary:hover {
-    background: #4a9eff;
-    color: white;
-}
-
-#trial-limit-modal {
-    max-width: 450px;
-    padding: 2rem;
+.memory-modal-content h2 {
+    color: var(--primary);
+    margin-bottom: 10px;
     text-align: center;
 }
 
-#trial-limit-modal h2 {
-    margin-bottom: 1rem;
-    font-size: 1.6rem;
+.memory-modal-date {
+    color: var(--text-light);
+    font-size: 0.9em;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-#trial-limit-modal p {
-    margin-bottom: 2rem;
-    color: #ddd;
-    line-height: 1.6;
+.memory-messages-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: #222;
+}
+
+.memory-messages-container .user-message {
+    background: var(--accent);
+    color: #fff;
+    align-self: flex-end;
+    border-radius: 18px;
+    padding: 8px 12px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.memory-messages-container .assistant-message {
+    background: #333;
+    color: var(--primary);
+    align-self: flex-start;
+    border-radius: 18px;
+    padding: 8px 12px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* Enhancements for memory cards */
+.memory-card {
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    position: relative; /* For positioning action buttons */
+    padding-bottom: 40px; /* Make space for action buttons */
+}
+
+.memory-card:hover {
+    background-color: #3a3a3a;
+}
+
+.memory-card-title {
+    font-size: 1.1em;
+    color: var(--accent);
+    margin-bottom: 5px;
+}
+
+.memory-card-preview {
+    font-size: 0.9em;
+    color: var(--text-light);
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Show up to 2 lines */
+    -webkit-box-orient: vertical;
+}
+
+.memory-card-actions {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.memory-card-actions button {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+.edit-memory {
+    background-color: #3498db; /* Blue for edit */
+    color: white;
+}
+
+.delete-memory {
+    background-color: #e74c3c; /* Red for delete */
+    color: white;
 }

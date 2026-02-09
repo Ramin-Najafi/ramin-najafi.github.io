@@ -138,6 +138,35 @@ class LinenDB {
         const c = await this.getConversations();
         return JSON.stringify({ memories: m, conversations: c }, null, 2);
     }
+
+    async archiveSession(sessionData) {
+        return new Promise((r, j) => {
+            const t = this.db.transaction(['memories'], 'readwrite');
+            const s = t.objectStore('memories');
+            const req = s.add(sessionData);
+            req.onsuccess = () => r(req.result);
+            req.onerror = () => j(req.error);
+        });
+    }
+
+    async clearCurrentSession() {
+        return new Promise((r, j) => {
+            const t = this.db.transaction(['conversations'], 'readwrite');
+            t.objectStore('conversations').clear();
+            t.oncomplete = () => r();
+            t.onerror = () => j(t.error);
+        });
+    }
+
+    async updateMemory(memory) {
+        return new Promise((r, j) => {
+            const t = this.db.transaction(['memories'], 'readwrite');
+            const s = t.objectStore('memories');
+            const req = s.put(memory);
+            req.onsuccess = () => r(req.result);
+            req.onerror = () => j(req.error);
+        });
+    }
 }
 
 class GeminiAssistant {
@@ -286,6 +315,12 @@ Core Directives:
             role: m.sender === 'user' ? 'user' : 'model',
             parts: [{ text: m.text }]
         }));
+    }
+
+    detectCrisis(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
+        return crisisKeywords.some(keyword => msg.includes(keyword));
     }
 }
 
@@ -534,6 +569,51 @@ class Linen {
         this._eventsBound = false;
         this.trialMode = false;
         this.trialCount = 0;
+        this.currentSessionTitle = null;
+        this.isNewSession = true;
+    }
+
+    detectUserSentiment(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const distressKeywords = ['sad', 'depressed', 'hopeless', 'suicidal', 'die', 'crisis', 'emergency', 'angry', 'frustrated', 'trauma', 'anxious', 'panicking'];
+        const positiveKeywords = ['happy', 'excited', 'great', 'wonderful', 'amazing', 'good'];
+        
+        if (distressKeywords.some(k => msg.includes(k))) return 'distressed';
+        if (positiveKeywords.some(k => msg.includes(k))) return 'positive';
+        return 'neutral';
+    }
+
+    filterEmojis(reply, userMessage) {
+        if (this.detectUserSentiment(userMessage) === 'distressed') {
+            const happyEmojis = ['😊', '😄', '😃', '🎉', '🎊', '😆', '😂'];
+            happyEmojis.forEach(e => {
+                reply = reply.split(e).join('');
+            });
+        }
+        return reply;
+    }
+
+    showCrisisModal() {
+        const modal = document.getElementById('crisis-modal');
+        const backdrop = document.getElementById('modal-backdrop');
+        if (!modal) return;
+        modal.classList.add('active');
+        backdrop.classList.add('active');
+        const acknowledgeBtn = document.getElementById('acknowledge-crisis');
+        const closeBtn = document.getElementById('close-crisis-modal');
+        if (acknowledgeBtn) {
+            acknowledgeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                backdrop.classList.remove('active');
+                this.showToast('You can talk to me anytime. I\'m here to listen.');
+            });
+        }
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                backdrop.classList.remove('active');
+            });
+        }
     }
 
     async init() {
@@ -541,6 +621,13 @@ class Linen {
         try {
             this.analytics.trackPageView();
             await this.db.init();
+            
+            const existingConvs = await this.db.getConversations();
+            if (existingConvs && existingConvs.length > 0) {
+                const sessionTitle = this.generateSessionTitle(existingConvs);
+                await this.db.archiveSession({ title: sessionTitle, messages: existingConvs, date: Date.now(), preview: existingConvs[existingConvs.length - 1]?.text || 'Previous conversation', messageCount: existingConvs.length });
+            }
+            await this.db.clearCurrentSession();
             
             const apiKey = await this.db.getSetting('gemini-api-key');
             const hasSeenPitch = localStorage.getItem('linen-pitch-shown');
@@ -650,6 +737,50 @@ class Linen {
                 this.showOnboarding();
             });
         }
+    }
+
+    generateSessionTitle(conversations) {
+        if (!conversations || conversations.length === 0) return 'Conversation - ' + new Date().toLocaleDateString();
+        const firstUserMsg = conversations.find(c => c.sender === 'user');
+        if (firstUserMsg) {
+            let title = firstUserMsg.text.substring(0, 50);
+            if (firstUserMsg.text.length > 50) title += '...';
+            return title;
+        }
+        return 'Conversation - ' + new Date().toLocaleDateString();
+    }
+
+    showMemoryModal(memory) {
+        const backdrop = document.getElementById('modal-backdrop');
+        let modal = document.getElementById('memory-view-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'memory-view-modal';
+            modal.className = 'modal memory-modal';
+            document.body.appendChild(modal);
+        }
+        const title = memory.title || 'Conversation';
+        const date = new Date(memory.date).toLocaleDateString();
+        let messagesHtml = '';
+        if (memory.messages) {
+            memory.messages.forEach(msg => {
+                const className = msg.sender === 'user' ? 'user-message' : 'assistant-message';
+                messagesHtml += `<div class="${className}">${msg.text}</div>`;
+            });
+        }
+        modal.innerHTML = `<div class="memory-modal-content"><button class="close-modal" id="close-memory-modal">×</button><h2>${title}</h2><p class="memory-modal-date">${date}</p><div class="memory-messages-container">${messagesHtml}</div></div>`;
+        modal.classList.add('active');
+        backdrop.classList.add('active');
+        document.getElementById('close-memory-modal').addEventListener('click', () => {
+            modal.classList.remove('active');
+            backdrop.classList.remove('active');
+        });
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+                modal.classList.remove('active');
+                backdrop.classList.remove('active');
+            }
+        });
     }
 
     showOnboarding(errorMsg = '') {
@@ -767,6 +898,50 @@ class Linen {
         document.getElementById('clear-data').addEventListener('click', () => this.clearAll());
         document.getElementById('clear-chat-history').addEventListener('click', () => this.clearChatHistory());
         document.getElementById('memory-search').addEventListener('input', (e) => this.loadMemories(e.target.value));
+
+        // Quick Capture
+        document.getElementById('quick-capture-btn').addEventListener('click', () => {
+            document.getElementById('quick-capture-modal').classList.add('active');
+            backdrop.classList.add('active');
+        });
+        document.getElementById('close-quick-capture').addEventListener('click', () => {
+            document.getElementById('quick-capture-modal').classList.remove('active');
+            backdrop.classList.remove('active');
+        });
+        document.getElementById('save-quick-capture').addEventListener('click', async () => {
+            const title = document.getElementById('quick-capture-title').value.trim();
+            const text = document.getElementById('quick-capture-text').value.trim();
+            if (!text) {
+                this.showToast('Please enter something to save.');
+                return;
+            }
+            await this.db.addMemory({ title: title || text.substring(0, 30), text: text, tags: ['quick-capture'], date: Date.now() });
+            document.getElementById('quick-capture-title').value = '';
+            document.getElementById('quick-capture-text').value = '';
+            document.getElementById('quick-capture-modal').classList.remove('active');
+            backdrop.classList.remove('active');
+            this.showToast('Thought saved!');
+        });
+
+        // Mood Check
+        document.getElementById('mood-check-btn').addEventListener('click', () => {
+            document.getElementById('mood-check-modal').classList.add('active');
+            backdrop.classList.add('active');
+        });
+        document.getElementById('close-mood-check').addEventListener('click', () => {
+            document.getElementById('mood-check-modal').classList.remove('active');
+            backdrop.classList.remove('active');
+        });
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const mood = e.target.dataset.mood;
+                const moodText = e.target.textContent;
+                await this.db.addMemory({ title: `Mood check-in: ${moodText}`, text: `Feeling: ${moodText} ${mood}`, tags: ['mood-check'], emotion: moodText.toLowerCase(), date: Date.now() });
+                document.getElementById('mood-check-modal').classList.remove('active');
+                backdrop.classList.remove('active');
+                this.showToast(`Mood saved: ${mood}`);
+            });
+        });
     }
 
     async validateAndSaveKey(inputId, errorId, onSuccess) {
@@ -842,35 +1017,68 @@ class Linen {
 
         let reply = '';
         try {
-            const mems = await this.db.getAllMemories();
-            const convs = await this.db.getConversations();
-            
-            // If in local mode, directly use local assistant
-            if (this.isLocalMode) {
-                console.log("Linen: Currently in local mode. Using LocalAssistant.");
-                reply = await this.assistant.chat(msg);
-            } else {
-                // Try GeminiAssistant
-                console.log("Linen: Attempting to use GeminiAssistant.");
-                reply = await this.assistant.chat(msg, convs, mems, id);
-            }
-
-            document.getElementById(id)?.remove();
-            
-            // Parse and strip memory markers (only if using GeminiAssistant)
-            if (!this.isLocalMode) {
-                const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
-                const match = reply.match(memoryMarker);
-                if (match) {
-                    reply = reply.replace(memoryMarker, '').trim();
-                    try {
-                        const memData = JSON.parse(match[1]);
-                        await this.db.addMemory({ ...memData, date: Date.now() });
-                    } catch (e) {
-                        console.error('Failed to parse memory:', e);
+                            const mems = await this.db.getAllMemories();
+                            const convs = await this.db.getConversations();
+                            
+                            // If in local mode, directly use local assistant
+                            if (this.isLocalMode) {
+                                console.log("Linen: Currently in local mode. Using LocalAssistant.");
+                                reply = await this.assistant.chat(msg);
+                            } else {
+                                // Try GeminiAssistant
+                                console.log("Linen: Attempting to use GeminiAssistant.");
+                                if (this.assistant.detectCrisis(msg)) { // <-- Crisis Detection Logic
+                                    this.showCrisisModal();
+                                }
+                                if (this.assistant.detectCrisis(msg)) { // <-- Crisis Detection Logic
+                        this.showCrisisModal();
                     }
-                }
-            }
+                    reply = await this.assistant.chat(msg, convs, mems, id);
+                            }
+            
+                                        document.getElementById(id)?.remove();
+            
+                                        
+            
+                                        // Parse and strip memory markers (only if using GeminiAssistant)
+            
+                                        if (!this.isLocalMode) {
+            
+                                            const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
+            
+                                            const match = reply.match(memoryMarker);
+            
+                                            if (match) {
+            
+                                                reply = reply.replace(memoryMarker, '').trim();
+            
+                                                try {
+            
+                                                    const memData = JSON.parse(match[1]);
+            
+                                                    await this.db.addMemory({ ...memData, date: Date.now() });
+            
+                                                } catch (e) {
+            
+                                                    console.error('Failed to parse memory:', e);
+            
+                                                }
+            
+                                            }
+            
+                                        }
+            
+                            
+            
+                                        if (!this.isLocalMode && !initialMessage) { // <-- Emoji Filtering Logic
+            
+                                            reply = this.filterEmojis(reply, msg);
+            
+                                        }
+            
+                                
+            
+                                
 
             if (!this.isLocalMode && !initialMessage) {
                 reply = this.filterEmojis(reply, msg);
@@ -1003,7 +1211,9 @@ class Linen {
         const filtered = memories.filter(mem => {
             const s = filter.toLowerCase();
             if (!s) return true;
-            return mem.text.toLowerCase().includes(s) ||
+            return (mem.title && mem.title.toLowerCase().includes(s)) ||
+                (mem.text && mem.text.toLowerCase().includes(s)) ||
+                (mem.preview && mem.preview.toLowerCase().includes(s)) ||
                 (mem.tags && mem.tags.some(tag => tag.toLowerCase().includes(s)));
         });
 
@@ -1015,22 +1225,44 @@ class Linen {
         filtered.forEach(mem => {
             const card = document.createElement('div');
             card.className = 'memory-card';
+            // Add click event listener to view full memory
+            card.addEventListener('click', () => this.showMemoryModal(mem));
+
+            const title = mem.title || 'Conversation';
+            const preview = mem.preview || mem.text || 'No preview available';
+            const date = new Date(mem.date).toLocaleDateString();
+
             card.innerHTML = `
-                <p class="memory-text">${mem.text}</p>
+                <h3 class="memory-card-title">${title}</h3>
+                <p class="memory-card-preview">${preview}</p>
                 <p class="memory-meta">
                     ${mem.emotion ? `<span class="emotion">${mem.emotion}</span>` : ''}
                     ${mem.tags?.length ? `<span class="tags">${mem.tags.map(t => `#${t}`).join(' ')}</span>` : ''}
-                    <span class="date">${new Date(mem.date).toLocaleDateString()}</span>
+                    <span class="date">${date}</span>
                 </p>
-                <button class="delete-memory" data-id="${mem.id}">Delete</button>
+                <div class="memory-card-actions">
+                    <button class="edit-memory" data-id="${mem.id}" aria-label="Edit Memory">Edit</button>
+                    <button class="delete-memory" data-id="${mem.id}" aria-label="Delete Memory">Delete</button>
+                </div>
             `;
             memoriesList.appendChild(card);
         });
 
         memoriesList.querySelectorAll('.delete-memory').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                await this.db.deleteMemory(parseInt(e.target.dataset.id));
-                this.loadMemories(document.getElementById('memory-search').value);
+                e.stopPropagation(); // Prevent card click event
+                if (confirm('Are you sure you want to delete this memory?')) {
+                    await this.db.deleteMemory(parseInt(e.target.dataset.id));
+                    this.loadMemories(document.getElementById('memory-search').value);
+                }
+            });
+        });
+
+        memoriesList.querySelectorAll('.edit-memory').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent card click event
+                // TODO: Implement edit functionality (e.g., show an edit modal)
+                alert('Edit functionality coming soon!');
             });
         });
     }
