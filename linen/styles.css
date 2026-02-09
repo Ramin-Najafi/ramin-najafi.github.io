@@ -369,3 +369,63 @@ hr {
 #contact-form button {
     background: #8e44ad;
 }
+
+#pitch-modal, #trial-limit-modal {
+    max-width: 500px;
+    padding: 2rem;
+    text-align: center;
+}
+
+#pitch-modal h2, #trial-limit-modal h2 {
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+#pitch-modal p, #trial-limit-modal p {
+    margin-bottom: 1.5rem;
+    color: #ddd;
+    line-height: 1.6;
+}
+
+#pitch-modal ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+#pitch-modal li {
+    padding: 0.5rem 0;
+    color: #bbb;
+}
+
+.button-primary {
+    background: #4a9eff;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    margin: 0.5rem;
+    font-weight: 600;
+}
+
+.button-primary:hover {
+    background: #357abd;
+}
+
+.button-secondary {
+    background: transparent;
+    color: #4a9eff;
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #4a9eff;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    margin: 0.5rem;
+    font-weight: 600;
+}
+
+.button-secondary:hover {
+    background: #4a9eff;
+    color: white;
+}

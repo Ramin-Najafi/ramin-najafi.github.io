@@ -396,6 +396,8 @@ class Linen {
         this.isLocalMode = false;
         this._onboardingBound = false;
         this._eventsBound = false;
+        this.trialMode = false;
+        this.trialCount = 0;
     }
 
     async init() {
@@ -403,7 +405,17 @@ class Linen {
         try {
             this.analytics.trackPageView();
             await this.db.init();
+            
             const apiKey = await this.db.getSetting('gemini-api-key');
+            const hasSeenPitch = localStorage.getItem('linen-pitch-shown');
+            
+            if (!apiKey && !hasSeenPitch) {
+                localStorage.setItem('linen-pitch-shown', 'true');
+                this.showPitchModal();
+                return;
+            }
+            
+            // rest of init code continues...
             console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}`);
 
             if (!apiKey) {
@@ -458,6 +470,31 @@ class Linen {
         this.bindEvents();
         await this.loadChatHistory();
         console.log("Linen: App started.");
+    }
+
+    showPitchModal() {
+        const modal = document.getElementById('pitch-modal');
+        const backdrop = document.getElementById('modal-backdrop');
+        if (!modal) return;
+        
+        modal.classList.add('active');
+        backdrop.classList.add('active');
+        
+        document.getElementById('try-free-btn')?.addEventListener('click', () => {
+            this.trialMode = true;
+            this.trialCount = 0;
+            localStorage.setItem('linen-trial', 'true');
+            modal.classList.remove('active');
+            backdrop.classList.remove('active');
+            this.startApp(null);
+            setTimeout(() => this.sendChat('[INITIAL_GREETING]'), 500);
+        });
+        
+        document.getElementById('add-api-key-btn')?.addEventListener('click', () => {
+            modal.classList.remove('active');
+            backdrop.classList.remove('active');
+            this.showOnboarding();
+        });
     }
 
     showOnboarding(errorMsg = '') {
@@ -692,6 +729,18 @@ class Linen {
                 await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
             }
             await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
+
+            if (this.trialMode) {
+                this.trialCount++;
+                if (this.trialCount >= 3) {
+                    const backdrop = document.getElementById('modal-backdrop');
+                    const limitModal = document.getElementById('trial-limit-modal');
+                    if (limitModal) {
+                        limitModal.classList.add('active');
+                        backdrop.classList.add('active');
+                    }
+                }
+            }
 
         } catch (e) {
             document.getElementById(id)?.remove();
