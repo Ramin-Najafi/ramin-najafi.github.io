@@ -702,19 +702,20 @@ class Linen {
 
             document.getElementById(id)?.remove();
             
-                if (!this.isLocalMode) {
-                    const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
-                    const match = reply.match(memoryMarker);
-                    if (match) {
-                        reply = reply.replace(memoryMarker, '').trim();
-                        try {
-                            const memData = JSON.parse(match[1]);
-                            await this.db.addMemory({ ...memData, date: Date.now() });
-                        } catch (e) {
-                            console.error('Failed to parse memory:', e);
-                        }
+            // Parse and strip memory markers (only if using GeminiAssistant)
+            if (!this.isLocalMode) {
+                const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
+                const match = reply.match(memoryMarker);
+                if (match) {
+                    reply = reply.replace(memoryMarker, '').trim();
+                    try {
+                        const memData = JSON.parse(match[1]);
+                        await this.db.addMemory({ ...memData, date: Date.now() });
+                    } catch (e) {
+                        console.error('Failed to parse memory:', e);
                     }
                 }
+            }
 
             if (!this.isLocalMode && !initialMessage) {
                 reply = this.filterEmojis(reply, msg);
