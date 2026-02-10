@@ -18,36 +18,7 @@ document.querySelectorAll('#mobileNav nav a').forEach(item => {
     });
 });
 
-// Lightbox functionality - universal lightbox handler
-function openLightbox(lightboxId) {
-    const lightbox = document.getElementById(lightboxId);
-    if (lightbox) {
-        lightbox.style.display = 'flex'; // Use flex to center content
-        document.body.style.overflow = 'hidden'; // Prevent scrolling on body
-    }
-}
-
-function closeLightbox(lightboxId) {
-    const lightbox = document.getElementById(lightboxId);
-    if (lightbox) {
-        lightbox.style.display = 'none';
-        document.body.style.overflow = ''; // Restore scrolling on body
-    }
-}
-
-// Legacy function for backward compatibility
-function openSkillsLightbox() {
-    openLightbox('skills-goals-lightbox');
-}
-
-function openSkillsLightboxAndCloseMenu() {
-    openSkillsLightbox();
-}
-
-
-
-
-// Existing code...
+// Mobile navigation click outside handler
 document.addEventListener('DOMContentLoaded', function() {
     const mobileNav = document.getElementById('mobileNav');
     const hamburger = document.getElementById('hamburger');
@@ -55,44 +26,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(event) {
         const isClickInsideNav = mobileNav.contains(event.target);
         const isClickOnHamburger = hamburger.contains(event.target);
-        
+
         // If menu is open and click is outside nav and outside hamburger, close menu
         if (menuOpen && !isClickInsideNav && !isClickOnHamburger) {
             toggleMenu(); // Close the menu
         }
-    });
-
-    // Universal lightbox button handler
-    document.querySelectorAll('.btn-read-more').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const lightboxId = this.dataset.lightbox;
-            if (lightboxId) {
-                openLightbox(lightboxId);
-            }
-        });
-    });
-
-    // Universal close button handler for all lightboxes
-    document.querySelectorAll('.lightbox .close-button').forEach(closeBtn => {
-        closeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const lightbox = this.closest('.lightbox');
-            if (lightbox) {
-                lightbox.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
-    });
-
-    // Close lightbox when clicking outside of it
-    document.querySelectorAll('.lightbox').forEach(lightbox => {
-        lightbox.addEventListener('click', function(event) {
-            if (event.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
     });
 });
 
