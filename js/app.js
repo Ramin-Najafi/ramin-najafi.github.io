@@ -18,22 +18,30 @@ document.querySelectorAll('#mobileNav nav a').forEach(item => {
     });
 });
 
-// Lightbox functionality - elements declared globally, initialized in DOMContentLoaded
-let skillsLightbox;
-let openSkillsGoalsBtn;
-let closeLightboxBtn;
-
-function openSkillsLightbox() {
-    const originalSkillsGoalsContent = document.getElementById('skills-and-goals').innerHTML;
-    document.getElementById('lightbox-skills-goals-content').innerHTML = originalSkillsGoalsContent;
-    skillsLightbox.style.display = 'flex'; // Use flex to center content
-    document.body.style.overflow = 'hidden'; // Prevent scrolling on body
+// Lightbox functionality - universal lightbox handler
+function openLightbox(lightboxId) {
+    const lightbox = document.getElementById(lightboxId);
+    if (lightbox) {
+        lightbox.style.display = 'flex'; // Use flex to center content
+        document.body.style.overflow = 'hidden'; // Prevent scrolling on body
+    }
 }
 
-function closeSkillsLightbox() {
-    skillsLightbox.style.display = 'none';
-    document.body.style.overflow = ''; // Restore scrolling on body
-    document.getElementById('lightbox-skills-goals-content').innerHTML = ''; // Clear content when closing
+function closeLightbox(lightboxId) {
+    const lightbox = document.getElementById(lightboxId);
+    if (lightbox) {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling on body
+    }
+}
+
+// Legacy function for backward compatibility
+function openSkillsLightbox() {
+    openLightbox('skills-goals-lightbox');
+}
+
+function openSkillsLightboxAndCloseMenu() {
+    openSkillsLightbox();
 }
 
 
@@ -54,69 +62,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Lightbox initialization and event listeners - MOVED HERE
-    skillsLightbox = document.getElementById('skillsLightbox'); // Initialize globally declared variable
-    openSkillsGoalsBtn = document.getElementById('openSkillsGoals'); // Initialize globally declared variable
-    closeLightboxBtn = skillsLightbox ? skillsLightbox.querySelector('.close-button') : null; // Initialize globally declared variable
-
-    // Event listeners for lightbox
-    if (openSkillsGoalsBtn) {
-        openSkillsGoalsBtn.addEventListener('click', openSkillsLightbox);
-    }
-
-    if (closeLightboxBtn) {
-        closeLightboxBtn.addEventListener('click', closeSkillsLightbox);
-    }
-
-    if (skillsLightbox) { // Only attach if lightbox exists
-        window.addEventListener('click', function(event) {
-            if (event.target === skillsLightbox) {
-                closeSkillsLightbox();
+    // Universal lightbox button handler
+    document.querySelectorAll('.btn-read-more').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const lightboxId = this.dataset.lightbox;
+            if (lightboxId) {
+                openLightbox(lightboxId);
             }
         });
-    }
+    });
 
-    // Project card click handling with mobile accordion support
-    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+    // Universal close button handler for all lightboxes
+    document.querySelectorAll('.lightbox .close-button').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const lightbox = this.closest('.lightbox');
+            if (lightbox) {
+                lightbox.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    });
 
-    const projectCards = [
-        { id: 'linen-project-box', url: '/linen/' },
-        { id: 'shopall-project-box', url: '/shopall/' }
-    ];
-
-    projectCards.forEach(({ id, url }) => {
-        const box = document.getElementById(id);
-        if (!box) return;
-
-        box.style.cursor = 'pointer';
-        const header = box.querySelector('.project-header');
-        const linkIndicator = box.querySelector('.project-link-indicator');
-
-        // Header click: toggle accordion on mobile, navigate on desktop
-        if (header) {
-            header.addEventListener('click', function(e) {
-                if (isMobile()) {
-                    e.stopPropagation();
-                    box.classList.toggle('expanded');
-                } else {
-                    window.open(url, '_blank');
-                }
-            });
-        }
-
-        // "View Project →" link always navigates
-        if (linkIndicator) {
-            linkIndicator.addEventListener('click', function(e) {
-                e.stopPropagation();
-                window.open(url, '_blank');
-            });
-            linkIndicator.style.cursor = 'pointer';
-        }
-
-        // Full card click navigates on desktop
-        box.addEventListener('click', function() {
-            if (!isMobile()) {
-                window.open(url, '_blank');
+    // Close lightbox when clicking outside of it
+    document.querySelectorAll('.lightbox').forEach(lightbox => {
+        lightbox.addEventListener('click', function(event) {
+            if (event.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = '';
             }
         });
     });
