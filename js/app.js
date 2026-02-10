@@ -76,23 +76,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add click functionality to Linen Project Box
-    const linenProjectBox = document.getElementById('linen-project-box');
-    if (linenProjectBox) {
-        linenProjectBox.style.cursor = 'pointer'; // Indicate clickable
-        linenProjectBox.addEventListener('click', function() {
-            window.open('/linen/', '_blank');
-        });
-    }
+    // Project card click handling with mobile accordion support
+    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
-    // Add click functionality to ShopAll Project Box
-    const shopallProjectBox = document.getElementById('shopall-project-box');
-    if (shopallProjectBox) {
-        shopallProjectBox.style.cursor = 'pointer'; // Indicate clickable
-        shopallProjectBox.addEventListener('click', function() {
-            window.open('/shopall/', '_blank'); // Assuming /shopall/ is the correct URL
+    const projectCards = [
+        { id: 'linen-project-box', url: '/linen/' },
+        { id: 'shopall-project-box', url: '/shopall/' }
+    ];
+
+    projectCards.forEach(({ id, url }) => {
+        const box = document.getElementById(id);
+        if (!box) return;
+
+        box.style.cursor = 'pointer';
+        const header = box.querySelector('.project-header');
+        const linkIndicator = box.querySelector('.project-link-indicator');
+
+        // Header click: toggle accordion on mobile, navigate on desktop
+        if (header) {
+            header.addEventListener('click', function(e) {
+                if (isMobile()) {
+                    e.stopPropagation();
+                    box.classList.toggle('expanded');
+                } else {
+                    window.open(url, '_blank');
+                }
+            });
+        }
+
+        // "View Project →" link always navigates
+        if (linkIndicator) {
+            linkIndicator.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.open(url, '_blank');
+            });
+            linkIndicator.style.cursor = 'pointer';
+        }
+
+        // Full card click navigates on desktop
+        box.addEventListener('click', function() {
+            if (!isMobile()) {
+                window.open(url, '_blank');
+            }
         });
-    }
+    });
 });
 
 async function submitContact(event) {

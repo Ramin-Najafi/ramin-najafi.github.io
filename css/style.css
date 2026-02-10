@@ -8,7 +8,7 @@
 body {
   font-family: "Merienda", cursive;
   background: linear-gradient(180deg, #000000 0%, #1a1a2e 100%);
-  color: #d0d0d0;
+  color: #e0e0e0;
   line-height: 1.6;
   font-size: 18px;
 }
@@ -37,7 +37,7 @@ p {
   font-size: 1.1em;
   margin: 8px 0;
   line-height: 1.6;
-  color: #d0d0d0;
+  color: #e0e0e0;
 }
 
 #logo {
@@ -133,7 +133,7 @@ p {
 
 .mobile-nav nav a {
   display: block;
-  color: #d0d0d0;
+  color: #e0e0e0;
   text-decoration: none;
   font-size: 1.2em;
   padding: 12px 25px;
@@ -189,7 +189,7 @@ p {
   padding-top: 60px;
   padding-bottom: 30px;
   text-align: center; /* Centered */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background-image: url('../assets/images/headerBkg.jpg');
   background-size: 80%;
   background-position: center;
@@ -244,8 +244,8 @@ p {
 
 .btn.outline {
   background: transparent;
-  color: #d0d0d0;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn.outline:hover {
@@ -258,7 +258,7 @@ p {
   background: linear-gradient(180deg, #120034, #1a1a2e);
   padding: 16px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 1em;
   transition: transform 0.3s, box-shadow 0.3s;
   text-align: center; /* Center align text inside skill cards */
@@ -273,7 +273,7 @@ p {
 .section {
   padding-top: 30px;
   padding-bottom: 30px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center; /* Centered */
 }
 
@@ -327,7 +327,7 @@ p {
   padding-bottom: 25px; /* Space for the line */
   padding-top: 10px;
   line-height: 1.5;
-  color: #d0d0d0;
+  color: #e0e0e0;
   font-size: 1.1em;
 }
 
@@ -370,9 +370,9 @@ p {
   background: linear-gradient(180deg, #120034, #1a1a2e);
   padding: 24px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   margin-bottom: 24px;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
   text-align: center;
   max-width: 800px; /* Limit width for project items */
   margin-left: auto;
@@ -382,6 +382,81 @@ p {
 .project-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Tap/active feedback for mobile on the link indicator */
+.project-link-indicator:active {
+  transform: scale(0.95);
+}
+
+/* Active state on whole card for desktop tap */
+@media (min-width: 769px) {
+  .project-item:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-color: #ffcc00;
+  }
+}
+
+/* Always-visible link indicator for clickable project cards */
+.project-link-indicator {
+  display: inline-block;
+  margin-top: 16px;
+  color: #ffcc00;
+  font-size: 0.95em;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+}
+
+.project-item:hover .project-link-indicator {
+  transform: translateX(4px);
+}
+
+/* === Mobile Accordion for Projects === */
+
+/* Desktop: hide accordion-only elements, show everything */
+.project-summary,
+.project-chevron {
+  display: none;
+}
+
+/* Mobile accordion behavior */
+@media (max-width: 768px) {
+  .project-summary {
+    display: block;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 4px 0 0;
+    line-height: 1.4;
+  }
+
+  .project-chevron {
+    display: inline-block;
+    color: #ffcc00;
+    font-size: 0.75em;
+    transition: transform 0.3s ease;
+    margin-top: 8px;
+  }
+
+  .project-item.expanded .project-chevron {
+    transform: rotate(180deg);
+  }
+
+  .project-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  .project-item.expanded .project-details {
+    max-height: 600px;
+    opacity: 1;
+  }
+
+  .project-header {
+    cursor: pointer;
+  }
 }
 
 .project-item h3 {
@@ -439,8 +514,8 @@ p {
   border-radius: 22px;
   font-size: 0.95em;
   background: rgba(255, 204, 153, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: #d0d0d0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e0e0e0;
   transition: background 0.3s, border 0.3s;
 }
 
@@ -449,9 +524,9 @@ textarea {
   width: 100%;
   padding: 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: #120034;
-  color: #d0d0d0;
+  color: #e0e0e0;
   font-family: "Merienda", cursive;
   font-size: 1em;
   transition: border 0.3s, background 0.3s;
@@ -507,11 +582,11 @@ button:hover {
 }
 
 .social-links a {
-  color: #d0d0d0;
+  color: #e0e0e0;
   background: #1a1a2e;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   transition: all 0.3s;
   text-decoration: none;
 }
@@ -535,8 +610,8 @@ footer {
   padding: 28px 0;
   text-align: center;
   font-size: 0.7em;
-  color: rgba(255, 255, 255, 0.6);
-  border-top: 0.3px solid rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .form-row {
