@@ -41,14 +41,14 @@
   </section>
 
   <!-- About Section - Preview + Read More -->
-  <section id="about" class="container section section-preview">
+  <section id="about" class="section section-preview">
     <h2>About Me</h2>
     <p>I'm a web developer based in London, Ontario, currently in the internship stage of my Web and Development Fundamentals diploma at triOS College. Nearly twenty years in customer-facing roles taught me how to think from the user's side.</p>
     <button class="btn-read-more" data-lightbox="about-lightbox">Read More</button>
   </section>
 
   <!-- Current Experience Section - Preview + Read More -->
-  <section id="current-experience" class="container section section-preview">
+  <section id="current-experience" class="section section-preview">
     <h2>Current Experience</h2>
     <p>Mobile Application Development Intern — Building AI-powered conversational commerce platforms with cutting-edge tech.</p>
     <button class="btn-read-more" data-lightbox="experience-lightbox">Read More</button>
@@ -79,42 +79,39 @@
   </div>
 
   <!-- Projects Section - Full Content (No Lightbox) -->
-  <section id="projects" class="container section">
+  <section id="projects" class="section">
     <h2>Featured Projects</h2>
     <div class="project-grid">
-      <div class="project-item-full">
-        <h3>Linen PWA - Personal Memory App</h3>
-        <p class="project-summary">A privacy-focused PWA for capturing and recalling personal memories offline.</p>
-        <p class="project-meta">Progressive Web Application | JavaScript, IndexedDB, Service Worker</p>
-        <p>A privacy-focused PWA designed to capture, organize, and recall personal memories. Works entirely offline with local storage.</p>
-        <h4>Key Features</h4>
-        <ul class="project-features">
-          <li>Secure local data storage with IndexedDB</li>
-          <li>Offline-first architecture using Service Workers for reliability</li>
-          <li>Intuitive UI for memory capture, search, and insights</li>
-          <li>Installable on mobile and desktop for native-like experience</li>
-        </ul>
-        <a href="/linen/" class="project-link-button">Visit Linen</a>
+      <div class="project-box">
+        <h3>Linen PWA</h3>
+        <p class="project-short-desc">Personal Memory App</p>
+        <button class="project-accordion-btn" data-project="linen">
+          <span class="chevron">▼</span>
+        </button>
+        <div class="project-accordion" id="linen">
+          <p class="project-description">A privacy-focused PWA designed to capture, organize, and recall personal memories. Works entirely offline with local storage.</p>
+          <p class="project-description">Offline-first architecture using Service Workers for reliability with intuitive UI for memory capture, search, and insights.</p>
+          <a href="/linen/" target="_blank" class="project-link-button">Visit Linen</a>
+        </div>
       </div>
-      <div class="project-item-full">
-        <h3>ShopAll - E-Commerce Platform</h3>
-        <p class="project-summary">A full e-commerce site with 35+ products, shopping cart, and persistent storage.</p>
-        <p class="project-meta">Full-Stack Web Application | HTML, CSS, JavaScript, Local Storage</p>
-        <p>A comprehensive tech product e-commerce site featuring 35+ products across 7 categories with full shopping cart functionality, wishlist system, and persistent local storage.</p>
-        <h4>Highlights</h4>
-        <ul class="project-features">
-          <li>Built search system with product suggestions and category filtering</li>
-          <li>Created purchase confirmation popups with automatic data persistence</li>
-          <li>Designed responsive interface for mobile and desktop users</li>
-          <li>Implemented shopping cart with localStorage persistence and tax calculations (13%)</li>
-        </ul>
-        <a href="/shopall/" class="project-link-button">Visit ShopAll</a>
+
+      <div class="project-box">
+        <h3>ShopAll</h3>
+        <p class="project-short-desc">E-Commerce Platform</p>
+        <button class="project-accordion-btn" data-project="shopall">
+          <span class="chevron">▼</span>
+        </button>
+        <div class="project-accordion" id="shopall">
+          <p class="project-description">A comprehensive tech product e-commerce site with 35+ products across 7 categories featuring full shopping cart functionality and wishlist system.</p>
+          <p class="project-description">Built with search system with product suggestions, category filtering, and persistent local storage with tax calculations.</p>
+          <a href="/shopall/" target="_blank" class="project-link-button">Visit ShopAll</a>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Contact Section - Full Content (No Lightbox) -->
-  <section id="contact" class="container section">
+  <section id="contact" class="section">
     <h2>Let's Connect</h2>
     <p>I'm open to collaboration, mentorship, and sharing knowledge. Currently seeking internship or entry-level opportunities where I can contribute to real-world projects and continue growing as a developer.</p>
     <form id="contactForm" class="contact-form" onsubmit="return submitContact(event)">

@@ -110,6 +110,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Project accordion functionality
+    document.querySelectorAll('.project-accordion-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const projectId = this.dataset.project;
+            const accordion = document.getElementById(projectId);
+
+            if (accordion) {
+                accordion.classList.toggle('expanded');
+                this.classList.toggle('expanded');
+            }
+        });
+    });
 });
 
 async function submitContact(event) {
