@@ -372,191 +372,247 @@ class Analytics {
 
 class LocalAssistant {
     constructor() {
-        this.sessionMemory = []; // Conversation history for this session
-        this.userProfile = {
-            name: null,
-            mood: 'neutral',
-            topics: [], // Topics user talks about
-            preferences: {}
-        };
+        this.sessionMemory = [];
+        this.userProfile = { name: null, mood: 'neutral', topics: [] };
+        this.lastCategory = null; // Track last response category to avoid repeats
+        this.usedResponses = new Set(); // Track used responses to avoid repetition
+
         this.responses = {
             greeting: [
-                "Hey! I'm Linen, your local assistant. I'm here to listen and chat. What's on your mind?",
-                "Hi there! I'm running locally right now, but I'm still here to talk with you. What would you like to discuss?",
-                "Welcome! I'm in local mode, but don't worry—I'm still a good listener. Tell me what's going on.",
+                "Hey! I'm Linen, running in local mode right now. How's your day going?",
+                "Hi there! What's going on?",
+                "Hey! Nice to hear from you. What's up?",
+                "Hello! What's on your mind today?",
             ],
-            listening: [
-                "That sounds important. Tell me more.",
-                "I'm here and listening. Keep going.",
-                "I hear you. What else?",
-                "That makes sense. How are you feeling about it?",
+            greetingReply: [
+                "Hey! How are you doing?",
+                "Hi! What's up?",
+                "Hey there! How's it going?",
+                "Hello! Good to hear from you. What's on your mind?",
+                "Hi! What brings you here today?",
             ],
-            support: [
-                "I'm here for you. You're not alone in this.",
-                "That's a lot to handle. You're doing great dealing with it.",
-                "I appreciate you sharing that with me.",
-                "Your feelings are valid. What do you need right now?",
+            howAreYou: [
+                "I'm doing well, thanks for asking! How about you?",
+                "I'm good! More importantly, how are you doing?",
+                "Doing great! What about you — how's your day going?",
+                "All good on my end! How are things with you?",
             ],
-            reflection: [
-                "So what I'm hearing is that...",
-                "If I understand correctly, you're...",
-                "It sounds like you...",
+            thanks: [
+                "You're welcome! Anything else on your mind?",
+                "Of course! Happy to help. What else?",
+                "No problem at all! Is there anything else you'd like to talk about?",
+                "Glad I could help! What's next?",
+            ],
+            farewell: [
+                "Take care! Come back anytime.",
+                "See you later! Remember, I'm always here if you need to talk.",
+                "Bye for now! Take care of yourself.",
+                "Talk soon! Hope the rest of your day goes well.",
             ],
             positive: [
-                "That's wonderful! I'm happy for you.",
-                "That's great to hear!",
-                "You should feel proud of that.",
-                "That's a great way to think about it.",
+                "That's awesome! Tell me more about it.",
+                "Love to hear that! What made it so great?",
+                "That's really cool! I'm happy for you.",
+                "Nice! Sounds like things are going well.",
+                "That's fantastic! What else has been going well?",
             ],
-            closing: [
-                "I'm always here if you need to talk.",
-                "Feel free to come back anytime you want to chat.",
-                "Remember, you've got this.",
-                "Take care of yourself.",
-            ]
+            distressed: [
+                "I'm sorry you're going through that. I'm here for you.",
+                "That sounds really tough. You don't have to go through it alone.",
+                "I hear you, and your feelings are completely valid. Want to talk about it?",
+                "That's a lot to carry. I'm listening if you want to share more.",
+            ],
+            anxious: [
+                "It's totally normal to feel that way. Take a deep breath — I'm here.",
+                "Anxiety can be really overwhelming. What's weighing on you the most?",
+                "That sounds stressful. Want to talk through what's on your mind?",
+                "I get that. Sometimes just putting it into words can help. What's going on?",
+            ],
+            question: [
+                "That's a great question! I'm running in local mode so I can't look things up, but I'd love to hear your thoughts on it.",
+                "Interesting question! I don't have full AI capabilities offline, but tell me more about what you're thinking.",
+                "I wish I could give you a detailed answer — I'm in local mode right now so my abilities are limited. But I'm still here to chat!",
+                "Good question! My local mode is more for chatting than answering complex questions, but I'm happy to think through it with you.",
+            ],
+            topicWork: [
+                "Work stuff can be a lot. What's going on at the office?",
+                "How are things at work? Tell me about it.",
+                "Sounds work-related. Is it stressing you out or just on your mind?",
+            ],
+            topicRelationships: [
+                "Relationships can be complicated. Want to talk about what's happening?",
+                "That sounds like it involves someone important to you. What's going on?",
+                "Tell me more about that. How are things between you?",
+            ],
+            topicHealth: [
+                "Your health matters. How are you feeling physically?",
+                "Taking care of yourself is important. What's going on?",
+                "I hope you're taking it easy. Tell me more about how you're feeling.",
+            ],
+            topicHobbies: [
+                "Nice! I love hearing about hobbies. Tell me more.",
+                "That sounds fun! How long have you been into that?",
+                "Cool! What do you enjoy most about it?",
+            ],
+            topicGoals: [
+                "Goals are great! What are you working toward?",
+                "I love that you're thinking about this. What's the plan?",
+                "That's exciting! How's progress going?",
+            ],
+            engaged: [
+                "Tell me more about that.",
+                "That's interesting — what happened next?",
+                "How did that make you feel?",
+                "What are you thinking of doing about it?",
+                "I'd love to hear more. Keep going.",
+                "What do you think you'll do?",
+                "And how's that been going for you?",
+                "That makes a lot of sense. What else?",
+            ],
+            confused: [
+                "I'm not sure I follow — could you tell me a bit more?",
+                "Hmm, can you help me understand what you mean?",
+                "I want to make sure I get what you're saying. Could you elaborate?",
+            ],
+            frustrated: [
+                "I'm sorry if I'm not being helpful enough. Let me try again — what would you like to talk about?",
+                "I hear you, and I apologize. I'm in local mode so I'm a bit limited, but I'm trying my best. What can I help with?",
+                "You're right, I could do better. Tell me what's on your mind and I'll do my best.",
+            ],
         };
     }
 
-    // Detect what the user is talking about
-    detectTopic(message) {
-        const msg = message.toLowerCase();
-        const topics = {
-            work: ['work', 'job', 'boss', 'project', 'deadline', 'meeting', 'office'],
-            health: ['tired', 'sick', 'sleep', 'exercise', 'health', 'doctor', 'pain'],
-            relationships: ['friend', 'family', 'partner', 'mom', 'dad', 'brother', 'sister', 'girlfriend', 'boyfriend', 'love'],
-            mental_health: ['stressed', 'anxious', 'depressed', 'sad', 'overwhelmed', 'scared', 'worried'],
-            goals: ['want', 'goal', 'dream', 'learn', 'achieve', 'trying', 'plan'],
-            hobbies: ['hobby', 'play', 'music', 'read', 'game', 'art', 'write', 'draw', 'cook'],
-        };
-
-        const detected = [];
-        for (const [topic, keywords] of Object.entries(topics)) {
-            if (keywords.some(k => msg.includes(k))) {
-                detected.push(topic);
-            }
+    // Pick a random response that hasn't been used recently
+    pick(category) {
+        const pool = this.responses[category];
+        if (!pool || pool.length === 0) return '';
+        // Filter out recently used
+        const available = pool.filter(r => !this.usedResponses.has(r));
+        // If all used, reset for this category
+        const choices = available.length > 0 ? available : pool;
+        const response = choices[Math.floor(Math.random() * choices.length)];
+        this.usedResponses.add(response);
+        // Keep used set from growing forever — clear if > 30
+        if (this.usedResponses.size > 30) {
+            this.usedResponses.clear();
         }
-        return detected.length > 0 ? detected[0] : null;
+        this.lastCategory = category;
+        return response;
     }
 
-    // Detect user's emotional tone
+    detectIntent(message) {
+        const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
+        const words = msg.split(/\s+/);
+
+        // Greeting detection (short messages that are greetings)
+        const greetWords = ['hi', 'hello', 'hey', 'yo', 'sup', 'hiya', 'whats up', 'wassup', 'howdy', 'good morning', 'good afternoon', 'good evening', 'morning', 'evening', 'afternoon'];
+        if (words.length <= 4 && greetWords.some(g => msg.includes(g))) return 'greetingReply';
+
+        // "How are you" detection
+        if (msg.includes('how are you') || msg.includes('hows it going') || msg.includes('how you doing') || msg.includes('how do you feel') || msg.includes('whats up with you')) return 'howAreYou';
+
+        // Thanks detection
+        if (['thank', 'thanks', 'thx', 'ty', 'appreciate'].some(t => msg.includes(t))) return 'thanks';
+
+        // Farewell detection
+        if (words.length <= 4 && ['bye', 'goodbye', 'see you', 'later', 'goodnight', 'good night', 'gotta go', 'gtg', 'cya', 'night'].some(f => msg.includes(f))) return 'farewell';
+
+        // Frustration / repetition detection
+        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even'].some(f => msg.includes(f))) return 'frustrated';
+
+        // Mood detection
+        const distressWords = ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'die', 'angry', 'furious', 'frustrated', 'devastated', 'hate', 'miserable', 'crying', 'hurting', 'suffering', 'lonely', 'alone', 'broken'];
+        if (distressWords.some(k => msg.includes(k))) return 'distressed';
+
+        const anxiousWords = ['anxious', 'nervous', 'worried', 'scared', 'afraid', 'panic', 'stress', 'overwhelmed', 'freaking out'];
+        if (anxiousWords.some(k => msg.includes(k))) return 'anxious';
+
+        const positiveWords = ['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful', 'awesome', 'fantastic', 'love it', 'best', 'good news', 'pumped', 'thrilled'];
+        if (positiveWords.some(k => msg.includes(k))) return 'positive';
+
+        // Topic detection
+        if (['work', 'job', 'boss', 'project', 'deadline', 'meeting', 'office', 'coworker', 'intern', 'internship'].some(k => msg.includes(k))) return 'topicWork';
+        if (['friend', 'family', 'partner', 'mom', 'dad', 'brother', 'sister', 'girlfriend', 'boyfriend', 'relationship', 'dating'].some(k => msg.includes(k))) return 'topicRelationships';
+        if (['tired', 'sick', 'sleep', 'exercise', 'health', 'doctor', 'pain', 'headache', 'ill'].some(k => msg.includes(k))) return 'topicHealth';
+        if (['hobby', 'play', 'music', 'read', 'game', 'art', 'write', 'draw', 'cook', 'sport', 'watch', 'movie', 'show'].some(k => msg.includes(k))) return 'topicHobbies';
+        if (['goal', 'dream', 'achieve', 'trying', 'plan', 'future', 'career', 'aspire', 'ambition'].some(k => msg.includes(k))) return 'topicGoals';
+
+        // Question detection
+        if (message.trim().endsWith('?') || ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can you', 'do you', 'could you', 'would you', 'tell me'].some(q => msg.startsWith(q))) return 'question';
+
+        // Very short messages that aren't greetings — probably confused or need more engagement
+        if (words.length <= 2) return 'confused';
+
+        // Default: engaged conversation
+        return 'engaged';
+    }
+
     detectMood(message) {
         const msg = message.toLowerCase();
-        
-        const moods = {
-            distressed: ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'emergency', 'angry', 'furious', 'frustrated', 'devastated'],
-            anxious: ['anxious', 'nervous', 'worried', 'scared', 'afraid', 'panic'],
-            positive: ['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful'],
-            neutral: []
-        };
-
-        for (const [mood, keywords] of Object.entries(moods)) {
-            if (keywords.some(k => msg.includes(k))) {
-                return mood;
-            }
-        }
+        if (['sad', 'depressed', 'hopeless', 'angry', 'frustrated', 'devastated', 'miserable', 'crying', 'hurting'].some(k => msg.includes(k))) return 'distressed';
+        if (['anxious', 'nervous', 'worried', 'scared', 'afraid', 'panic', 'overwhelmed'].some(k => msg.includes(k))) return 'anxious';
+        if (['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful', 'awesome'].some(k => msg.includes(k))) return 'positive';
         return 'neutral';
     }
 
-    // Extract user's name if mentioned
     extractName(message) {
-        const nameMatch = message.match(/(?:call me|i'm|i am|name is|i go by)\s+(\w+)/i);
-        if (nameMatch) {
+        const nameMatch = message.match(/(?:call me|i'm|i am|name is|i go by|my name's)\s+(\w+)/i);
+        if (nameMatch && nameMatch[1].length > 1 && !['not', 'so', 'very', 'really', 'just', 'feeling', 'doing', 'going', 'trying', 'here', 'fine', 'good', 'okay', 'ok'].includes(nameMatch[1].toLowerCase())) {
             return nameMatch[1];
         }
         return null;
     }
 
-    // Generate a contextual response
     async chat(message) {
-        // Update user profile
-        const topic = this.detectTopic(message);
+        const intent = this.detectIntent(message);
         const mood = this.detectMood(message);
         const name = this.extractName(message);
 
-        if (topic && !this.userProfile.topics.includes(topic)) {
-            this.userProfile.topics.push(topic);
-        }
-        if (mood !== 'neutral') {
-            this.userProfile.mood = mood;
-        }
-        if (name) {
-            this.userProfile.name = name;
-        }
+        if (name) this.userProfile.name = name;
+        if (mood !== 'neutral') this.userProfile.mood = mood;
 
-        // Add to session memory
-        this.sessionMemory.push({
-            role: 'user',
-            content: message,
-            mood: mood,
-            topic: topic,
-            timestamp: Date.now()
-        });
+        this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
 
-        // Generate response based on mood and context
         let response = '';
 
-        // Initial greeting
-        if (this.sessionMemory.length === 1) {
-            response = this.responses.greeting[Math.floor(Math.random() * this.responses.greeting.length)];
+        // First message — always greet
+        if (this.sessionMemory.filter(m => m.role === 'user').length === 1) {
+            response = this.pick('greeting');
         }
-        // Distressed user - prioritize support
-        else if (mood === 'distressed') {
-            response = this.responses.support[Math.floor(Math.random() * this.responses.support.length)];
-            // Add follow-up question
-            if (message.length < 30) {
-                response += " What's troubling you?";
-            } else {
-                response += " How are you feeling right now?";
-            }
+        // Detected user is frustrated — apologize and re-engage
+        else if (intent === 'frustrated') {
+            response = this.pick('frustrated');
         }
-        // Anxious user - normalize and support
-        else if (mood === 'anxious') {
-            response = "It's natural to feel that way. ";
-            response += this.responses.listening[Math.floor(Math.random() * this.responses.listening.length)]?.toLowerCase();
+        // Distressed user — supportive, with follow-up
+        else if (intent === 'distressed') {
+            response = this.pick('distressed');
         }
-        // Positive mood - celebrate
-        else if (mood === 'positive') {
-            response = this.responses.positive[Math.floor(Math.random() * this.responses.positive.length)];
-        }
-        // Neutral/normal conversation
+        // All other intents — use the matching category
         else {
-            // Reflect back what they said
-            if (Math.random() > 0.5 && message.length > 20) {
-                const reflection = this.responses.reflection[Math.floor(Math.random() * this.responses.reflection.length)];
-                // Create a shortened reflection
-                const keywords = message.split(' ').filter(w => w.length > 4).slice(0, 3).join(' ');
-                response = `${reflection} ${keywords}. `;
-                response += this.responses.listening[Math.floor(Math.random() * this.responses.listening.length)];
-            } else {
-                response = this.responses.listening[Math.floor(Math.random() * this.responses.listening.length)];
-            }
+            response = this.pick(intent);
         }
 
-        // Store the assistant's response
-        this.sessionMemory.push({
-            role: 'assistant',
-            content: response,
-            timestamp: Date.now()
-        });
+        // Personalize with name if known
+        if (this.userProfile.name && Math.random() > 0.7) {
+            response = response.replace(/^(Hey|Hi|Hello)(!?)/, `$1 ${this.userProfile.name}$2`);
+        }
 
+        this.sessionMemory.push({ role: 'assistant', content: response, timestamp: Date.now() });
         return response;
     }
 
-    // Get session summary (for context handoff to Gemini later if API comes back)
     getSessionSummary() {
-        const summary = {
+        return {
             userProfile: this.userProfile,
             messageCount: this.sessionMemory.length,
             topics: this.userProfile.topics,
             lastMood: this.userProfile.mood,
-            conversationLength: this.sessionMemory.length
         };
-        return summary;
     }
 
-    // Clear session (when switching to Gemini)
     clearSession() {
         this.sessionMemory = [];
+        this.usedResponses.clear();
     }
 }
 class Linen {
