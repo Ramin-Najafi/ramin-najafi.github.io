@@ -309,19 +309,58 @@ p {
   font-weight: bold;
 }
 
+/* Key Points, Goals, and Experience Lists */
+.key-points-list, .goals-list, .experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  margin: 20px 0;
+  text-align: center;
+  max-width: 100%;
+}
+
+.key-point, .goal-item, .experience-item {
+  margin: 0;
+  padding: 15px 20px;
+  position: relative;
+  color: #e0e0e0;
+  font-size: 1.05em;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.key-point:not(:last-child)::after, .goal-item:not(:last-child)::after, .experience-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(to right,
+    rgba(255, 204, 0, 0) 0%,
+    rgba(255, 204, 0, 0.7) 25%,
+    rgba(255, 204, 0, 1) 50%,
+    rgba(255, 204, 0, 0.7) 75%,
+    rgba(255, 204, 0, 0) 100%
+  );
+}
+
+/* Legacy list styles */
 .about-feature-list, .goals-list {
   list-style: none;
-  padding: 0; /* Remove default padding from ul */
-  text-align: center; /* Center the content of the list */
-  max-width: 800px; /* Limit width for centering */
+  padding: 0;
+  text-align: center;
+  max-width: 800px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .about-feature-list li, .goals-list li {
-  margin: 15px auto; /* Add vertical margin and center block */
+  margin: 15px auto;
   position: relative;
-  padding-bottom: 25px; /* Space for the line */
+  padding-bottom: 25px;
   padding-top: 10px;
   line-height: 1.5;
   color: #e0e0e0;
@@ -329,7 +368,7 @@ p {
 }
 
 .about-feature-list li::before, .goals-list li::before {
-  content: none; /* Remove custom bullet */
+  content: none;
 }
 
 /* Thinning out line separator */
@@ -339,7 +378,7 @@ p {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 80%; /* Adjust width as needed */
+  width: 80%;
   height: 1px;
   background: linear-gradient(to right,
     rgba(255, 204, 0, 0) 0%,
@@ -859,6 +898,17 @@ footer {
   position: relative;
   display: flex; /* Use flex for content centering */
   flex-direction: column; /* Stack content vertically */
+  text-align: center;
+}
+
+.lightbox-content h2,
+.lightbox-content h3,
+.lightbox-content h4 {
+  text-align: center;
+}
+
+.lightbox-content p {
+  text-align: center;
 }
 
 /* Responsive padding for mobile */
