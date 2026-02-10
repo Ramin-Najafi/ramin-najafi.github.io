@@ -8,6 +8,23 @@ function toggleMenu() {
     menuOpen = mobileNav.classList.contains('open'); // Update menuOpen state
 }
 
+// Lightbox functionality
+function openLightbox(lightboxId) {
+    const lightbox = document.getElementById(lightboxId);
+    if (lightbox) {
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeLightbox(lightboxId) {
+    const lightbox = document.getElementById(lightboxId);
+    if (lightbox) {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
 // Close mobile nav when a link is clicked
 document.querySelectorAll('#mobileNav nav a').forEach(item => {
     item.addEventListener('click', () => {
@@ -31,6 +48,67 @@ document.addEventListener('DOMContentLoaded', function() {
         if (menuOpen && !isClickInsideNav && !isClickOnHamburger) {
             toggleMenu(); // Close the menu
         }
+    });
+
+    // "Read More" button handler
+    document.querySelectorAll('.btn-read-more').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const lightboxId = this.dataset.lightbox;
+            if (lightboxId) {
+                openLightbox(lightboxId);
+            }
+        });
+    });
+
+    // Close button handler for all lightboxes
+    document.querySelectorAll('.lightbox .close-button').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const lightbox = this.closest('.lightbox');
+            if (lightbox) {
+                lightbox.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    });
+
+    // Click outside lightbox to close
+    document.querySelectorAll('.lightbox').forEach(lightbox => {
+        lightbox.addEventListener('click', function(event) {
+            if (event.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    });
+
+    // Navigation scroll and auto-open lightbox handler
+    document.querySelectorAll('.nav-scroll-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sectionId = this.dataset.section;
+            const lightboxId = this.dataset.lightbox;
+
+            // Close mobile menu
+            if (menuOpen) {
+                toggleMenu();
+            }
+
+            // Scroll to section
+            const section = document.getElementById(sectionId);
+            if (section) {
+                setTimeout(() => {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Open lightbox after scroll
+                    if (lightboxId) {
+                        setTimeout(() => {
+                            openLightbox(lightboxId);
+                        }, 500);
+                    }
+                }, 100);
+            }
+        });
     });
 });
 
