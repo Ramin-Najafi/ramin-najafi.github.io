@@ -685,8 +685,17 @@ class Linen {
     }
 
     async startApp(apiKey) {
-        console.log("Linen: Starting app with API Key.");
-        this.assistant = new GeminiAssistant(apiKey);
+        console.log("Linen: Starting app.");
+        // Only create a new GeminiAssistant if we have an API key AND aren't already in local mode
+        if (apiKey && !this.isLocalMode) {
+            this.assistant = new GeminiAssistant(apiKey);
+        }
+        // If no assistant is set at all (shouldn't happen), fallback to local
+        if (!this.assistant) {
+            console.warn("Linen: No assistant set in startApp, falling back to LocalAssistant.");
+            this.assistant = new LocalAssistant();
+            this.isLocalMode = true;
+        }
         document.getElementById('onboarding-overlay').style.display = 'none';
         document.getElementById('re-enter-key-modal').classList.remove('active');
         document.getElementById('modal-backdrop').classList.remove('active');
