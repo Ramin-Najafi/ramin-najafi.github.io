@@ -574,6 +574,10 @@ class LocalAssistant {
         if (startsWithQuestionWord && words.length > 3) return 'question';
         if (isQuestion && !referenceBack.some(r => msg.includes(r)) && words.length > 4) return 'question';
 
+        // Simple status responses (very short but valid) — treat as engaged, not confused
+        const statusWords = ['good', 'alright', 'okay', 'ok', 'fine', 'well', 'great', 'awesome', 'tired', 'busy', 'yep', 'yep', 'yeah', 'nope', 'nah', 'not really'];
+        if (words.length <= 2 && statusWords.some(s => msg.includes(s))) return 'engaged';
+
         // Very short messages that aren't greetings — probably confused or need more engagement
         if (words.length <= 2) return 'confused';
 
