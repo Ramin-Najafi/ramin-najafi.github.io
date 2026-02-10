@@ -40,3 +40,6 @@ tmp/
 .vscode/
 cypress/
 cypress.config.js
+.claude/
+.next/
+package.json
