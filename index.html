@@ -23,8 +23,8 @@
       <a href="#skills-section" class="nav-scroll-link" data-section="skills-section" data-lightbox="skills-lightbox">Skills</a>
       <a href="#goals-section" class="nav-scroll-link" data-section="goals-section" data-lightbox="goals-lightbox">Goals</a>
       <a href="#learning-section" class="nav-scroll-link" data-section="learning-section" data-lightbox="learning-lightbox">Learning</a>
-      <a href="#projects" class="nav-scroll-link" data-section="projects" data-lightbox="projects-lightbox">Projects</a>
-      <a href="#contact" class="nav-scroll-link" data-section="contact" data-lightbox="contact-lightbox">Contact</a>
+      <a href="#projects" class="nav-scroll-link" data-section="projects">Projects</a>
+      <a href="#contact" class="nav-scroll-link" data-section="contact">Contact</a>
       <a href="/linen/" class="menu-linen-app">Linen App</a>
       <a href="/shopall/" class="menu-shopall-app">ShopAll</a>
     </nav>
@@ -54,39 +54,84 @@
     <button class="btn-read-more" data-lightbox="experience-lightbox">Read More</button>
   </section>
 
-  <!-- Skills Section - Preview + Read More -->
-  <section id="skills-section" class="container section section-preview">
-    <h2>Skills</h2>
-    <p>Full-stack developer with expertise in web technologies, progressive web apps, and AI integration.</p>
-    <button class="btn-read-more" data-lightbox="skills-lightbox">View Skills</button>
-  </section>
+  <!-- Skills, Goals, Learning - 3 Columns -->
+  <div class="three-column-container">
+    <!-- Skills Section - Preview + Read More -->
+    <section id="skills-section" class="section section-preview">
+      <h2>Skills</h2>
+      <p>Full-stack developer with expertise in web technologies, progressive web apps, and AI integration.</p>
+      <button class="btn-read-more" data-lightbox="skills-lightbox">View Skills</button>
+    </section>
 
-  <!-- Goals Section - Preview + Read More -->
-  <section id="goals-section" class="container section section-preview">
-    <h2>Goals</h2>
-    <p>Building real-world applications with a focus on accessibility, user experience, and continuous learning.</p>
-    <button class="btn-read-more" data-lightbox="goals-lightbox">View Goals</button>
-  </section>
+    <!-- Goals Section - Preview + Read More -->
+    <section id="goals-section" class="section section-preview">
+      <h2>Goals</h2>
+      <p>Building real-world applications with a focus on accessibility, user experience, and continuous learning.</p>
+      <button class="btn-read-more" data-lightbox="goals-lightbox">View Goals</button>
+    </section>
 
-  <!-- Learning Section - Preview + Read More -->
-  <section id="learning-section" class="container section section-preview">
-    <h2>Currently Learning</h2>
-    <p>Continuously expanding my knowledge in modern frameworks, databases, and deployment strategies.</p>
-    <button class="btn-read-more" data-lightbox="learning-lightbox">View Learning</button>
-  </section>
+    <!-- Learning Section - Preview + Read More -->
+    <section id="learning-section" class="section section-preview">
+      <h2>Currently Learning</h2>
+      <p>Continuously expanding my knowledge in modern frameworks, databases, and deployment strategies.</p>
+      <button class="btn-read-more" data-lightbox="learning-lightbox">View Learning</button>
+    </section>
+  </div>
 
-  <!-- Projects Section - Preview + Read More -->
-  <section id="projects" class="container section section-preview">
+  <!-- Projects Section - Full Content (No Lightbox) -->
+  <section id="projects" class="container section">
     <h2>Featured Projects</h2>
-    <p>I've built several production-ready applications showcasing clean code and user-centric design.</p>
-    <button class="btn-read-more" data-lightbox="projects-lightbox">View Projects</button>
+    <div class="project-grid">
+      <div class="project-item-full">
+        <h3>Linen PWA - Personal Memory App</h3>
+        <p class="project-summary">A privacy-focused PWA for capturing and recalling personal memories offline.</p>
+        <p class="project-meta">Progressive Web Application | JavaScript, IndexedDB, Service Worker</p>
+        <p>A privacy-focused PWA designed to capture, organize, and recall personal memories. Works entirely offline with local storage.</p>
+        <h4>Key Features</h4>
+        <ul class="project-features">
+          <li>Secure local data storage with IndexedDB</li>
+          <li>Offline-first architecture using Service Workers for reliability</li>
+          <li>Intuitive UI for memory capture, search, and insights</li>
+          <li>Installable on mobile and desktop for native-like experience</li>
+        </ul>
+        <a href="/linen/" class="project-link-button">Visit Linen</a>
+      </div>
+      <div class="project-item-full">
+        <h3>ShopAll - E-Commerce Platform</h3>
+        <p class="project-summary">A full e-commerce site with 35+ products, shopping cart, and persistent storage.</p>
+        <p class="project-meta">Full-Stack Web Application | HTML, CSS, JavaScript, Local Storage</p>
+        <p>A comprehensive tech product e-commerce site featuring 35+ products across 7 categories with full shopping cart functionality, wishlist system, and persistent local storage.</p>
+        <h4>Highlights</h4>
+        <ul class="project-features">
+          <li>Built search system with product suggestions and category filtering</li>
+          <li>Created purchase confirmation popups with automatic data persistence</li>
+          <li>Designed responsive interface for mobile and desktop users</li>
+          <li>Implemented shopping cart with localStorage persistence and tax calculations (13%)</li>
+        </ul>
+        <a href="/shopall/" class="project-link-button">Visit ShopAll</a>
+      </div>
+    </div>
   </section>
 
-  <!-- Contact Section - Preview + Read More -->
-  <section id="contact" class="container section section-preview">
+  <!-- Contact Section - Full Content (No Lightbox) -->
+  <section id="contact" class="container section">
     <h2>Let's Connect</h2>
-    <p>I'm open to collaboration, mentorship, and sharing knowledge.</p>
-    <button class="btn-read-more" data-lightbox="contact-lightbox">Get in Touch</button>
+    <p>I'm open to collaboration, mentorship, and sharing knowledge. Currently seeking internship or entry-level opportunities where I can contribute to real-world projects and continue growing as a developer.</p>
+    <form id="contactForm" class="contact-form" onsubmit="return submitContact(event)">
+      <div class="form-row">
+        <input type="text" id="name" name="name" placeholder="Your name" required>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <input type="text" id="subject" name="subject" placeholder="Subject" required>
+      <textarea id="message" name="message" placeholder="Write your message..." required></textarea>
+      <button type="submit">Send Message</button>
+      <p id="successMsg" class="success" style="display:none;">Thank you! Your message has been sent.</p>
+    </form>
+    <div class="quote">"The expert in anything was once a beginner."</div>
+    <div class="social-links">
+      <a href="https://github.com/ramin-najafi" target="_blank">GitHub</a>
+      <a href="https://www.linkedin.com/in/ramin-najafi-689110390/" target="_blank">LinkedIn</a>
+    </div>
   </section>
 
   <footer>
@@ -205,65 +250,6 @@
     </div>
   </div>
 
-  <!-- Lightbox: Projects -->
-  <div id="projects-lightbox" class="lightbox">
-    <div class="lightbox-content">
-      <span class="close-button">&times;</span>
-      <h2>Featured Projects</h2>
-      <div class="project-item-full">
-        <h3>Linen PWA - Personal Memory App</h3>
-        <p class="project-summary">A privacy-focused PWA for capturing and recalling personal memories offline.</p>
-        <p class="project-meta">Progressive Web Application | JavaScript, IndexedDB, Service Worker</p>
-        <p>A privacy-focused PWA designed to capture, organize, and recall personal memories. Works entirely offline with local storage.</p>
-        <h4>Key Features</h4>
-        <ul class="project-features">
-          <li>Secure local data storage with IndexedDB</li>
-          <li>Offline-first architecture using Service Workers for reliability</li>
-          <li>Intuitive UI for memory capture, search, and insights</li>
-          <li>Installable on mobile and desktop for native-like experience</li>
-        </ul>
-        <a href="/linen/" class="project-link-button">Visit Linen</a>
-      </div>
-      <div class="project-item-full">
-        <h3>ShopAll - E-Commerce Platform</h3>
-        <p class="project-summary">A full e-commerce site with 35+ products, shopping cart, and persistent storage.</p>
-        <p class="project-meta">Full-Stack Web Application | HTML, CSS, JavaScript, Local Storage</p>
-        <p>A comprehensive tech product e-commerce site featuring 35+ products across 7 categories with full shopping cart functionality, wishlist system, and persistent local storage.</p>
-        <h4>Highlights</h4>
-        <ul class="project-features">
-          <li>Built search system with product suggestions and category filtering</li>
-          <li>Created purchase confirmation popups with automatic data persistence</li>
-          <li>Designed responsive interface for mobile and desktop users</li>
-          <li>Implemented shopping cart with localStorage persistence and tax calculations (13%)</li>
-        </ul>
-        <a href="/shopall/" class="project-link-button">Visit ShopAll</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lightbox: Contact -->
-  <div id="contact-lightbox" class="lightbox">
-    <div class="lightbox-content">
-      <span class="close-button">&times;</span>
-      <h2>Let's Connect</h2>
-      <p>I'm open to collaboration, mentorship, and sharing knowledge. Currently seeking internship or entry-level opportunities where I can contribute to real-world projects and continue growing as a developer.</p>
-      <form id="contactForm" class="contact-form" onsubmit="return submitContact(event)">
-        <div class="form-row">
-          <input type="text" id="name" name="name" placeholder="Your name" required>
-          <input type="email" id="email" name="email" placeholder="you@example.com" required>
-        </div>
-        <input type="text" id="subject" name="subject" placeholder="Subject" required>
-        <textarea id="message" name="message" placeholder="Write your message..." required></textarea>
-        <button type="submit">Send Message</button>
-        <p id="successMsg" class="success" style="display:none;">Thank you! Your message has been sent.</p>
-      </form>
-      <div class="quote">"The expert in anything was once a beginner."</div>
-      <div class="social-links">
-        <a href="https://github.com/ramin-najafi" target="_blank">GitHub</a>
-        <a href="https://www.linkedin.com/in/ramin-najafi-689110390/" target="_blank">LinkedIn</a>
-      </div>
-    </div>
-  </div>
 
   <!-- Lightbox: About -->
   <div id="about-lightbox" class="lightbox">

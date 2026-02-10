@@ -764,10 +764,28 @@ footer {
   }
 }
 
+/* Three Column Container for Skills, Goals, Learning */
+.three-column-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  width: 92%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+@media (min-width: 860px) {
+  .three-column-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+  }
+}
+
 /* Section Preview Styling */
 .section-preview {
-  max-width: 600px;
-  margin: 40px auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .btn-read-more {
