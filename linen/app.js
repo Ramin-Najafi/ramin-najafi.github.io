@@ -379,105 +379,128 @@ class LocalAssistant {
 
         this.responses = {
             greeting: [
-                "Hey! I'm Linen, running in local mode right now. How's your day going?",
+                "Hey! I'm running in local mode right now, but I'm still here. How's your day going?",
                 "Hi there! What's going on?",
-                "Hey! Nice to hear from you. What's up?",
-                "Hello! What's on your mind today?",
+                "Hey! Good to see you. What's on your mind?",
+                "Hello! How's it going today?",
+                "Hey! What's up?",
             ],
             greetingReply: [
-                "Hey! How are you doing?",
-                "Hi! What's up?",
-                "Hey there! How's it going?",
-                "Hello! Good to hear from you. What's on your mind?",
-                "Hi! What brings you here today?",
+                "Hey! How's it going?",
+                "Hi! Good to see you. What's on your mind?",
+                "Hey there! What's new?",
+                "Hello! How's your day been?",
+                "Hey! What can I do for you?",
+                "Hi! What's going on?",
             ],
             howAreYou: [
-                "I'm doing well, thanks for asking! How about you?",
-                "I'm good! More importantly, how are you doing?",
-                "Doing great! What about you — how's your day going?",
+                "I'm doing well, thanks for asking! How about you — how's your day been?",
+                "I'm good! But enough about me, how are you doing?",
+                "Doing alright! What about you, how's everything going?",
                 "All good on my end! How are things with you?",
+                "Can't complain! How about you though, everything okay?",
+                "Pretty good! Thanks for asking. What about you?",
+            ],
+            referenceBack: [
+                "You're right, my bad. Let me focus — what were you asking about?",
+                "Sorry about that, I should've responded to that. What was it you wanted to know?",
+                "Fair point, I got sidetracked. Go ahead, I'm listening this time.",
+                "Oops, you're right. I missed that — what did you want to talk about?",
+                "My bad! I didn't mean to skip over that. What was your question?",
             ],
             thanks: [
-                "You're welcome! Anything else on your mind?",
-                "Of course! Happy to help. What else?",
-                "No problem at all! Is there anything else you'd like to talk about?",
-                "Glad I could help! What's next?",
+                "Of course! Anything else?",
+                "No problem! What else is on your mind?",
+                "Happy to help! Anything else going on?",
+                "Sure thing! What's next?",
+                "Anytime!",
             ],
             farewell: [
                 "Take care! Come back anytime.",
-                "See you later! Remember, I'm always here if you need to talk.",
-                "Bye for now! Take care of yourself.",
-                "Talk soon! Hope the rest of your day goes well.",
+                "See you later! I'll be here when you need me.",
+                "Bye for now! Hope the rest of your day goes well.",
+                "Talk soon! Take it easy.",
+                "Later! Don't be a stranger.",
             ],
             positive: [
-                "That's awesome! Tell me more about it.",
-                "Love to hear that! What made it so great?",
-                "That's really cool! I'm happy for you.",
-                "Nice! Sounds like things are going well.",
-                "That's fantastic! What else has been going well?",
+                "That's awesome! What made it so great?",
+                "Love that energy! Tell me more.",
+                "Nice! Sounds like things are going well for you.",
+                "That's really cool. What else has been good lately?",
+                "Glad to hear that! What happened?",
             ],
             distressed: [
-                "I'm sorry you're going through that. I'm here for you.",
+                "I'm sorry you're going through that. I'm here if you want to talk.",
                 "That sounds really tough. You don't have to go through it alone.",
-                "I hear you, and your feelings are completely valid. Want to talk about it?",
-                "That's a lot to carry. I'm listening if you want to share more.",
+                "I hear you. Your feelings are valid. Want to talk about what's going on?",
+                "That's a lot to carry. I'm listening whenever you're ready.",
+                "I'm sorry. That's not easy. Take your time — I'm here.",
             ],
             anxious: [
-                "It's totally normal to feel that way. Take a deep breath — I'm here.",
-                "Anxiety can be really overwhelming. What's weighing on you the most?",
-                "That sounds stressful. Want to talk through what's on your mind?",
-                "I get that. Sometimes just putting it into words can help. What's going on?",
+                "That sounds stressful. What's weighing on you the most?",
+                "I get that. Sometimes just talking it through helps. What's going on?",
+                "Anxiety can be a lot. Take a breath — what's on your mind?",
+                "That's understandable. Want to walk me through what's been happening?",
             ],
             question: [
-                "That's a great question! I'm running in local mode so I can't look things up, but I'd love to hear your thoughts on it.",
-                "Interesting question! I don't have full AI capabilities offline, but tell me more about what you're thinking.",
-                "I wish I could give you a detailed answer — I'm in local mode right now so my abilities are limited. But I'm still here to chat!",
-                "Good question! My local mode is more for chatting than answering complex questions, but I'm happy to think through it with you.",
+                "That's a good question! I'm in local mode so I can't look things up, but I can try to think through it with you. What are your thoughts?",
+                "Hmm, I wish I could look that up for you. In local mode I'm a bit limited, but tell me more — maybe we can work through it together.",
+                "I don't have the full answer for that in local mode, but I'm curious what you think. What's your take?",
+                "I can't really search for things right now, but I'm still happy to chat through it. What do you think?",
             ],
             topicWork: [
-                "Work stuff can be a lot. What's going on at the office?",
-                "How are things at work? Tell me about it.",
-                "Sounds work-related. Is it stressing you out or just on your mind?",
+                "Work stuff, huh? What's going on?",
+                "Tell me about it. Is it stressing you out or just on your mind?",
+                "How are things at work? What's happening?",
+                "Ugh, work. What's the situation?",
             ],
             topicRelationships: [
-                "Relationships can be complicated. Want to talk about what's happening?",
-                "That sounds like it involves someone important to you. What's going on?",
-                "Tell me more about that. How are things between you?",
+                "Relationships can be a lot. What's going on?",
+                "Sounds like it's about someone important to you. Tell me more.",
+                "How are things between you two? What's happening?",
+                "That's a big topic. Want to walk me through it?",
             ],
             topicHealth: [
-                "Your health matters. How are you feeling physically?",
-                "Taking care of yourself is important. What's going on?",
-                "I hope you're taking it easy. Tell me more about how you're feeling.",
+                "Your health matters. How are you feeling?",
+                "That doesn't sound fun. What's going on?",
+                "I hope you're taking it easy. Tell me more.",
+                "How are you doing physically? What's been going on?",
             ],
             topicHobbies: [
-                "Nice! I love hearing about hobbies. Tell me more.",
-                "That sounds fun! How long have you been into that?",
-                "Cool! What do you enjoy most about it?",
+                "Oh nice! Tell me more about that.",
+                "That sounds fun! How long have you been into it?",
+                "Cool, what do you enjoy most about it?",
+                "I like hearing about this stuff. What got you into it?",
             ],
             topicGoals: [
-                "Goals are great! What are you working toward?",
-                "I love that you're thinking about this. What's the plan?",
-                "That's exciting! How's progress going?",
+                "That's exciting! What are you working toward?",
+                "I love that. What's the plan?",
+                "Nice, how's progress going so far?",
+                "That's a solid goal. What's the next step?",
             ],
             engaged: [
                 "Tell me more about that.",
-                "That's interesting — what happened next?",
-                "How did that make you feel?",
+                "Interesting — what happened next?",
+                "How'd that make you feel?",
                 "What are you thinking of doing about it?",
-                "I'd love to hear more. Keep going.",
-                "What do you think you'll do?",
-                "And how's that been going for you?",
-                "That makes a lot of sense. What else?",
+                "I hear you. Keep going.",
+                "And then what happened?",
+                "How's that been going for you?",
+                "That makes sense. What else?",
+                "Go on, I'm listening.",
+                "Okay, I'm with you. What else?",
             ],
             confused: [
-                "I'm not sure I follow — could you tell me a bit more?",
-                "Hmm, can you help me understand what you mean?",
-                "I want to make sure I get what you're saying. Could you elaborate?",
+                "I'm not sure I follow — can you give me a bit more to go on?",
+                "Hmm, what do you mean by that?",
+                "Could you say a bit more? I want to make sure I understand.",
+                "I'm not quite getting it — can you explain?",
             ],
             frustrated: [
-                "I'm sorry if I'm not being helpful enough. Let me try again — what would you like to talk about?",
-                "I hear you, and I apologize. I'm in local mode so I'm a bit limited, but I'm trying my best. What can I help with?",
-                "You're right, I could do better. Tell me what's on your mind and I'll do my best.",
+                "You're right, that's on me. What would you like to talk about?",
+                "I hear you. I'm a bit limited in local mode, but I'm trying. What can I do?",
+                "Fair enough. Let me try again — what's on your mind?",
+                "Sorry about that. Tell me what you need and I'll do my best.",
             ],
         };
     }
@@ -504,12 +527,17 @@ class LocalAssistant {
         const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
         const words = msg.split(/\s+/);
 
+        // Context awareness — detect references to previous messages
+        const referenceBack = ['i asked', 'i said', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'what i said', 'before i'];
+        if (referenceBack.some(r => msg.includes(r))) return 'referenceBack';
+
+        // "How are you" detection — check BEFORE greetings so "how are you today" isn't caught as greeting
+        const howAreYouPhrases = ['how are you', 'hows it going', 'how you doing', 'how do you feel', 'whats up with you', 'how have you been', 'how ya doing', 'how you been', 'hows everything', 'hows life', 'how are things', 'how goes it', 'hru'];
+        if (howAreYouPhrases.some(p => msg.includes(p))) return 'howAreYou';
+
         // Greeting detection (short messages that are greetings)
         const greetWords = ['hi', 'hello', 'hey', 'yo', 'sup', 'hiya', 'whats up', 'wassup', 'howdy', 'good morning', 'good afternoon', 'good evening', 'morning', 'evening', 'afternoon'];
         if (words.length <= 4 && greetWords.some(g => msg.includes(g))) return 'greetingReply';
-
-        // "How are you" detection
-        if (msg.includes('how are you') || msg.includes('hows it going') || msg.includes('how you doing') || msg.includes('how do you feel') || msg.includes('whats up with you')) return 'howAreYou';
 
         // Thanks detection
         if (['thank', 'thanks', 'thx', 'ty', 'appreciate'].some(t => msg.includes(t))) return 'thanks';
@@ -518,7 +546,7 @@ class LocalAssistant {
         if (words.length <= 4 && ['bye', 'goodbye', 'see you', 'later', 'goodnight', 'good night', 'gotta go', 'gtg', 'cya', 'night'].some(f => msg.includes(f))) return 'farewell';
 
         // Frustration / repetition detection
-        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even'].some(f => msg.includes(f))) return 'frustrated';
+        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying'].some(f => msg.includes(f))) return 'frustrated';
 
         // Mood detection
         const distressWords = ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'die', 'angry', 'furious', 'frustrated', 'devastated', 'hate', 'miserable', 'crying', 'hurting', 'suffering', 'lonely', 'alone', 'broken'];
@@ -537,8 +565,12 @@ class LocalAssistant {
         if (['hobby', 'play', 'music', 'read', 'game', 'art', 'write', 'draw', 'cook', 'sport', 'watch', 'movie', 'show'].some(k => msg.includes(k))) return 'topicHobbies';
         if (['goal', 'dream', 'achieve', 'trying', 'plan', 'future', 'career', 'aspire', 'ambition'].some(k => msg.includes(k))) return 'topicGoals';
 
-        // Question detection
-        if (message.trim().endsWith('?') || ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can you', 'do you', 'could you', 'would you', 'tell me'].some(q => msg.startsWith(q))) return 'question';
+        // Question detection — only for genuine standalone questions, not conversational phrases
+        const isQuestion = message.trim().endsWith('?');
+        const startsWithQuestionWord = ['what ', 'why ', 'how ', 'when ', 'where ', 'who ', 'which '].some(q => msg.startsWith(q));
+        // Only trigger question for actual informational questions, not conversational ones
+        if (startsWithQuestionWord && words.length > 3) return 'question';
+        if (isQuestion && !referenceBack.some(r => msg.includes(r)) && words.length > 4) return 'question';
 
         // Very short messages that aren't greetings — probably confused or need more engagement
         if (words.length <= 2) return 'confused';
@@ -574,27 +606,30 @@ class LocalAssistant {
         this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
 
         let response = '';
+        const userMsgCount = this.sessionMemory.filter(m => m.role === 'user').length;
 
         // First message — always greet
-        if (this.sessionMemory.filter(m => m.role === 'user').length === 1) {
+        if (userMsgCount === 1) {
             response = this.pick('greeting');
         }
-        // Detected user is frustrated — apologize and re-engage
+        // Priority intents — frustration, distress, and referencing back
         else if (intent === 'frustrated') {
             response = this.pick('frustrated');
         }
-        // Distressed user — supportive, with follow-up
         else if (intent === 'distressed') {
             response = this.pick('distressed');
+        }
+        else if (intent === 'referenceBack') {
+            response = this.pick('referenceBack');
         }
         // All other intents — use the matching category
         else {
             response = this.pick(intent);
         }
 
-        // Personalize with name if known
-        if (this.userProfile.name && Math.random() > 0.7) {
-            response = response.replace(/^(Hey|Hi|Hello)(!?)/, `$1 ${this.userProfile.name}$2`);
+        // Personalize with name occasionally
+        if (this.userProfile.name && Math.random() > 0.75) {
+            response = response.replace(/^(Hey|Hi|Hello|Glad|Nice)(!?\s)/, `$1 ${this.userProfile.name}$2`);
         }
 
         this.sessionMemory.push({ role: 'assistant', content: response, timestamp: Date.now() });
@@ -1088,7 +1123,14 @@ class Linen {
         const div = document.createElement('div');
         div.id = id;
         div.className = 'assistant-message';
-        div.textContent = 'Thinking...';
+
+        // Show typing indicator bubble for local mode, "Thinking..." for API mode
+        if (this.isLocalMode) {
+            div.classList.add('typing-indicator');
+            div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+        } else {
+            div.textContent = 'Thinking...';
+        }
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
 
@@ -1097,9 +1139,11 @@ class Linen {
             const mems = await this.db.getAllMemories();
             const convs = await this.db.getConversations();
 
-            // If in local mode, directly use local assistant
+            // If in local mode, add a short delay to simulate thinking
             if (this.isLocalMode) {
                 console.log("Linen: Currently in local mode. Using LocalAssistant.");
+                const delay = 800 + Math.random() * 700; // 800ms–1500ms
+                await new Promise(resolve => setTimeout(resolve, delay));
                 reply = await this.assistant.chat(msg);
             } else {
                 // Try GeminiAssistant
@@ -1172,13 +1216,21 @@ class Linen {
                 console.log("Linen: Falling back to LocalAssistant.");
                 this.assistant = new LocalAssistant();
                 this.isLocalMode = true;
+                // Show typing bubble with delay
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'assistant-message typing-indicator';
+                typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+                container.appendChild(typingDiv);
+                container.scrollTop = container.scrollHeight;
+                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+                typingDiv.remove();
                 const localReply = await this.assistant.chat(msg);
                 const rdiv = document.createElement('div');
                 rdiv.className = 'assistant-message';
                 rdiv.textContent = localReply;
                 container.appendChild(rdiv);
                 container.scrollTop = container.scrollHeight;
-                
+
                 // Show toast once when switching to local mode
                 if (this.trialMode) {
                     this.showLocalModeToast('trial');
@@ -1191,11 +1243,18 @@ class Linen {
                 await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
 
             } else if (canFallback && this.isLocalMode) {
-                 // Already in local mode, just respond with local assistant's reply
+                 // Already in local mode, show typing bubble then respond
                  console.log("Linen: Already in local mode. LocalAssistant responding to error.");
+                 const typingDiv = document.createElement('div');
+                 typingDiv.className = 'assistant-message typing-indicator';
+                 typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+                 container.appendChild(typingDiv);
+                 container.scrollTop = container.scrollHeight;
+                 await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+                 typingDiv.remove();
                  const localReply = await this.assistant.chat(msg);
                  const rdiv = document.createElement('div');
-                 rdiv.className = 'assistant-message error-message';
+                 rdiv.className = 'assistant-message';
                  rdiv.textContent = localReply;
                  container.appendChild(rdiv);
                  container.scrollTop = container.scrollHeight;
