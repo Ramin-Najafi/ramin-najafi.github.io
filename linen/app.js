@@ -423,11 +423,13 @@ class LocalAssistant {
                 "Later! Don't be a stranger.",
             ],
             positive: [
-                "That's awesome! What made it so great?",
-                "Love that energy! Tell me more.",
-                "Nice! Sounds like things are going well for you.",
-                "That's really cool. What else has been good lately?",
-                "Glad to hear that! What happened?",
+                "That's awesome! I'm genuinely happy for you.",
+                "Love that for you! That's a huge deal.",
+                "That sounds amazing. Really glad you're experiencing that.",
+                "You should be proud. That's incredible.",
+                "Honestly, that's beautiful to hear. Keep that momentum going.",
+                "That's the energy right there. I'm here for it.",
+                "That's really special. Thanks for sharing that with me.",
             ],
             distressed: [
                 "I'm sorry you're going through that. I'm here if you want to talk.",
@@ -443,10 +445,10 @@ class LocalAssistant {
                 "That's understandable. Want to walk me through what's been happening?",
             ],
             question: [
-                "That's a good question! I'm in local mode so I can't look things up, but I can try to think through it with you. What are your thoughts?",
+                "That's a good question. I'm in local mode so I can't look things up, but I can think through it with you. What are your thoughts?",
                 "Hmm, I wish I could look that up for you. In local mode I'm a bit limited, but tell me more — maybe we can work through it together.",
-                "I don't have the full answer for that in local mode, but I'm curious what you think. What's your take?",
-                "I can't really search for things right now, but I'm still happy to chat through it. What do you think?",
+                "I don't have the full answer for that, but I'm curious what you think. What's your take?",
+                "I can't really search for things right now, but I'm happy to talk it through. What do you think?",
             ],
             topicWork: [
                 "Work stuff, huh? What's going on?",
@@ -481,14 +483,14 @@ class LocalAssistant {
             engaged: [
                 "Tell me more about that.",
                 "Interesting — what happened next?",
-                "How'd that make you feel?",
-                "What are you thinking of doing about it?",
-                "I hear you. Keep going.",
+                "I hear you.",
                 "And then what happened?",
                 "How's that been going for you?",
                 "That makes sense. What else?",
                 "Go on, I'm listening.",
                 "Okay, I'm with you. What else?",
+                "Yeah? Tell me more.",
+                "I'm here for it. Keep going.",
             ],
             confused: [
                 "I'm not sure I follow — can you give me a bit more to go on?",
@@ -528,7 +530,7 @@ class LocalAssistant {
         const words = msg.split(/\s+/);
 
         // Context awareness — detect references to previous messages
-        const referenceBack = ['i asked', 'i said', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'what i said', 'before i'];
+        const referenceBack = ['i asked', 'i said', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'what i said', 'before i', 'you could', 'instead of', 'acknowledge'];
         if (referenceBack.some(r => msg.includes(r))) return 'referenceBack';
 
         // "How are you" detection — check BEFORE greetings so "how are you today" isn't caught as greeting
@@ -546,16 +548,16 @@ class LocalAssistant {
         if (words.length <= 4 && ['bye', 'goodbye', 'see you', 'later', 'goodnight', 'good night', 'gotta go', 'gtg', 'cya', 'night'].some(f => msg.includes(f))) return 'farewell';
 
         // Frustration / repetition detection
-        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying'].some(f => msg.includes(f))) return 'frustrated';
+        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying', 'angry', 'making me angry'].some(f => msg.includes(f))) return 'frustrated';
 
         // Mood detection
-        const distressWords = ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'die', 'angry', 'furious', 'frustrated', 'devastated', 'hate', 'miserable', 'crying', 'hurting', 'suffering', 'lonely', 'alone', 'broken'];
+        const distressWords = ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'die', 'furious', 'devastated', 'hate', 'miserable', 'crying', 'hurting', 'suffering', 'lonely', 'alone', 'broken'];
         if (distressWords.some(k => msg.includes(k))) return 'distressed';
 
         const anxiousWords = ['anxious', 'nervous', 'worried', 'scared', 'afraid', 'panic', 'stress', 'overwhelmed', 'freaking out'];
         if (anxiousWords.some(k => msg.includes(k))) return 'anxious';
 
-        const positiveWords = ['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful', 'awesome', 'fantastic', 'love it', 'best', 'good news', 'pumped', 'thrilled'];
+        const positiveWords = ['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful', 'awesome', 'fantastic', 'love it', 'best', 'good news', 'pumped', 'thrilled', 'doing what i love', 'never been happier', 'sharper', 'physically', 'mentally'];
         if (positiveWords.some(k => msg.includes(k))) return 'positive';
 
         // Topic detection
@@ -621,6 +623,10 @@ class LocalAssistant {
         }
         else if (intent === 'referenceBack') {
             response = this.pick('referenceBack');
+        }
+        // Positive mood takes priority — acknowledge and celebrate
+        else if (mood === 'positive') {
+            response = this.pick('positive');
         }
         // All other intents — use the matching category
         else {
