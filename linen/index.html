@@ -97,6 +97,56 @@
     <p class="error-message" id="re-enter-error"></p>
 </div>
 
+<div id="crisis-modal" class="modal crisis-modal">
+    <button class="close-modal" id="close-crisis-modal">×</button>
+    <h2 style="color: #ff6b6b;">You're Not Alone</h2>
+    <p style="color: #fff; font-size: 1.1rem; margin: 1.5rem 0;">If you're in crisis, please reach out to someone who can help:</p>
+    <div class="crisis-resources">
+        <div class="resource">
+            <h3>United States</h3>
+            <p><strong>988 Suicide & Crisis Lifeline</strong></p>
+            <p>Call or text 988 (available 24/7)</p>
+            <p><a href="https://988lifeline.org" target="_blank" style="color: #4a9eff;">988lifeline.org</a></p>
+        </div>
+        <div class="resource">
+            <h3>International</h3>
+            <p><strong>Find Your Country's Crisis Line</strong></p>
+            <p><a href="https://findahelpline.com" target="_blank" style="color: #4a9eff;">findahelpline.com</a></p>
+            <p><a href="https://www.befrienders.org" target="_blank" style="color: #4a9eff;">befrienders.org</a></p>
+        </div>
+        <div class="resource">
+            <h3>Text-Based Support</h3>
+            <p><strong>Crisis Text Line</strong></p>
+            <p>Text HOME to 741741 (US)</p>
+            <p><a href="https://www.crisistextline.org" target="_blank" style="color: #4a9eff;">crisistextline.org</a></p>
+        </div>
+    </div>
+    <p style="color: #ddd; margin-top: 2rem; font-size: 0.95rem;">I'm here to listen and support you, but if you're in immediate danger, please call emergency services (911 in US) or go to your nearest emergency room.</p>
+    <button id="acknowledge-crisis" class="button-primary">I'm Safe / Need to Talk</button>
+</div>
+
+<div id="quick-capture-modal" class="modal">
+    <button class="close-modal" id="close-quick-capture">×</button>
+    <h2>Save a Thought</h2>
+    <input type="text" id="quick-capture-title" placeholder="Title (optional)">
+    <textarea id="quick-capture-text" placeholder="What's on your mind?" style="min-height: 120px;"></textarea>
+    <button id="save-quick-capture" class="button-primary">Save Memory</button>
+</div>
+
+<div id="mood-check-modal" class="modal">
+    <button class="close-modal" id="close-mood-check">×</button>
+    <h2>How are you feeling?</h2>
+    <div class="mood-options">
+        <button class="mood-btn" data-mood="😊">Happy</button>
+        <button class="mood-btn" data-mood="😌">Calm</button>
+        <button class="mood-btn" data-mood="😐">Neutral</button>
+        <button class="mood-btn" data-mood="😟">Worried</button>
+        <button class="mood-btn" data-mood="😢">Sad</button>
+        <button class="mood-btn" data-mood="😠">Angry</button>
+        <button class="mood-btn" data-mood="😴">Tired</button>
+    </div>
+</div>
+
 <div id="app-container">
     <header>
         <button id="settings-button">⚙</button>
@@ -107,7 +157,9 @@
     <main class="main-content" id="chat-view">
         <div id="chat-messages"></div>
         <div id="chat-input-area">
+            <button id="quick-capture-btn" title="Quick save thought">💭</button>
             <textarea id="chat-input" placeholder="Ask me anything..."></textarea>
+            <button id="mood-check-btn" title="Quick mood check">😊</button>
             <button id="chat-send">Send</button>
         </div>
     </main>
@@ -138,7 +190,7 @@
                 <button type="submit">Send</button>
             </form>
         </div>
-        <p id="version-info">v1.0.1 [beta]</p>
+        <p id="version-info">v1.0.2 [beta]</p>
     </div>
 </div>
 

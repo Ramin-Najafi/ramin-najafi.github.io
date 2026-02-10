@@ -468,6 +468,102 @@ hr {
     flex-direction: column;
     gap: 1rem;
 }
+
+/* Crisis Modal */
+.crisis-modal {
+    max-width: 600px;
+    padding: 2rem;
+    border: 2px solid #ff6b6b;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.crisis-resources {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.resource {
+    background: rgba(255, 107, 107, 0.1);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #ff6b6b;
+}
+
+.resource h3 {
+    color: #ff6b6b;
+    margin-bottom: 0.5rem;
+}
+
+.resource p {
+    color: #ddd;
+    margin: 0.5rem 0;
+}
+
+.resource a {
+    color: #4a9eff;
+    text-decoration: none;
+}
+
+.resource a:hover {
+    text-decoration: underline;
+}
+
+/* Chat Input Area with Buttons */
+#chat-input-area {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+#quick-capture-btn,
+#mood-check-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: transform 0.2s;
+}
+
+#quick-capture-btn:hover,
+#mood-check-btn:hover {
+    transform: scale(1.2);
+}
+
+#chat-input {
+    flex: 1;
+}
+
+#chat-send {
+    padding: 0.8rem 1.5rem;
+}
+
+/* Mood Options Grid */
+.mood-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.mood-btn {
+    padding: 1rem;
+    background: #1e1e1e;
+    border: 2px solid #333;
+    color: white;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 2rem;
+    transition: all 0.3s;
+}
+
+.mood-btn:hover {
+    background: #4a9eff;
+    border-color: #4a9eff;
+}
 /* Memory Modal Styles */
 .memory-modal {
     max-width: 600px;

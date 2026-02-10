@@ -1017,72 +1017,44 @@ class Linen {
 
         let reply = '';
         try {
-                            const mems = await this.db.getAllMemories();
-                            const convs = await this.db.getConversations();
-                            
-                            // If in local mode, directly use local assistant
-                            if (this.isLocalMode) {
-                                console.log("Linen: Currently in local mode. Using LocalAssistant.");
-                                reply = await this.assistant.chat(msg);
-                            } else {
-                                // Try GeminiAssistant
-                                console.log("Linen: Attempting to use GeminiAssistant.");
-                                if (this.assistant.detectCrisis(msg)) { // <-- Crisis Detection Logic
-                                    this.showCrisisModal();
-                                }
-                                if (this.assistant.detectCrisis(msg)) { // <-- Crisis Detection Logic
-                        this.showCrisisModal();
-                    }
-                    reply = await this.assistant.chat(msg, convs, mems, id);
-                            }
-            
-                                        document.getElementById(id)?.remove();
-            
-                                        
-            
-                                        // Parse and strip memory markers (only if using GeminiAssistant)
-            
-                                        if (!this.isLocalMode) {
-            
-                                            const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
-            
-                                            const match = reply.match(memoryMarker);
-            
-                                            if (match) {
-            
-                                                reply = reply.replace(memoryMarker, '').trim();
-            
-                                                try {
-            
-                                                    const memData = JSON.parse(match[1]);
-            
-                                                    await this.db.addMemory({ ...memData, date: Date.now() });
-            
-                                                } catch (e) {
-            
-                                                    console.error('Failed to parse memory:', e);
-            
-                                                }
-            
-                                            }
-            
-                                        }
-            
-                            
-            
-                                        if (!this.isLocalMode && !initialMessage) { // <-- Emoji Filtering Logic
-            
-                                            reply = this.filterEmojis(reply, msg);
-            
-                                        }
-            
-                                
-            
-                                
+            const mems = await this.db.getAllMemories();
+            const convs = await this.db.getConversations();
 
+            // If in local mode, directly use local assistant
+            if (this.isLocalMode) {
+                console.log("Linen: Currently in local mode. Using LocalAssistant.");
+                reply = await this.assistant.chat(msg);
+            } else {
+                // Try GeminiAssistant
+                console.log("Linen: Attempting to use GeminiAssistant.");
+                if (!initialMessage && this.assistant.detectCrisis(msg)) {
+                    this.showCrisisModal();
+                }
+                reply = await this.assistant.chat(msg, convs, mems, id);
+            }
+
+            document.getElementById(id)?.remove();
+
+            // Parse and strip memory markers (only if using GeminiAssistant)
+            if (!this.isLocalMode) {
+                const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
+                const match = reply.match(memoryMarker);
+                if (match) {
+                    reply = reply.replace(memoryMarker, '').trim();
+                    try {
+                        const memData = JSON.parse(match[1]);
+                        await this.db.addMemory({ ...memData, date: Date.now() });
+                    } catch (e) {
+                        console.error('Failed to parse memory:', e);
+                    }
+                }
+            }
+
+            // Filter happy emojis from replies to distressed users
             if (!this.isLocalMode && !initialMessage) {
                 reply = this.filterEmojis(reply, msg);
             }
+
             const rdiv = document.createElement('div');
             rdiv.className = 'assistant-message';
             rdiv.textContent = reply;
@@ -1265,26 +1237,6 @@ class Linen {
                 alert('Edit functionality coming soon!');
             });
         });
-    }
-
-    detectUserSentiment(userMessage) {
-        const msg = userMessage.toLowerCase();
-        const distress = ['sad', 'depressed', 'hopeless', 'suicidal', 'die', 'crisis', 'emergency', 'angry', 'frustrated', 'trauma'];
-        const positive = ['happy', 'excited', 'great', 'wonderful', 'good'];
-        
-        if (distress.some(k => msg.includes(k))) return 'distressed';
-        if (positive.some(k => msg.includes(k))) return 'positive';
-        return 'neutral';
-    }
-
-    filterEmojis(reply, userMessage) {
-        if (this.detectUserSentiment(userMessage) === 'distressed') {
-            const happyEmojis = ['😊', '😄', '😃', '🎉', '🎊', '😆', '😂'];
-            happyEmojis.forEach(e => {
-                reply = reply.split(e).join('');
-            });
-        }
-        return reply;
     }
 
     showToast(message) {
