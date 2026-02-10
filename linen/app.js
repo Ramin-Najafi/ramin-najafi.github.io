@@ -627,6 +627,18 @@ class Linen {
         this.trialCount = 0;
         this.currentSessionTitle = null;
         this.isNewSession = true;
+        this._localModeToastShown = false;
+    }
+
+    showLocalModeToast(reason) {
+        if (this._localModeToastShown) return;
+        this._localModeToastShown = true;
+        const isQuota = reason && (reason.toLowerCase().includes('quota') || reason.toLowerCase().includes('rate') || reason.toLowerCase().includes('429'));
+        if (isQuota) {
+            this.showToast("You've hit your API usage limit. Switching to local mode — I can still chat!");
+        } else {
+            this.showToast("API unavailable right now. Switching to local mode — I can still chat!");
+        }
     }
 
     detectUserSentiment(userMessage) {
@@ -722,7 +734,7 @@ class Linen {
                         this.assistant = new LocalAssistant();
                         this.isLocalMode = true;
                         this.startApp(apiKey); // Start app without showing onboarding
-                        this.showToast(`Gemini API unavailable: ${result.error}. Using local assistant.`);
+                        this.showLocalModeToast(result.error);
                     } else {
                         console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
                         this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
@@ -735,7 +747,7 @@ class Linen {
             this.assistant = new LocalAssistant();
             this.isLocalMode = true;
             this.startApp(null); // Start in local mode without API key
-            this.showToast(`Linen failed to initialize: ${e.message}. Using local assistant.`);
+            this.showLocalModeToast(e.message);
             console.error('Linen: Fatal error during init, starting in local-only mode.', e);
         }
     }
@@ -1167,11 +1179,11 @@ class Linen {
                 container.appendChild(rdiv);
                 container.scrollTop = container.scrollHeight;
                 
-                // Show toast based on why we switched
-                if (msgText.includes('API key not configured') || this.trialMode) {
-                    this.showToast("Using local assistant for free trial.");
+                // Show toast once when switching to local mode
+                if (this.trialMode) {
+                    this.showLocalModeToast('trial');
                 } else {
-                    this.showToast("API temporarily unavailable. Using local assistant.");
+                    this.showLocalModeToast(msgText);
                 }
                 if (!initialMessage) {
                     await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
