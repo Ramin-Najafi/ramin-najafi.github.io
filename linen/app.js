@@ -375,7 +375,12 @@ class GeminiAssistant {
 
         const memoryContext = this.buildMemoryContext(mems);
         const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+**About Linen:**
+Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
+
+If the user asks who created you or who your creator is, respond: "I'm Linen, created by Ramin Najafi. You can check out his work and portfolio at https://ramin-najafi.github.io/ - he's the designer and developer behind me, and built this app with modern web technologies to prioritize your privacy and give you a personal AI assistant that works offline and keeps all your data on your device."
 
 Core Directives:
 1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
@@ -509,7 +514,12 @@ class OpenAIAssistant {
 
         const memoryContext = this.buildMemoryContext(mems);
         const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+**About Linen:**
+Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
+
+If the user asks who created you or who your creator is, respond: "I'm Linen, created by Ramin Najafi. You can check out his work and portfolio at https://ramin-najafi.github.io/ - he's the designer and developer behind me, and built this app with modern web technologies to prioritize your privacy and give you a personal AI assistant that works offline and keeps all your data on your device."
 
 Core Directives:
 1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
@@ -633,7 +643,12 @@ class ClaudeAssistant {
 
         const memoryContext = this.buildMemoryContext(mems);
         const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+**About Linen:**
+Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
+
+If the user asks who created you or who your creator is, respond: "I'm Linen, created by Ramin Najafi. You can check out his work and portfolio at https://ramin-najafi.github.io/ - he's the designer and developer behind me, and built this app with modern web technologies to prioritize your privacy and give you a personal AI assistant that works offline and keeps all your data on your device."
 
 Core Directives:
 1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
@@ -752,7 +767,12 @@ class DeepSeekAssistant {
 
         const memoryContext = this.buildMemoryContext(mems);
         const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+**About Linen:**
+Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
+
+If the user asks who created you or who your creator is, respond: "I'm Linen, created by Ramin Najafi. You can check out his work and portfolio at https://ramin-najafi.github.io/ - he's the designer and developer behind me, and built this app with modern web technologies to prioritize your privacy and give you a personal AI assistant that works offline and keeps all your data on your device."
 
 Core Directives:
 1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
@@ -871,7 +891,12 @@ class OpenRouterAssistant {
 
         const memoryContext = this.buildMemoryContext(mems);
         const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+**About Linen:**
+Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
+
+If the user asks who created you or who your creator is, respond: "I'm Linen, created by Ramin Najafi. You can check out his work and portfolio at https://ramin-najafi.github.io/ - he's the designer and developer behind me, and built this app with modern web technologies to prioritize your privacy and give you a personal AI assistant that works offline and keeps all your data on your device."
 
 Core Directives:
 1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
@@ -1419,6 +1444,11 @@ class LocalAssistant {
                 "That's outside my wheelhouse, but I'm here to help with what matters to you — how are you really doing?",
                 "I'm built to listen and support you, not to answer factual questions like that. What's really on your mind?",
             ],
+            creator: [
+                "I'm Linen, created by Ramin Najafi! He designed and built me to be a personal AI assistant that prioritizes your privacy and keeps everything on your device. You can check out his work at https://ramin-najafi.github.io/",
+                "Ramin Najafi is who built me! He's a developer passionate about privacy-first tech. Check out his portfolio at https://ramin-najafi.github.io/ to see his other projects.",
+                "I was created by Ramin Najafi. He developed me to be your personal memory companion while keeping all your data safe on your device. Learn more about his work at https://ramin-najafi.github.io/",
+            ],
             topicWork: [
                 "Work stuff, huh? What's going on?",
                 "Tell me about it. Is it stressing you out or just on your mind?",
@@ -1497,6 +1527,10 @@ class LocalAssistant {
     detectIntent(message) {
         const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
         const words = msg.split(/\s+/);
+
+        // Creator question detection
+        const creatorKeywords = ['who created you', 'who made you', 'who built you', 'who is your creator', 'who developed you', 'who is ramin', 'ramin najafi', 'your creator'];
+        if (creatorKeywords.some(k => msg.includes(k))) return 'creator';
 
         // Context awareness — detect references to previous messages
         const referenceBack = ['i asked', 'i said', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'what i said', 'before i', 'you could', 'instead of', 'acknowledge'];
@@ -1590,6 +1624,10 @@ class LocalAssistant {
         // First message — always greet
         if (userMsgCount === 1) {
             response = this.pick('greeting');
+        }
+        // Creator question — always answer with creator info
+        else if (intent === 'creator') {
+            response = this.pick('creator');
         }
         // Priority intents — out-of-scope, frustration, distress, and referencing back
         else if (intent === 'outOfScope') {
