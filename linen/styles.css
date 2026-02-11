@@ -846,6 +846,13 @@ hr {
     animation: pulse 1.5s ease-in-out infinite;
 }
 
+/* Ensure voice modal buttons are clickable */
+#close-voice-modal,
+#lightbox-stop-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
 /* Crisis Modal */
 .crisis-modal {
     max-width: 600px;
