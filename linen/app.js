@@ -1717,18 +1717,11 @@ class Linen {
             await this.db.clearCurrentSession();
 
             const apiKey = await this.db.getSetting('gemini-api-key');
-            const hasSeenPitch = localStorage.getItem('linen-pitch-shown');
+            const primaryAgentId = await this.db.getSetting('primary-agent-id');
 
-            if (!apiKey && !hasSeenPitch) {
-                localStorage.setItem('linen-pitch-shown', 'true');
-                this.showPitchModal();
-                return;
-            }
-
-            console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}`);
+            console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}, Agent: ${primaryAgentId ? 'Yes' : 'No'}`);
 
             // Try to load primary agent from multi-agent system
-            const primaryAgentId = await this.db.getSetting('primary-agent-id');
             let primaryAgent = null;
 
             if (primaryAgentId) {
@@ -1753,14 +1746,23 @@ class Linen {
                 this.isLocalMode = false;
             }
 
-            // If still no assistant, use local mode
+            // If still no assistant, use local mode (always available)
             if (!this.assistant) {
-                console.log("Linen: Starting in local mode by default to conserve API quota.");
+                console.log("Linen: Starting with LocalAssistant (no API configured).");
                 this.assistant = new LocalAssistant();
                 this.isLocalMode = true;
             }
 
-            this.startApp(apiKey); // Pass apiKey for lazy validation when needed
+            // Start the app immediately - users can chat with LocalAssistant
+            this.startApp(apiKey);
+
+            // Show pitch modal EVERY TIME if no API key/agent configured
+            // This lets users discover the option to add an API key
+            if (!apiKey && !primaryAgentId) {
+                console.log("Linen: No API configured, showing pitch modal.");
+                // Show after a brief delay so app renders first
+                setTimeout(() => this.showPitchModal(), 500);
+            }
         } catch (e) {
             console.error('Linen: Init error:', e);
             this.assistant = new LocalAssistant();
@@ -1827,21 +1829,21 @@ class Linen {
             console.warn("Pitch modal not found in HTML");
             return;
         }
-        
+
         modal.classList.add('active');
         backdrop.classList.add('active');
-        
-        const tryFreeBtn = document.getElementById('try-free-btn');
-        const addKeyBtn = document.getElementById('add-api-key-btn');
-        
-        if (tryFreeBtn) {
-            tryFreeBtn.addEventListener('click', () => {
+
+        // "Start Chatting" button - just close modal and start using app
+        const closeBtn = document.getElementById('close-pitch-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
                 modal.classList.remove('active');
                 backdrop.classList.remove('active');
-                this.startTrialMode();
             });
         }
-        
+
+        // "Add My API Key" button - show onboarding to add API
+        const addKeyBtn = document.getElementById('add-api-key-btn');
         if (addKeyBtn) {
             addKeyBtn.addEventListener('click', () => {
                 modal.classList.remove('active');
@@ -2708,17 +2710,8 @@ class Linen {
                 await this.analyzeForEvents(msg);
             }
 
-            if (this.trialMode) {
-                this.trialCount++;
-                if (this.trialCount >= 3) {
-                    const backdrop = document.getElementById('modal-backdrop');
-                    const limitModal = document.getElementById('trial-limit-modal');
-                    if (limitModal) {
-                        limitModal.classList.add('active');
-                        backdrop.classList.add('active');
-                    }
-                }
-            }
+            // Trial mode is deprecated - users can always use LocalAssistant
+            // No message limit anymore
 
         } catch (e) {
             document.getElementById(id)?.remove();
