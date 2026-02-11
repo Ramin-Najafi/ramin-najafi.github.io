@@ -92,26 +92,66 @@
     </div>
 </div>
 
-<div id="pitch-modal" class="modal">
+<div id="pitch-modal" class="modal pitch-accordion">
     <h2>Welcome to Linen</h2>
-    <p>Linen is a personal AI assistant that actually respects your privacy. Unlike other apps, everything you talk to Linen about stays on your device—we don't sell your data or train on your conversations. It learns who you are over time, remembers what matters to you, and helps with reminders, planning, or just being there when you need support. Think of it as an AI that's actually on your side.</p>
-    <h3>Always Works, Even Without An API Key:</h3>
-    <p style="font-size: 0.95rem; color: var(--text-light);">Start chatting right now with Linen's built-in AI. It's a great listener and helpful friend. Want even smarter features? Add your favorite AI provider's API key anytime to unlock memories, reminders, and deeper conversations. <strong style="color: #fff;">Your conversations with Linen always stay private on your device—the API key only tells Linen which AI service you prefer to use.</strong></p>
-    <h3>Works With Your Favorite AI:</h3>
-    <div class="provider-badges">
-        <span class="badge">🔵 Gemini</span>
-        <span class="badge">🟢 ChatGPT</span>
-        <span class="badge">🔴 Claude</span>
-        <span class="badge">🟠 DeepSeek</span>
+    <p>Your AI companion that respects your privacy.</p>
+
+    <!-- Accordion Container -->
+    <div class="accordion-container">
+        <!-- Accordion Sections -->
+        <div class="accordion-item">
+            <button class="accordion-header" data-section="about">
+                <span>📱 About Linen</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content" id="about">
+                <p>Linen is a personal AI assistant that actually respects your privacy. Unlike other apps, everything you talk to Linen about stays on your device—we don't sell your data or train on your conversations. It learns who you are over time, remembers what matters to you, and helps with reminders, planning, or just being there when you need support. Think of it as an AI that's actually on your side.</p>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <button class="accordion-header" data-section="start">
+                <span>⚡ Start Chatting Now</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content" id="start">
+                <p>Start chatting right now with Linen's built-in AI. It's a great listener and helpful friend. Want even smarter features? Add your favorite AI provider's API key anytime to unlock memories, reminders, and deeper conversations.</p>
+                <p style="font-size: 0.9rem; color: #999;"><strong>Your conversations with Linen always stay private on your device—the API key only tells Linen which AI service you prefer to use.</strong></p>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <button class="accordion-header" data-section="ai">
+                <span>🤖 Works With Your Favorite AI</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content" id="ai">
+                <div class="provider-badges">
+                    <span class="badge">🔵 Gemini</span>
+                    <span class="badge">🟢 ChatGPT</span>
+                    <span class="badge">🔴 Claude</span>
+                    <span class="badge">🟠 DeepSeek</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <button class="accordion-header" data-section="features">
+                <span>✨ Key Features</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-content" id="features">
+                <ul>
+                    <li>🔒 Privacy First</li>
+                    <li>🧠 Personalized</li>
+                    <li>👤 You Own Your Data</li>
+                    <li>🤖 Use Your Favorite AI</li>
+                    <li>💬 Start Chatting Immediately</li>
+                </ul>
+            </div>
+        </div>
     </div>
-    <h3>Key Differentiators:</h3>
-    <ul>
-        <li>🔒 Privacy First</li>
-        <li>🧠 Personalized</li>
-        <li>👤 You Own Your Data</li>
-        <li>🤖 Use Your Favorite AI</li>
-        <li>💬 Start Chatting Immediately</li>
-    </ul>
+
     <div class="pitch-buttons">
         <button id="close-pitch-modal" class="button-primary">Start Chatting</button>
         <button id="add-api-key-btn" class="button-secondary">Add My API Key</button>

@@ -617,10 +617,41 @@ hr {
 
 #pitch-modal, #trial-limit-modal {
     max-width: 480px;
-    padding: 1.5rem;
+    padding: 0;
     text-align: center;
     max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#pitch-modal.pitch-accordion {
+    padding: 1.5rem 1.5rem 0 1.5rem;
+}
+
+#pitch-modal.pitch-accordion > h2 {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+}
+
+#pitch-modal.pitch-accordion > p {
+    flex-shrink: 0;
+    margin-bottom: 1.5rem;
+}
+
+#pitch-modal.pitch-accordion .accordion-container {
+    flex: 1;
     overflow-y: auto;
+    min-height: 0;
+}
+
+#pitch-modal.pitch-accordion .pitch-buttons {
+    flex-shrink: 0;
+    margin-top: 1.5rem;
+    padding: 0 0 1.5rem 0;
+}
+
+#pitch-modal.pitch-accordion .accordion-item {
+    flex-shrink: 0;
 }
 
 #pitch-modal h2, #trial-limit-modal h2 {
@@ -646,6 +677,77 @@ hr {
     padding: 0.3rem 0;
     color: #bbb;
     font-size: 0.95rem;
+}
+
+/* Accordion Styles */
+.accordion-item {
+    border-bottom: 1px solid #333;
+    margin-bottom: 0;
+}
+
+.accordion-header {
+    width: 100%;
+    padding: 1rem;
+    background: #2a2a2a;
+    border: none;
+    color: var(--primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+    font-weight: 600;
+    text-align: left;
+}
+
+.accordion-header:hover {
+    background: #333;
+}
+
+.accordion-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+    margin-left: 1rem;
+}
+
+.accordion-item.active .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: #1f1f1f;
+    padding: 0;
+}
+
+.accordion-item.active .accordion-content {
+    max-height: 1000px;
+    padding: 1rem;
+}
+
+.accordion-content p {
+    margin: 0.5rem 0;
+    color: #ddd;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.accordion-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.accordion-content li {
+    padding: 0.4rem 0;
+    color: #ccc;
+    font-size: 0.9rem;
 }
 
 .button-primary {

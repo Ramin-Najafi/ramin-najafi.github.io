@@ -2008,18 +2008,32 @@ class Linen {
         modal.classList.add('active');
         backdrop.classList.add('active');
 
+        // Set up accordion functionality if not already done
+        const accordionHeaders = modal.querySelectorAll('.accordion-header');
+        accordionHeaders.forEach(header => {
+            // Only add listener once
+            if (!header.dataset.listenerAttached) {
+                header.addEventListener('click', () => {
+                    const item = header.closest('.accordion-item');
+                    item.classList.toggle('active');
+                });
+                header.dataset.listenerAttached = 'true';
+            }
+        });
+
         // "Start Chatting" button - just close modal and start using app
         const closeBtn = document.getElementById('close-pitch-modal');
-        if (closeBtn) {
+        if (closeBtn && !closeBtn.dataset.listenerAttached) {
             closeBtn.addEventListener('click', () => {
                 modal.classList.remove('active');
                 backdrop.classList.remove('active');
             });
+            closeBtn.dataset.listenerAttached = 'true';
         }
 
         // "Add My API Key" button - show onboarding to add API
         const addKeyBtn = document.getElementById('add-api-key-btn');
-        if (addKeyBtn) {
+        if (addKeyBtn && !addKeyBtn.dataset.listenerAttached) {
             addKeyBtn.addEventListener('click', () => {
                 modal.classList.remove('active');
                 backdrop.classList.remove('active');
@@ -2027,6 +2041,7 @@ class Linen {
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 this.showOnboardingStep(2);
             });
+            addKeyBtn.dataset.listenerAttached = 'true';
         }
     }
 
