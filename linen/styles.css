@@ -247,9 +247,10 @@ header {
     border-radius: 8px;
     width: 90%;
     max-width: 500px;
-    max-height: 90vh;
-    overflow-y: scroll;
+    max-height: 85vh;
+    overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     transform: translate(-50%, -50%) scale(0.9);
 }
 
@@ -260,6 +261,7 @@ header {
 
 .modal.active {
     transform: translate(-50%, -50%) scale(1);
+    display: block;
 }
 
 .close-panel, .close-modal {
