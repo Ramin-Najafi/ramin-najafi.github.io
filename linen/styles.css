@@ -217,6 +217,7 @@ header {
     z-index: 999;
     display: none;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
     flex-direction: column;
     gap: 15px;
@@ -236,6 +237,7 @@ header {
 #memories-panel.active, .modal.active {
     display: flex;
     opacity: 1;
+    pointer-events: auto;
     transform: translateX(0);
 }
 
@@ -827,7 +829,6 @@ hr {
     max-width: 400px;
     padding: 2rem;
     text-align: center;
-    display: flex;
     flex-direction: column;
     gap: 1.5rem;
     align-items: center;

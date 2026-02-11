@@ -2008,6 +2008,15 @@ class Linen {
         modal.classList.add('active');
         backdrop.classList.add('active');
 
+        // Ensure all other modals have pointer-events disabled to avoid blocking clicks
+        const allModals = document.querySelectorAll('.modal');
+        allModals.forEach(m => {
+            if (m !== modal) {
+                m.style.pointerEvents = 'none';
+            }
+        });
+        modal.style.pointerEvents = 'auto';
+
         // Set up accordion functionality - attach listener directly to modal
         const accordionHeaders = modal.querySelectorAll('.accordion-header');
         accordionHeaders.forEach((header) => {
