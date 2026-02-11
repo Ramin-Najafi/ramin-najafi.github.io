@@ -1888,6 +1888,16 @@ class Linen {
         document.getElementById('modal-backdrop').classList.remove('active');
         this.bindEvents();
         await this.loadChatHistory();
+
+        // Ask for user's name on first ever message
+        const hasSeenApp = await this.db.getSetting('seen-app-before');
+        if (!hasSeenApp) {
+            this.showNamePrompt();
+        } else {
+            // Start with initial greeting if not first time
+            this.sendChat('[INITIAL_GREETING]');
+        }
+
         console.log("Linen: App started in", this.isLocalMode ? 'local mode' : 'Gemini mode');
     }
 
@@ -1902,6 +1912,65 @@ class Linen {
         this.isLocalMode = true;
         this.startApp(null);
         this.sendChat('[INITIAL_GREETING]');
+    }
+
+    showNamePrompt() {
+        const backdrop = document.getElementById('modal-backdrop');
+        const modal = document.createElement('div');
+        modal.id = 'name-prompt-modal';
+        modal.className = 'modal';
+        modal.style.zIndex = '2000';
+        modal.innerHTML = `
+            <div style="max-width: 400px; text-align: center;">
+                <h2>What's your name?</h2>
+                <p style="color: var(--text-light); margin-bottom: 1.5rem;">I'd love to know who I'm talking to so I can personalize our conversations.</p>
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <input type="text" id="name-input" placeholder="Enter your name" style="padding: 12px; border: 1px solid #444; border-radius: 6px; background: #333; color: #fff; font-size: 1rem;" autocomplete="off">
+                    <button id="name-submit" class="button-primary" style="background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Let's Chat!</button>
+                    <button id="name-skip" style="background: none; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 6px; cursor: pointer;">Skip for now</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        backdrop.classList.add('active');
+        modal.classList.add('active');
+
+        const nameInput = document.getElementById('name-input');
+        const submitBtn = document.getElementById('name-submit');
+        const skipBtn = document.getElementById('name-skip');
+
+        const closeName = () => {
+            modal.remove();
+            backdrop.classList.remove('active');
+            this.sendChat('[INITIAL_GREETING]');
+        };
+
+        submitBtn.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                // Save the name to both database and assistant profile
+                await this.db.setSetting('user-name', name);
+                if (this.assistant && this.assistant.userProfile) {
+                    this.assistant.userProfile.name = name;
+                }
+                closeName();
+            } else {
+                nameInput.style.borderColor = '#ff6b6b';
+            }
+        });
+
+        skipBtn.addEventListener('click', closeName);
+
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                submitBtn.click();
+            }
+        });
+
+        nameInput.focus();
+
+        // Mark that user has seen the app
+        this.db.setSetting('seen-app-before', true);
     }
 
     showPitchModal() {
@@ -2336,7 +2405,7 @@ class Linen {
 
         document.getElementById('logo-new-chat').addEventListener('click', () => {
             logoMenu.classList.add('hidden');
-            this.clearChatHistory();
+            this.startNewChat();
         });
 
         document.getElementById('logo-settings').addEventListener('click', () => {
@@ -2936,6 +3005,23 @@ class Linen {
         await this.db.setSetting('onboarding-complete', false);
         window.location.reload();
     }
+    async startNewChat() {
+        // Clear only the current conversation (messages on screen)
+        // Keep all saved history and memories intact
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+
+        // Clear current session memory in assistant
+        if (this.assistant && this.assistant.clearSession) {
+            this.assistant.clearSession();
+        }
+
+        this.showToast('New chat started! 💬');
+
+        // Start with greeting
+        this.sendChat('[INITIAL_GREETING]');
+    }
+
     async clearChatHistory() {
         if (!confirm('Are you sure you want to clear all chat history? This cannot be undone.')) return;
         await this.db.clearConversations();
@@ -2960,14 +3046,14 @@ class Linen {
         statusEl.textContent = '';
 
         try {
-            // Send suggestion to admin endpoint
-            const response = await fetch('https://formspree.io/f/xvgedlzr', {
+            // Send suggestion to formspree endpoint
+            const response = await fetch('https://formspree.io/f/xaqdnyzw', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    suggestion: suggestionText,
+                    message: suggestionText,
                     timestamp: new Date().toISOString(),
-                    userAgent: navigator.userAgent
+                    _replyto: 'feedback'
                 })
             });
 
