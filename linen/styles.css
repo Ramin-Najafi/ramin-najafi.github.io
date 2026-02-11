@@ -248,8 +248,7 @@ header {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
-    min-height: 0;
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
     transform: translate(-50%, -50%) scale(0.9);
 }
