@@ -429,6 +429,8 @@ hr {
     background: var(--accent);
     color: #000;
     font-weight: 500;
+    align-self: center;
+    padding: 10px 24px;
 }
 
 #submit-suggestion:hover:not(:disabled) {
