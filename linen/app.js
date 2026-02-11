@@ -370,6 +370,106 @@ class Analytics {
     }
 }
 
+class VoiceManager {
+    constructor() {
+        this.isListening = false;
+        this.recognition = null;
+        this.synthesis = window.speechSynthesis;
+        this.isSpeaking = false;
+        this.initRecognition();
+    }
+
+    initRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            this.recognition = new SpeechRecognition();
+            this.recognition.continuous = false;
+            this.recognition.interimResults = true;
+            this.recognition.lang = 'en-US';
+        }
+    }
+
+    startListening(onResult, onError) {
+        if (!this.recognition) {
+            onError('Speech recognition not supported in this browser');
+            return;
+        }
+
+        this.isListening = true;
+        let transcript = '';
+
+        this.recognition.onstart = () => {
+            console.log('Voice input started');
+        };
+
+        this.recognition.onresult = (event) => {
+            transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcriptSegment = event.results[i][0].transcript;
+                transcript += transcriptSegment;
+            }
+            onResult(transcript, !event.results[event.results.length - 1].isFinal);
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Voice input error:', event.error);
+            onError(event.error);
+        };
+
+        this.recognition.onend = () => {
+            this.isListening = false;
+            console.log('Voice input ended');
+        };
+
+        this.recognition.start();
+    }
+
+    stopListening() {
+        if (this.recognition && this.isListening) {
+            this.recognition.stop();
+            this.isListening = false;
+        }
+    }
+
+    speak(text, onComplete) {
+        if (!this.synthesis) {
+            onComplete();
+            return;
+        }
+
+        // Cancel any ongoing speech
+        this.synthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onstart = () => {
+            this.isSpeaking = true;
+        };
+
+        utterance.onend = () => {
+            this.isSpeaking = false;
+            onComplete();
+        };
+
+        utterance.onerror = () => {
+            this.isSpeaking = false;
+            onComplete();
+        };
+
+        this.synthesis.speak(utterance);
+    }
+
+    stopSpeaking() {
+        if (this.synthesis) {
+            this.synthesis.cancel();
+            this.isSpeaking = false;
+        }
+    }
+}
+
 class LocalAssistant {
     constructor() {
         this.sessionMemory = [];
@@ -664,6 +764,7 @@ class Linen {
     constructor() {
         this.db = new LinenDB();
         this.analytics = new Analytics();
+        this.voiceManager = new VoiceManager();
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
         this.isLocalMode = false;
         this._onboardingBound = false;
@@ -673,6 +774,7 @@ class Linen {
         this.currentSessionTitle = null;
         this.isNewSession = true;
         this._localModeToastShown = false;
+        this._voiceInputActive = false;
     }
 
     showLocalModeToast(reason) {
@@ -1097,6 +1199,9 @@ class Linen {
             }
         });
 
+        // Voice input
+        document.getElementById('voice-btn').addEventListener('click', () => this.toggleVoiceInput());
+
         // Settings actions
         const settingsSaveKey = () => this.saveApiKey();
         document.getElementById('save-api-key').addEventListener('click', settingsSaveKey);
@@ -1474,6 +1579,53 @@ class Linen {
                 }
             });
         });
+    }
+
+    toggleVoiceInput() {
+        if (this._voiceInputActive) {
+            this.stopVoiceInput();
+        } else {
+            this.startVoiceInput();
+        }
+    }
+
+    startVoiceInput() {
+        this._voiceInputActive = true;
+        const voiceBtn = document.getElementById('voice-btn');
+        voiceBtn.style.background = '#ff6b6b';
+        voiceBtn.textContent = '🔴';
+
+        const statusDiv = document.getElementById('voice-status');
+        statusDiv.textContent = 'Listening...';
+        statusDiv.style.display = 'block';
+
+        this.voiceManager.startListening(
+            (transcript, isInterim) => {
+                const chatInput = document.getElementById('chat-input');
+                chatInput.value = transcript;
+                if (!isInterim) {
+                    chatInput.value = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+                }
+            },
+            (error) => {
+                console.error('Voice input error:', error);
+                this.showToast(`Voice input error: ${error}`);
+                this.stopVoiceInput();
+            }
+        );
+    }
+
+    stopVoiceInput() {
+        this._voiceInputActive = false;
+        const voiceBtn = document.getElementById('voice-btn');
+        voiceBtn.style.background = '';
+        voiceBtn.textContent = '🎤';
+
+        const statusDiv = document.getElementById('voice-status');
+        statusDiv.textContent = '';
+        statusDiv.style.display = 'none';
+
+        this.voiceManager.stopListening();
     }
 
     showToast(message) {
