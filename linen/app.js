@@ -2476,45 +2476,98 @@ class Linen {
             });
         }
 
-        // Chat
+        // Chat - Messenger-style input
         const chatInput = document.getElementById('chat-input');
         const chatTypeBtn = document.getElementById('chat-type');
         const chatTalkBtn = document.getElementById('chat-talk');
+        const inputButtonsDiv = document.getElementById('input-buttons');
+        const textInputMode = document.getElementById('text-input-mode');
+        const voiceInputMode = document.getElementById('voice-input-mode');
+        const sendBtn = document.getElementById('send-btn');
+        const modeSwitcher = document.getElementById('mode-switcher');
+        const voiceModeSwitcher = document.getElementById('voice-mode-switcher');
+        const stopVoiceBtn = document.getElementById('stop-voice-btn');
 
         console.log("Linen: Chat elements - input:", !!chatInput, "typeBtn:", !!chatTypeBtn, "talkBtn:", !!chatTalkBtn);
 
         if (chatTypeBtn) {
             chatTypeBtn.addEventListener('click', () => {
                 console.log("Linen: Text button clicked");
-                if (chatInput) {
-                    chatInput.style.display = 'block';
-                    chatInput.focus();
-                }
+                // Show text input mode, hide buttons
+                inputButtonsDiv.style.display = 'none';
+                voiceInputMode.style.display = 'none';
+                textInputMode.style.display = 'flex';
+                if (chatInput) chatInput.focus();
             });
         } else {
             console.warn("Linen: Chat Type button not found");
         }
 
+        if (chatTalkBtn) {
+            chatTalkBtn.addEventListener('click', () => {
+                console.log("Linen: Talk button clicked");
+                // Show voice input mode, hide buttons
+                inputButtonsDiv.style.display = 'none';
+                textInputMode.style.display = 'none';
+                voiceInputMode.style.display = 'flex';
+                this.startVoiceInput();
+            });
+        } else {
+            console.warn("Linen: Chat Talk button not found");
+        }
+
+        // Text input send button
+        if (sendBtn) {
+            sendBtn.addEventListener('click', () => {
+                this.sendChat();
+                // Hide text mode, show buttons
+                textInputMode.style.display = 'none';
+                voiceInputMode.style.display = 'none';
+                inputButtonsDiv.style.display = 'flex';
+                if (chatInput) chatInput.value = '';
+            });
+        }
+
+        // Text input Enter to send
         if (chatInput) {
             chatInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendChat();
-                    chatInput.style.display = 'none';
+                    textInputMode.style.display = 'none';
+                    voiceInputMode.style.display = 'none';
+                    inputButtonsDiv.style.display = 'flex';
+                    chatInput.value = '';
                 }
             });
         } else {
             console.warn("Linen: Chat input element not found");
         }
 
-        // Voice input
-        if (chatTalkBtn) {
-            chatTalkBtn.addEventListener('click', () => {
-                console.log("Linen: Talk button clicked");
-                this.toggleVoiceInput();
+        // Mode switcher from text to voice
+        if (modeSwitcher) {
+            modeSwitcher.addEventListener('click', () => {
+                textInputMode.style.display = 'none';
+                inputButtonsDiv.style.display = 'flex';
             });
-        } else {
-            console.warn("Linen: Chat Talk button not found");
+        }
+
+        // Mode switcher from voice to text
+        if (voiceModeSwitcher) {
+            voiceModeSwitcher.addEventListener('click', () => {
+                this.stopVoiceInput();
+                voiceInputMode.style.display = 'none';
+                inputButtonsDiv.style.display = 'flex';
+            });
+        }
+
+        // Stop voice button
+        if (stopVoiceBtn) {
+            stopVoiceBtn.addEventListener('click', () => {
+                this.stopVoiceInput();
+                voiceInputMode.style.display = 'none';
+                inputButtonsDiv.style.display = 'flex';
+            });
         }
 
         // Settings actions

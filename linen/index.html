@@ -211,9 +211,29 @@
     <main class="main-content" id="chat-view">
         <div id="chat-messages"></div>
         <div id="chat-input-area">
-            <textarea id="chat-input" placeholder="Ask me anything..."></textarea>
-            <button id="chat-type" class="input-btn" title="Type message">Text</button>
-            <button id="chat-talk" class="input-btn" title="Voice input">Talk</button>
+            <!-- Default state: Two buttons -->
+            <div id="input-buttons" class="input-buttons">
+                <button id="chat-type" class="input-btn" title="Type message">Text</button>
+                <button id="chat-talk" class="input-btn" title="Voice input">Talk</button>
+            </div>
+
+            <!-- Text input mode -->
+            <div id="text-input-mode" class="input-mode" style="display: none;">
+                <textarea id="chat-input" placeholder="Ask me anything..."></textarea>
+                <div class="input-actions">
+                    <button id="mode-switcher" class="mode-btn" title="Switch mode">+</button>
+                    <button id="send-btn" class="send-btn">Send</button>
+                </div>
+            </div>
+
+            <!-- Voice input mode -->
+            <div id="voice-input-mode" class="input-mode" style="display: none;">
+                <div id="voice-status-display" class="voice-status-display">🎤 Listening...</div>
+                <div class="input-actions">
+                    <button id="voice-mode-switcher" class="mode-btn" title="Switch mode">+</button>
+                    <button id="stop-voice-btn" class="send-btn">Stop</button>
+                </div>
+            </div>
         </div>
     </main>
 
