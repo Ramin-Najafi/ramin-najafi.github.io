@@ -470,6 +470,241 @@ class VoiceManager {
     }
 }
 
+class EventManager {
+    constructor() {
+        this.hasPermission = false;
+        this.events = []; // Store events locally
+        this.reminders = []; // Store reminders locally
+        this.permissionRequested = false;
+        this.checkPermissions();
+    }
+
+    async checkPermissions() {
+        // Check if browser supports Notification API
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                this.hasPermission = true;
+            } else if (Notification.permission !== 'denied') {
+                // Permission not yet requested, we'll ask when needed
+                this.hasPermission = false;
+            }
+        }
+    }
+
+    async requestPermission() {
+        if (this.permissionRequested) return this.hasPermission;
+        this.permissionRequested = true;
+
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                this.hasPermission = true;
+                return true;
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                this.hasPermission = permission === 'granted';
+                return this.hasPermission;
+            }
+        }
+        return false;
+    }
+
+    async createReminder(eventData) {
+        const reminder = {
+            id: Date.now(),
+            title: eventData.title,
+            description: eventData.description || '',
+            date: eventData.date, // ISO string or Date object
+            type: 'reminder', // 'reminder' or 'event'
+            notificationSent: false,
+            created: Date.now()
+        };
+
+        this.reminders.push(reminder);
+        await this.scheduleReminder(reminder);
+        return reminder;
+    }
+
+    async scheduleReminder(reminder) {
+        // Calculate time until reminder
+        const reminderDate = new Date(reminder.date);
+        const now = new Date();
+        const timeUntil = reminderDate.getTime() - now.getTime();
+
+        if (timeUntil > 0) {
+            // Schedule reminder to fire 1 day before (or at specified time)
+            const notificationTime = timeUntil - (24 * 60 * 60 * 1000); // 24 hours before
+
+            if (notificationTime > 0) {
+                setTimeout(async () => {
+                    await this.sendReminder(reminder);
+                }, notificationTime);
+            } else {
+                // If less than 24 hours away, send now
+                await this.sendReminder(reminder);
+            }
+        }
+    }
+
+    async sendReminder(reminder) {
+        if (!this.hasPermission && !await this.requestPermission()) {
+            console.warn('Reminder created but notification permission not granted');
+            return;
+        }
+
+        const reminderDate = new Date(reminder.date);
+        const dateStr = reminderDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const notificationTitle = `Reminder: ${reminder.title}`;
+        const notificationOptions = {
+            body: `Don't forget! ${reminder.title} is tomorrow (${dateStr})`,
+            icon: './favicon.svg',
+            tag: `reminder-${reminder.id}`,
+            requireInteraction: true, // Keep notification visible until user interacts
+            vibrate: [200, 100, 200],
+            actions: [
+                { action: 'snooze', title: 'Snooze' },
+                { action: 'done', title: 'Done' }
+            ]
+        };
+
+        if ('Notification' in window) {
+            const notification = new Notification(notificationTitle, notificationOptions);
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+
+            reminder.notificationSent = true;
+        }
+    }
+
+    async createEvent(eventData) {
+        const event = {
+            id: Date.now(),
+            title: eventData.title,
+            description: eventData.description || '',
+            date: eventData.date,
+            type: 'event',
+            color: eventData.color || '#d4a574',
+            created: Date.now()
+        };
+
+        this.events.push(event);
+        return event;
+    }
+
+    // Try to add to native calendar if possible (requires user to approve)
+    async addToNativeCalendar(eventData) {
+        // For iOS (via Safari)
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            const startDate = new Date(eventData.date);
+            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+            const icsContent = this.generateICS({
+                title: eventData.title,
+                description: eventData.description,
+                start: startDate,
+                end: endDate
+            });
+
+            const blob = new Blob([icsContent], { type: 'text/calendar' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${eventData.title}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            return true;
+        }
+
+        // For Android (would need native app integration)
+        return false;
+    }
+
+    generateICS(eventData) {
+        const startStr = this.formatICSDate(eventData.start);
+        const endStr = this.formatICSDate(eventData.end);
+        const uid = `${Date.now()}@linen-app`;
+
+        return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Linen App//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:${uid}
+DTSTART:${startStr}
+DTEND:${endStr}
+SUMMARY:${eventData.title}
+DESCRIPTION:${eventData.description || ''}
+CREATED:${this.formatICSDate(new Date())}
+LAST-MODIFIED:${this.formatICSDate(new Date())}
+END:VEVENT
+END:VCALENDAR`;
+    }
+
+    formatICSDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+    }
+
+    parseEventFromText(text) {
+        // Simple pattern matching to detect dates and events
+        // e.g., "granny's birthday next weekend", "meeting tomorrow at 3pm"
+
+        const datePatterns = {
+            'tomorrow': () => {
+                const date = new Date();
+                date.setDate(date.getDate() + 1);
+                return date;
+            },
+            'next weekend': () => {
+                const date = new Date();
+                const day = date.getDay();
+                const daysUntilSaturday = (6 - day + 7) % 7;
+                date.setDate(date.getDate() + (daysUntilSaturday || 7));
+                return date;
+            },
+            'next week': () => {
+                const date = new Date();
+                date.setDate(date.getDate() + 7);
+                return date;
+            },
+            'next month': () => {
+                const date = new Date();
+                date.setMonth(date.getMonth() + 1);
+                return date;
+            }
+        };
+
+        let detectedDate = null;
+        for (const [pattern, fn] of Object.entries(datePatterns)) {
+            if (text.toLowerCase().includes(pattern)) {
+                detectedDate = fn();
+                break;
+            }
+        }
+
+        return {
+            detected: detectedDate !== null,
+            date: detectedDate,
+            text: text
+        };
+    }
+}
+
 class LocalAssistant {
     constructor() {
         this.sessionMemory = [];
@@ -765,6 +1000,7 @@ class Linen {
         this.db = new LinenDB();
         this.analytics = new Analytics();
         this.voiceManager = new VoiceManager();
+        this.eventManager = new EventManager();
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
         this.isLocalMode = false;
         this.savedApiKey = null; // Store API key for lazy validation
@@ -776,6 +1012,7 @@ class Linen {
         this.isNewSession = true;
         this._localModeToastShown = false;
         this._voiceInputActive = false;
+        this._eventPermissionAsked = false;
     }
 
     showLocalModeToast(reason) {
@@ -1410,6 +1647,9 @@ class Linen {
             if (!initialMessage && !isInitialGreeting) {
                 await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
                 await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
+
+                // Analyze user message for potential calendar events/reminders
+                await this.analyzeForEvents(msg);
             }
 
             if (this.trialMode) {
@@ -1650,6 +1890,115 @@ class Linen {
         statusDiv.style.display = 'none';
 
         this.voiceManager.stopListening();
+    }
+
+    async analyzeForEvents(userMessage) {
+        // Check if the message contains temporal references that suggest an event
+        const eventKeywords = [
+            'birthday', 'anniversary', 'appointment', 'meeting', 'flight',
+            'reservation', 'deadline', 'exam', 'event', 'concert', 'wedding',
+            'graduation', 'doctor', 'dentist', 'interview', 'presentation'
+        ];
+
+        const hasEventKeyword = eventKeywords.some(keyword =>
+            userMessage.toLowerCase().includes(keyword)
+        );
+
+        // Check for temporal references
+        const temporalPatterns = /tomorrow|next (week|weekend|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|in \d+ (days?|weeks?|months?)/i;
+        const hasTemporalRef = temporalPatterns.test(userMessage);
+
+        if (hasEventKeyword && hasTemporalRef) {
+            // Found a potential event - ask permission if not already done
+            if (!this._eventPermissionAsked) {
+                await this.requestEventPermission();
+            }
+
+            // Parse the event from the message
+            const eventInfo = this.eventManager.parseEventFromText(userMessage);
+            if (eventInfo.detected && this.eventManager.hasPermission) {
+                // Extract title from the message
+                const title = this.extractEventTitle(userMessage);
+                if (title) {
+                    await this.eventManager.createReminder({
+                        title: title,
+                        description: userMessage,
+                        date: eventInfo.date
+                    });
+                    console.log('Linen: Reminder created for:', title);
+                }
+            }
+        }
+    }
+
+    extractEventTitle(text) {
+        // Simple extraction of event title from user message
+        // e.g., "granny's birthday next weekend" -> "Granny's Birthday"
+
+        const eventKeywords = [
+            'birthday', 'anniversary', 'appointment', 'meeting', 'flight',
+            'reservation', 'deadline', 'exam', 'event', 'concert', 'wedding',
+            'graduation', 'doctor', 'dentist', 'interview', 'presentation'
+        ];
+
+        for (const keyword of eventKeywords) {
+            const regex = new RegExp(`(.+?)\\s+${keyword}`, 'i');
+            const match = text.match(regex);
+            if (match) {
+                return match[1].trim() + ' ' + keyword.charAt(0).toUpperCase() + keyword.slice(1);
+            }
+        }
+
+        // If no match, just return first 50 characters
+        return text.substring(0, 50);
+    }
+
+    async requestEventPermission() {
+        this._eventPermissionAsked = true;
+
+        // Check if notifications are already supported
+        if (!('Notification' in window)) {
+            this.showToast('Your browser does not support reminders.');
+            return;
+        }
+
+        // Show custom permission request
+        const backdrop = document.getElementById('modal-backdrop');
+        const modal = document.createElement('div');
+        modal.className = 'modal permission-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>📅 Enable Reminders?</h2>
+                <p>I can create reminders for important dates and events mentioned in our conversation. Would you like me to set up reminders?</p>
+                <p style="font-size: 0.9rem; color: #999; margin-top: 1rem;">Example: You mention "granny's birthday next weekend" and I'll remind you Friday to not forget! 🎂</p>
+                <div class="modal-actions">
+                    <button id="enable-reminders" class="btn btn-primary">Enable Reminders</button>
+                    <button id="disable-reminders" class="btn btn-secondary">Not Now</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        backdrop.classList.add('active');
+        modal.classList.add('active');
+
+        return new Promise((resolve) => {
+            document.getElementById('enable-reminders').addEventListener('click', async () => {
+                const granted = await this.eventManager.requestPermission();
+                modal.remove();
+                backdrop.classList.remove('active');
+                if (granted) {
+                    this.showToast('Reminders enabled! ✓');
+                }
+                resolve(granted);
+            });
+
+            document.getElementById('disable-reminders').addEventListener('click', () => {
+                modal.remove();
+                backdrop.classList.remove('active');
+                resolve(false);
+            });
+        });
     }
 
     showToast(message) {
