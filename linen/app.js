@@ -1879,7 +1879,7 @@ class Linen {
     }
 
     async startApp(apiKey) {
-        console.log("Linen: Starting app.");
+        console.log("Linen: Starting app with apiKey:", !!apiKey);
         // Store API key for lazy validation and potential future use
         this.savedApiKey = apiKey;
         // If no assistant is set, use LocalAssistant
@@ -1888,11 +1888,24 @@ class Linen {
             this.assistant = new LocalAssistant();
             this.isLocalMode = true;
         }
+        console.log("Linen: About to hide modals and bind events");
         document.getElementById('onboarding-overlay').style.display = 'none';
         document.getElementById('re-enter-key-modal').classList.remove('active');
         document.getElementById('modal-backdrop').classList.remove('active');
-        this.bindEvents();
-        await this.loadChatHistory();
+        console.log("Linen: Calling bindEvents()");
+        try {
+            this.bindEvents();
+            console.log("Linen: bindEvents() complete");
+        } catch (err) {
+            console.error("Linen: Error in bindEvents():", err);
+        }
+        console.log("Linen: Loading chat history");
+        try {
+            await this.loadChatHistory();
+            console.log("Linen: Chat history loaded");
+        } catch (err) {
+            console.error("Linen: Error loading chat history:", err);
+        }
 
         // Ask for user's name on first ever message
         const hasSeenApp = await this.db.getSetting('seen-app-before');
