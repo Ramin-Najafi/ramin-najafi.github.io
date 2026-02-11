@@ -1052,6 +1052,15 @@ class VoiceManager {
             return;
         }
 
+        // Stop any previous recognition session first
+        if (this.isListening) {
+            try {
+                this.recognition.stop();
+            } catch (e) {
+                console.warn('Error stopping previous recognition:', e);
+            }
+        }
+
         this.isListening = true;
         let transcript = '';
 
@@ -1070,6 +1079,7 @@ class VoiceManager {
 
         this.recognition.onerror = (event) => {
             console.error('Voice input error:', event.error);
+            this.isListening = false;
             onError(event.error);
         };
 
@@ -1078,13 +1088,31 @@ class VoiceManager {
             console.log('Voice input ended');
         };
 
-        this.recognition.start();
+        try {
+            this.recognition.start();
+        } catch (error) {
+            console.error('Error starting recognition:', error);
+            this.isListening = false;
+            onError('Failed to start speech recognition');
+        }
     }
 
     stopListening() {
         if (this.recognition && this.isListening) {
-            this.recognition.stop();
-            this.isListening = false;
+            try {
+                this.recognition.stop();
+                this.isListening = false;
+            } catch (error) {
+                console.error('Error stopping recognition:', error);
+                this.isListening = false;
+            }
+        } else if (this.recognition) {
+            // Even if not marked as listening, try to stop it
+            try {
+                this.recognition.stop();
+            } catch (error) {
+                console.warn('Recognition already stopped:', error);
+            }
         }
     }
 
@@ -2568,9 +2596,16 @@ class Linen {
                 const voiceModal = document.getElementById('voice-modal');
                 const modalBackdrop = document.getElementById('modal-backdrop');
                 if (voiceModal && modalBackdrop) {
+                    // Show the elements
+                    voiceModal.style.display = 'flex';
+                    modalBackdrop.style.display = 'block';
+                    // Add active classes for styling
                     voiceModal.classList.add('active');
                     modalBackdrop.classList.add('active');
+                    console.log("Voice modal opened, starting voice input");
                     this.startVoiceInput();
+                } else {
+                    console.error("Voice modal or backdrop not found");
                 }
             });
         } else {
@@ -2659,20 +2694,29 @@ class Linen {
         const lightboxStopBtn = document.getElementById('lightbox-stop-btn');
         const modalBackdrop = document.getElementById('modal-backdrop');
 
-        if (closeVoiceModal) {
-            closeVoiceModal.addEventListener('click', () => {
-                this.stopVoiceInput();
+        const closeVoiceModal_Handler = () => {
+            console.log('Closing voice modal');
+            this.stopVoiceInput();
+            if (voiceModal) {
                 voiceModal.classList.remove('active');
+                voiceModal.style.display = 'none';
+            }
+            if (modalBackdrop) {
                 modalBackdrop.classList.remove('active');
-            });
+                modalBackdrop.style.display = 'none';
+            }
+        };
+
+        if (closeVoiceModal) {
+            closeVoiceModal.addEventListener('click', closeVoiceModal_Handler);
+        } else {
+            console.warn('close-voice-modal button not found');
         }
 
         if (lightboxStopBtn) {
-            lightboxStopBtn.addEventListener('click', () => {
-                this.stopVoiceInput();
-                voiceModal.classList.remove('active');
-                modalBackdrop.classList.remove('active');
-            });
+            lightboxStopBtn.addEventListener('click', closeVoiceModal_Handler);
+        } else {
+            console.warn('lightbox-stop-btn button not found');
         }
 
         // Agent Management
