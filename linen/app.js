@@ -2008,16 +2008,20 @@ class Linen {
         modal.classList.add('active');
         backdrop.classList.add('active');
 
-        // Set up accordion functionality if not already done
+        // Set up accordion functionality - attach listener directly to modal
         const accordionHeaders = modal.querySelectorAll('.accordion-header');
-        accordionHeaders.forEach(header => {
-            // Only add listener once
-            if (!header.dataset.listenerAttached) {
-                header.addEventListener('click', () => {
+        accordionHeaders.forEach((header) => {
+            // Remove any existing listeners by cloning the element
+            if (!header.dataset.accordionListenerAttached) {
+                header.addEventListener('click', (event) => {
+                    console.log('Accordion header clicked!');
                     const item = header.closest('.accordion-item');
-                    item.classList.toggle('active');
+                    if (item) {
+                        item.classList.toggle('active');
+                        console.log('Toggled accordion item');
+                    }
                 });
-                header.dataset.listenerAttached = 'true';
+                header.dataset.accordionListenerAttached = 'true';
             }
         });
 
