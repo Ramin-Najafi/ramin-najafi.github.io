@@ -2707,16 +2707,34 @@ class Linen {
             }
         };
 
+        // Try to attach direct event listeners
         if (closeVoiceModal) {
-            closeVoiceModal.addEventListener('click', closeVoiceModal_Handler);
+            console.log('Attaching close-voice-modal listener');
+            closeVoiceModal.addEventListener('click', closeVoiceModal_Handler, true);
+            // Also attach using click event property as backup
+            closeVoiceModal.onclick = closeVoiceModal_Handler;
         } else {
             console.warn('close-voice-modal button not found');
         }
 
         if (lightboxStopBtn) {
-            lightboxStopBtn.addEventListener('click', closeVoiceModal_Handler);
+            console.log('Attaching lightbox-stop-btn listener');
+            lightboxStopBtn.addEventListener('click', closeVoiceModal_Handler, true);
+            // Also attach using click event property as backup
+            lightboxStopBtn.onclick = closeVoiceModal_Handler;
         } else {
             console.warn('lightbox-stop-btn button not found');
+        }
+
+        // Also attach a delegated listener to the modal itself
+        if (voiceModal) {
+            voiceModal.addEventListener('click', (e) => {
+                if (e.target.id === 'close-voice-modal' || e.target.id === 'lightbox-stop-btn' ||
+                    e.target.closest('#close-voice-modal') || e.target.closest('#lightbox-stop-btn')) {
+                    console.log('Close button clicked via delegation');
+                    closeVoiceModal_Handler();
+                }
+            }, true);
         }
 
         // Agent Management
