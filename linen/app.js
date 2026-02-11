@@ -2523,8 +2523,8 @@ class Linen {
                 const voiceModal = document.getElementById('voice-modal');
                 const modalBackdrop = document.getElementById('modal-backdrop');
                 if (voiceModal && modalBackdrop) {
-                    voiceModal.style.display = 'flex';
-                    modalBackdrop.style.display = 'block';
+                    voiceModal.classList.add('active');
+                    modalBackdrop.classList.add('active');
                     this.startVoiceInput();
                 }
             });
@@ -2617,16 +2617,16 @@ class Linen {
         if (closeVoiceModal) {
             closeVoiceModal.addEventListener('click', () => {
                 this.stopVoiceInput();
-                voiceModal.style.display = 'none';
-                modalBackdrop.style.display = 'none';
+                voiceModal.classList.remove('active');
+                modalBackdrop.classList.remove('active');
             });
         }
 
         if (lightboxStopBtn) {
             lightboxStopBtn.addEventListener('click', () => {
                 this.stopVoiceInput();
-                voiceModal.style.display = 'none';
-                modalBackdrop.style.display = 'none';
+                voiceModal.classList.remove('active');
+                modalBackdrop.classList.remove('active');
             });
         }
 
