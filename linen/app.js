@@ -2466,13 +2466,17 @@ class Linen {
         const chatTalkBtn = document.getElementById('chat-talk');
 
         if (chatTypeBtn) {
-            chatTypeBtn.addEventListener('click', () => this.sendChat());
+            chatTypeBtn.addEventListener('click', () => {
+                chatInput.style.display = 'block';
+                chatInput.focus();
+            });
         }
 
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendChat();
+                chatInput.style.display = 'none';
             }
         });
 
