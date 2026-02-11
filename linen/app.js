@@ -905,6 +905,94 @@ class Linen {
         });
     }
 
+    showEditMemoryModal(memory) {
+        const backdrop = document.getElementById('modal-backdrop');
+        let modal = document.getElementById('edit-memory-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'edit-memory-modal';
+            modal.className = 'modal memory-modal';
+            document.body.appendChild(modal);
+        }
+
+        const title = memory.title || '';
+        const text = memory.text || '';
+        const tags = (memory.tags || []).join(', ');
+        const emotion = memory.emotion || '';
+
+        modal.innerHTML = `
+            <div class="memory-modal-content">
+                <button class="close-modal" id="close-edit-memory-modal">×</button>
+                <h2>Edit Memory</h2>
+                <form id="edit-memory-form">
+                    <div class="form-group">
+                        <label for="edit-memory-title">Title</label>
+                        <input type="text" id="edit-memory-title" value="${this.escapeHtml(title)}" placeholder="Memory title">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-memory-text">Text</label>
+                        <textarea id="edit-memory-text" placeholder="Memory text">${this.escapeHtml(text)}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-memory-tags">Tags (comma-separated)</label>
+                        <input type="text" id="edit-memory-tags" value="${this.escapeHtml(tags)}" placeholder="e.g. work, project, learning">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-memory-emotion">Emotion</label>
+                        <input type="text" id="edit-memory-emotion" value="${this.escapeHtml(emotion)}" placeholder="e.g. happy, stressed, excited">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-edit-memory">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        modal.classList.add('active');
+        backdrop.classList.add('active');
+
+        const form = document.getElementById('edit-memory-form');
+        const closeBtn = document.getElementById('close-edit-memory-modal');
+        const cancelBtn = document.getElementById('cancel-edit-memory');
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            backdrop.classList.remove('active');
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedMemory = {
+                id: memory.id,
+                title: document.getElementById('edit-memory-title').value.trim(),
+                text: document.getElementById('edit-memory-text').value.trim(),
+                tags: document.getElementById('edit-memory-tags').value.split(',').map(t => t.trim()).filter(t => t),
+                emotion: document.getElementById('edit-memory-emotion').value.trim(),
+                date: memory.date
+            };
+
+            await this.db.updateMemory(updatedMemory);
+            closeModal();
+            this.loadMemories(document.getElementById('memory-search').value);
+            this.showToast('Memory updated!');
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+                closeModal();
+            }
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     showOnboarding(errorMsg = '') {
         console.log(`Linen: Showing onboarding, error message: ${errorMsg}`);
         document.getElementById('onboarding-overlay').style.display = 'flex';
@@ -1377,10 +1465,13 @@ class Linen {
         });
 
         memoriesList.querySelectorAll('.edit-memory').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation(); // Prevent card click event
-                // TODO: Implement edit functionality (e.g., show an edit modal)
-                alert('Edit functionality coming soon!');
+                const memoryId = parseInt(e.target.dataset.id);
+                const memory = filtered.find(m => m.id === memoryId);
+                if (memory) {
+                    this.showEditMemoryModal(memory);
+                }
             });
         });
     }
