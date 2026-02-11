@@ -2683,6 +2683,9 @@ class Linen {
         document.getElementById('memory-search').addEventListener('input', (e) => this.loadMemories(e.target.value));
 
 
+        // Contact Support
+        document.getElementById('submit-contact').addEventListener('click', () => this.submitContactForm());
+
         // Suggestions
         document.getElementById('submit-suggestion').addEventListener('click', () => this.submitSuggestion());
 
@@ -3286,6 +3289,50 @@ class Linen {
         await this.db.clearConversations();
         this.loadChatHistory();
         this.showToast('Chat history cleared.');
+    }
+
+    async submitContactForm() {
+        const name = document.getElementById('contact-name').value.trim();
+        const email = document.getElementById('contact-email').value.trim();
+        const message = document.getElementById('contact-message').value.trim();
+        const statusEl = document.getElementById('contact-status');
+        const submitBtn = document.getElementById('submit-contact');
+
+        if (!name || !email || !message) {
+            statusEl.textContent = 'Please fill in all fields.';
+            statusEl.style.color = '#ff6b6b';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+        statusEl.textContent = '';
+
+        try {
+            const response = await fetch('https://formspree.io/f/xaqdnyzw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, message, _replyto: email })
+            });
+
+            if (response.ok) {
+                document.getElementById('contact-name').value = '';
+                document.getElementById('contact-email').value = '';
+                document.getElementById('contact-message').value = '';
+                statusEl.textContent = 'Message sent! We\'ll get back to you soon.';
+                statusEl.style.color = '#4a9eff';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send';
+                setTimeout(() => { statusEl.textContent = ''; }, 3000);
+            } else {
+                throw new Error('Failed to send message');
+            }
+        } catch (e) {
+            statusEl.textContent = 'Error sending message. Please try again.';
+            statusEl.style.color = '#ff6b6b';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send';
+        }
     }
 
     async submitSuggestion() {

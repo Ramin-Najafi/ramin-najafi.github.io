@@ -299,36 +299,54 @@
 
     <div class="modal" id="settings-modal">
         <button class="close-modal" id="close-settings-modal">×</button>
-        <h3 style="color: var(--accent); margin-bottom: 1rem; text-align: center;">📱 Installation</h3>
-        <button id="install-app-btn" class="button-primary" style="width: 100%; margin-bottom: 1rem; background: var(--accent); color: var(--bg);">Install Linen as App</button>
-        <hr>
-        <h3 style="color: var(--accent); margin-bottom: 1rem; text-align: center;">🤖 AI Agents</h3>
-        <button id="add-agent-btn" class="button-primary" style="width: 100%; margin-bottom: 1rem; background: var(--accent); color: var(--bg);">+ Add New Agent</button>
-        <div id="agents-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;"></div>
-        <hr>
-        <input id="api-key-input" placeholder="Paste Gemini API key (Legacy)">
-        <button id="save-api-key">Save API Key</button>
-        <button id="clear-chat-history">Clear Chat History</button>
-        <button id="export-data">Export Memories</button>
-        <button id="clear-data">Clear All Data</button>
-        <hr>
-        <div id="contact-form">
-            <h3>Contact Support</h3>
-            <form action="https://formspree.io/f/xaqdnyzw" method="POST">
-                <input type="text" name="name" placeholder="Your Name" required>
-                <input type="email" name="email" placeholder="Your Email" required>
-                <textarea name="message" placeholder="Your Message" required></textarea>
-                <button type="submit">Send</button>
-            </form>
+
+        <div class="settings-section">
+            <h3 class="settings-heading">📱 Installation</h3>
+            <button id="install-app-btn" class="settings-btn settings-btn-primary">Install Linen as App</button>
         </div>
-        <hr>
-        <div id="suggestions-form">
-            <h3>💡 Suggestions & Ideas</h3>
-            <textarea id="suggestion-text" placeholder="What would make Linen better for you?" style="min-height: 100px;"></textarea>
-            <button id="submit-suggestion">Send Suggestion</button>
-            <p id="suggestion-status" style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;"></p>
+
+        <div class="settings-section">
+            <h3 class="settings-heading">🤖 AI Agents</h3>
+            <button id="add-agent-btn" class="settings-btn settings-btn-primary">+ Add New Agent</button>
+            <div id="agents-list"></div>
         </div>
-        <hr>
+
+        <div class="settings-section">
+            <h3 class="settings-heading">🔑 Legacy API Key</h3>
+            <input id="api-key-input" placeholder="Paste Gemini API key">
+            <p id="settings-error" class="error-message"></p>
+            <button id="save-api-key" class="settings-btn settings-btn-primary">Save API Key</button>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-heading">🗂️ Data Management</h3>
+            <div class="settings-btn-group">
+                <button id="export-data" class="settings-btn settings-btn-secondary">Export Memories</button>
+                <button id="clear-chat-history" class="settings-btn settings-btn-danger">Clear Chat History</button>
+                <button id="clear-data" class="settings-btn settings-btn-danger">Clear All Data</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-heading">📬 Contact Support</h3>
+            <div id="contact-form">
+                <input type="text" id="contact-name" placeholder="Your Name">
+                <input type="email" id="contact-email" placeholder="Your Email">
+                <textarea id="contact-message" placeholder="Your Message"></textarea>
+                <button id="submit-contact" class="settings-btn settings-btn-primary">Send</button>
+                <p id="contact-status" class="settings-status"></p>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-heading">💡 Suggestions & Ideas</h3>
+            <div id="suggestions-form">
+                <textarea id="suggestion-text" placeholder="What would make Linen better for you?"></textarea>
+                <button id="submit-suggestion" class="settings-btn settings-btn-primary">Send Suggestion</button>
+                <p id="suggestion-status" class="settings-status"></p>
+            </div>
+        </div>
+
         <p id="version-info">v1.1.2 [beta]</p>
     </div>
 </div>
