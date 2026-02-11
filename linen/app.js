@@ -2043,6 +2043,13 @@ class Linen {
         this.bindOnboardingEvents();
     }
 
+    showInstallationInstructions() {
+        console.log("Linen: Showing installation instructions from settings");
+        document.getElementById('onboarding-overlay').style.display = 'flex';
+        this.showOnboardingStep(3); // Show step 3 which has installation instructions
+        this.bindOnboardingEvents();
+    }
+
     showOnboardingStep(stepNum) {
         document.querySelectorAll('#onboarding-wizard .step').forEach(s => s.classList.remove('active'));
         document.getElementById(`step-${stepNum}`).classList.add('active');
@@ -2250,6 +2257,16 @@ class Linen {
             if (document.getElementById('re-enter-key-modal').classList.contains('active')) return;
             closeModal();
         });
+
+        // Install as App button in settings
+        const installAppBtn = document.getElementById('install-app-btn');
+        if (installAppBtn) {
+            installAppBtn.addEventListener('click', () => {
+                console.log("Linen: Install app button clicked from settings");
+                closeModal();
+                this.showInstallationInstructions();
+            });
+        }
 
         // Chat
         const chatInput = document.getElementById('chat-input');
