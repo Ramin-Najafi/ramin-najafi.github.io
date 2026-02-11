@@ -745,38 +745,56 @@ hr {
 /* Chat Input Area with Buttons */
 #chat-input-area {
     display: flex;
-    gap: 0.5rem;
-    align-items: flex-end;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 16px;
+}
+
+#chat-input {
+    display: none;
 }
 
 .input-btn {
-    background: none;
-    border: 1px solid #444;
-    font-size: 1.5rem;
+    flex: 1;
+    border: none;
+    font-size: 1rem;
     cursor: pointer;
-    padding: 10px;
+    padding: 14px 20px;
     transition: all 0.2s;
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    color: var(--primary);
+    min-height: 50px;
+    color: #000;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
-#chat-type,
+#chat-type {
+    background: var(--accent);
+}
+
+#chat-type:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+#chat-type:active {
+    transform: translateY(0);
+}
+
 #chat-talk {
-    font-size: 1.3rem;
+    background: #4a9eff;
 }
 
-.input-btn:hover {
-    border-color: var(--accent);
-    background: rgba(212, 165, 116, 0.1);
+#chat-talk:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
 }
 
-.input-btn:active {
-    transform: scale(0.95);
+#chat-talk:active {
+    transform: translateY(0);
 }
 
 
