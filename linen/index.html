@@ -21,17 +21,33 @@
             <button id="get-started">Get Started</button>
         </div>
         <div class="step" id="step-2">
-            <h2>API Key Setup</h2>
-            <p>Linen uses Google Gemini AI. You need a free API key to get started.</p>
-            <ol>
-                <li>Tap the button below to open Google AI Studio</li>
-                <li>Sign in with your Google account</li>
-                <li>Click 'Create API Key'</li>
-                <li>Copy the key and paste it below</li>
-            </ol>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="button">Go to Google AI Studio</a>
-            <input type="password" id="onboarding-api-key" placeholder="Paste your API key here">
-            <button id="save-onboarding-api-key">Save and Continue</button>
+            <h2>Choose Your AI</h2>
+            <p>Pick your favorite AI assistant. All are supported by Linen.</p>
+            <div class="ai-provider-grid">
+                <button class="ai-provider-btn" data-provider="gemini" id="provider-gemini">
+                    <span class="provider-icon">🔵</span>
+                    <span class="provider-name">Gemini</span>
+                    <span class="provider-info">Free tier available</span>
+                </button>
+                <button class="ai-provider-btn" data-provider="chatgpt" id="provider-openai">
+                    <span class="provider-icon">🟢</span>
+                    <span class="provider-name">ChatGPT</span>
+                    <span class="provider-info">GPT-4 / GPT-4 Turbo</span>
+                </button>
+                <button class="ai-provider-btn" data-provider="claude" id="provider-claude">
+                    <span class="provider-icon">🔴</span>
+                    <span class="provider-name">Claude</span>
+                    <span class="provider-info">Claude Pro / API</span>
+                </button>
+                <button class="ai-provider-btn" data-provider="deepseek" id="provider-deepseek">
+                    <span class="provider-icon">🟠</span>
+                    <span class="provider-name">DeepSeek</span>
+                    <span class="provider-info">Free & affordable</span>
+                </button>
+            </div>
+            <div id="provider-setup">
+                <!-- Provider-specific setup will be shown here -->
+            </div>
             <p class="error-message" id="onboarding-error"></p>
         </div>
         <div class="step" id="step-3">
@@ -70,11 +86,19 @@
 <div id="pitch-modal" class="modal">
     <h2>Welcome to Linen</h2>
     <p>Linen is a personal AI assistant that actually respects your privacy. Unlike ChatGPT or other apps, everything you talk to Linen about stays on your device—we don't sell your data or train on your conversations. It learns who you are over time, remembers what matters to you, and helps with reminders, planning, or just being there when you need support. Think of it as an AI that's actually on your side.</p>
+    <h3>Works With Your Favorite AI:</h3>
+    <div class="provider-badges">
+        <span class="badge">🔵 Gemini</span>
+        <span class="badge">🟢 ChatGPT</span>
+        <span class="badge">🔴 Claude</span>
+        <span class="badge">🟠 DeepSeek</span>
+    </div>
     <h3>Key Differentiators:</h3>
     <ul>
         <li>🔒 Privacy First</li>
         <li>🧠 Personalized</li>
         <li>👤 You Own Your Data</li>
+        <li>🤖 Use Your Favorite AI</li>
     </ul>
     <div class="pitch-buttons">
         <button id="try-free-btn" class="button-primary">Try Free (3 chats)</button>

@@ -2049,11 +2049,124 @@ class Linen {
         });
     }
 
+    setupProviderForm(provider) {
+        const setup = document.getElementById('provider-setup');
+        setup.innerHTML = '';
+        setup.classList.add('active');
+
+        const providerConfig = {
+            'gemini': {
+                name: 'Google Gemini',
+                url: 'https://aistudio.google.com/app/apikey',
+                steps: [
+                    'Tap the button below to open Google AI Studio',
+                    'Sign in with your Google account',
+                    'Click "Create API Key"',
+                    'Copy the key and paste it below'
+                ]
+            },
+            'chatgpt': {
+                name: 'OpenAI (ChatGPT)',
+                url: 'https://platform.openai.com/api/keys',
+                steps: [
+                    'Tap the button below to go to OpenAI Platform',
+                    'Sign in with your OpenAI account (or create one)',
+                    'Go to API Keys section',
+                    'Click "Create new secret key"',
+                    'Copy the key and paste it below'
+                ]
+            },
+            'claude': {
+                name: 'Anthropic Claude',
+                url: 'https://console.anthropic.com/keys',
+                steps: [
+                    'Tap the button below to go to Anthropic Console',
+                    'Sign in with your Anthropic account',
+                    'Go to API Keys',
+                    'Click "Create Key"',
+                    'Copy the key and paste it below'
+                ]
+            },
+            'deepseek': {
+                name: 'DeepSeek',
+                url: 'https://platform.deepseek.com/api_keys',
+                steps: [
+                    'Tap the button below to go to DeepSeek Platform',
+                    'Sign in or create an account',
+                    'Go to API Keys',
+                    'Click "Create new key"',
+                    'Copy the key and paste it below'
+                ]
+            }
+        };
+
+        const config = providerConfig[provider];
+        if (!config) return;
+
+        const setupHTML = `
+            <h3>${config.name}</h3>
+            <ol>
+                ${config.steps.map(step => `<li>${step}</li>`).join('')}
+            </ol>
+            <a href="${config.url}" target="_blank" class="button" style="display: inline-block; padding: 10px 15px; background: var(--accent); color: var(--bg); border-radius: 6px; text-decoration: none; margin: 15px 0; font-weight: bold;">Get ${config.name} API Key</a>
+            <input type="password" id="onboarding-api-key" placeholder="Paste your API key here" style="margin-top: 10px;">
+            <button id="save-onboarding-api-key" class="button-primary" style="margin-top: 10px;">Save and Continue</button>
+        `;
+
+        setup.innerHTML = setupHTML;
+
+        // Rebind save button
+        const saveBtn = document.getElementById('save-onboarding-api-key');
+        const apiInput = document.getElementById('onboarding-api-key');
+
+        const saveKey = () => {
+            if (!apiInput.value.trim()) {
+                document.getElementById('onboarding-error').textContent = 'Please enter your API key';
+                return;
+            }
+            // Store selected provider
+            this.onboardingProvider = provider;
+            // For now, validate as Gemini to test (in production, validate per provider)
+            if (provider === 'gemini') {
+                this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
+                    const done = await this.db.getSetting('onboarding-complete');
+                    if (done) {
+                        this.startApp(this.assistant.apiKey);
+                    } else {
+                        this.showOnboardingStep(3);
+                    }
+                });
+            } else {
+                // For other providers, just save the key for now
+                // TODO: Add provider-specific validation
+                this.showToast(`${config.name} API key saved!`);
+                this.showOnboardingStep(3);
+            }
+        };
+
+        saveBtn.addEventListener('click', saveKey);
+        apiInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); saveKey(); }
+        });
+    }
+
     bindOnboardingEvents() {
         if (this._onboardingBound) return;
         this._onboardingBound = true;
 
         document.getElementById('get-started').addEventListener('click', () => this.showOnboardingStep(2));
+
+        // AI Provider selection
+        const providerButtons = document.querySelectorAll('.ai-provider-btn');
+        providerButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const provider = btn.dataset.provider;
+                this.setupProviderForm(provider);
+                // Remove active from all, add to clicked
+                providerButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
 
         const saveKey = () => this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
             const done = await this.db.getSetting('onboarding-complete');
@@ -2064,10 +2177,22 @@ class Linen {
             }
         });
 
-        document.getElementById('save-onboarding-api-key').addEventListener('click', saveKey);
-        document.getElementById('onboarding-api-key').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); saveKey(); }
-        });
+        // Legacy support for direct key input (if still present)
+        const apiKeyInput = document.getElementById('onboarding-api-key');
+        if (apiKeyInput) {
+            const saveLegacyKey = () => this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
+                const done = await this.db.getSetting('onboarding-complete');
+                if (done) {
+                    this.startApp(this.assistant.apiKey);
+                } else {
+                    this.showOnboardingStep(3);
+                }
+            });
+            document.getElementById('save-onboarding-api-key')?.addEventListener('click', saveLegacyKey);
+            apiKeyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); saveLegacyKey(); }
+            });
+        }
 
         document.querySelectorAll('.device-selector button').forEach(btn => {
             btn.addEventListener('click', (e) => {

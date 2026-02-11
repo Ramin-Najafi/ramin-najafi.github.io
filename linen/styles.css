@@ -369,6 +369,96 @@ button:hover {
     gap: 10px;
     margin-top: 10px;
 }
+
+/* AI Provider Grid Styles */
+.ai-provider-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.ai-provider-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    background: #2a2a2a;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.ai-provider-btn:hover {
+    border-color: var(--accent);
+    background: #333;
+    transform: translateY(-2px);
+}
+
+.ai-provider-btn.selected {
+    border-color: var(--accent);
+    background: rgba(212, 165, 116, 0.1);
+    box-shadow: 0 0 15px rgba(212, 165, 116, 0.3);
+}
+
+.provider-icon {
+    font-size: 2rem;
+}
+
+.provider-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.provider-info {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+#provider-setup {
+    margin-top: 20px;
+    padding: 15px;
+    background: #222;
+    border-radius: 8px;
+    display: none;
+}
+
+#provider-setup.active {
+    display: block;
+}
+
+#provider-setup ol {
+    margin-left: 20px;
+    margin-top: 10px;
+}
+
+#provider-setup li {
+    margin: 8px 0;
+}
+
+/* Provider Badges in Pitch Modal */
+.provider-badges {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 15px 0;
+}
+
+.badge {
+    background: #2a2a2a;
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--primary);
+}
+
 .button {
     text-decoration: none;
     color: #fff;
