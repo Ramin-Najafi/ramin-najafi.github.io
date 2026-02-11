@@ -2,7 +2,7 @@
   "name": "Linen",
   "short_name": "Linen",
   "description": "Linen — your personal memory app that remembers your life, understands context, and helps you think, recall, and decide.",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "start_url": "/linen/index.html",
   "scope": "/linen/",
   "display": "standalone",
