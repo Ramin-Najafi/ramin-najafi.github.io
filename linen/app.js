@@ -2766,25 +2766,30 @@ class Linen {
 
             document.getElementById(id)?.remove();
 
-            // Parse and strip memory markers (only if using GeminiAssistant)
+            // Parse and strip memory markers (only if using API assistants)
             if (!this.isLocalMode) {
-                const memoryMarker = /\[SAVE_MEMORY:\s*(.*?)\]/s;
-                const match = reply.match(memoryMarker);
-                if (match) {
-                    reply = reply.replace(memoryMarker, '').trim();
+                // Extract ALL memory markers (can be multiple)
+                const memoryMarkerRegex = /\[SAVE_MEMORY:\s*(\{[^}]*(?:\{[^}]*\}[^}]*)*\})\s*\]/g;
+                let memoryMatch;
+                while ((memoryMatch = memoryMarkerRegex.exec(reply)) !== null) {
                     try {
-                        const memData = JSON.parse(match[1]);
+                        const memData = JSON.parse(memoryMatch[1]);
                         await this.db.addMemory({ ...memData, date: Date.now() });
                     } catch (e) {
-                        console.error('Failed to parse memory:', e);
+                        console.error('Failed to parse memory:', e, memoryMatch[1]);
                     }
                 }
+                // Remove ALL memory markers from the display
+                reply = reply.replace(/\[SAVE_MEMORY:\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}\s*\]/g, '').trim();
             }
 
             // Filter happy emojis from replies to distressed users
             if (!this.isLocalMode && !initialMessage) {
                 reply = this.filterEmojis(reply, msg);
             }
+
+            // Final safety check: Strip any remaining memory markers before display
+            reply = reply.replace(/\[SAVE_MEMORY:\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}\s*\]/g, '').trim();
 
             const rdiv = document.createElement('div');
             rdiv.className = 'assistant-message';
