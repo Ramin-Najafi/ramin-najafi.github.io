@@ -767,6 +767,7 @@ class Linen {
         this.voiceManager = new VoiceManager();
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
         this.isLocalMode = false;
+        this.savedApiKey = null; // Store API key for lazy validation
         this._onboardingBound = false;
         this._eventsBound = false;
         this.trialMode = false;
@@ -836,78 +837,47 @@ class Linen {
         try {
             this.analytics.trackPageView();
             await this.db.init();
-            
+
             const existingConvs = await this.db.getConversations();
-            if (existingConvs && existingConvs.length > 0) {
+            // Only archive if there's meaningful conversation (more than just a greeting)
+            if (existingConvs && existingConvs.length > 2) {
                 const sessionTitle = this.generateSessionTitle(existingConvs);
                 await this.db.archiveSession({ title: sessionTitle, messages: existingConvs, date: Date.now(), preview: existingConvs[existingConvs.length - 1]?.text || 'Previous conversation', messageCount: existingConvs.length });
             }
             await this.db.clearCurrentSession();
-            
+
             const apiKey = await this.db.getSetting('gemini-api-key');
             const hasSeenPitch = localStorage.getItem('linen-pitch-shown');
-            
+
             if (!apiKey && !hasSeenPitch) {
                 localStorage.setItem('linen-pitch-shown', 'true');
                 this.showPitchModal();
                 return;
             }
-            
-            // rest of init code continues...
+
             console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}`);
 
-            if (!apiKey) {
-                console.log("Linen: No API Key found, showing onboarding.");
-                this.showOnboarding();
-            } else {
-                const geminiAssistant = new GeminiAssistant(apiKey);
-                const result = await geminiAssistant.validateKey();
-                if (result.valid) {
-                    console.log("Linen: API Key validated successfully, starting app with Gemini.");
-                    this.assistant = geminiAssistant;
-                    this.isLocalMode = false;
-                    this.startApp(apiKey);
-                } else {
-                    // Check if the error is due to network or quota, in which case we can fallback to local.
-                    // Otherwise, the key is truly invalid and requires re-entry via onboarding.
-                    const isRecoverableError = (result.error && (
-                        result.error.toLowerCase().includes('quota') ||
-                        result.error.toLowerCase().includes('network error') ||
-                        result.error.toLowerCase().includes('too many requests')
-                    ));
-
-                    if (isRecoverableError) {
-                        console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
-                        this.assistant = new LocalAssistant();
-                        this.isLocalMode = true;
-                        this.startApp(apiKey); // Start app without showing onboarding
-                        this.showLocalModeToast(result.error);
-                    } else {
-                        console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
-                        this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('Linen: Init error:', e);
-            // If init fails, always offer local mode if possible, otherwise show onboarding.
+            // Always start in local mode by default to conserve API usage
+            console.log("Linen: Starting in local mode by default to conserve API quota.");
             this.assistant = new LocalAssistant();
             this.isLocalMode = true;
-            this.startApp(null); // Start in local mode without API key
-            this.showLocalModeToast(e.message);
+            this.startApp(apiKey); // Pass apiKey for lazy validation when needed
+        } catch (e) {
+            console.error('Linen: Init error:', e);
+            this.assistant = new LocalAssistant();
+            this.isLocalMode = true;
+            this.startApp(null);
             console.error('Linen: Fatal error during init, starting in local-only mode.', e);
         }
     }
 
     async startApp(apiKey) {
         console.log("Linen: Starting app.");
-        // Only create a new GeminiAssistant if we have an API key AND aren't already in local mode
-        if (apiKey && !this.isLocalMode) {
-            this.assistant = new GeminiAssistant(apiKey);
-        }
-        // If no assistant is set at all (shouldn't happen), fallback to local
+        // Store API key for lazy validation and potential future use
+        this.savedApiKey = apiKey;
+        // If no assistant is set, use LocalAssistant
         if (!this.assistant) {
-            console.warn("Linen: No assistant set in startApp, falling back to LocalAssistant.");
+            console.warn("Linen: No assistant set in startApp, using LocalAssistant.");
             this.assistant = new LocalAssistant();
             this.isLocalMode = true;
         }
@@ -916,7 +886,7 @@ class Linen {
         document.getElementById('modal-backdrop').classList.remove('active');
         this.bindEvents();
         await this.loadChatHistory();
-        console.log("Linen: App started.");
+        console.log("Linen: App started in", this.isLocalMode ? 'local mode' : 'Gemini mode');
     }
 
     startTrialMode() {
@@ -1385,10 +1355,11 @@ class Linen {
             container.appendChild(rdiv);
             container.scrollTop = container.scrollHeight;
 
+            // Only save conversation if it's a real user message (not initial greeting)
             if (!initialMessage) {
                 await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
+                await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
             }
-            await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
 
             if (this.trialMode) {
                 this.trialCount++;
@@ -1440,10 +1411,11 @@ class Linen {
                 } else {
                     this.showLocalModeToast(msgText);
                 }
+                // Only save conversation if it's a real user message (not initial greeting)
                 if (!initialMessage) {
                     await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
+                    await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
                 }
-                await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
 
             } else if (canFallback && this.isLocalMode) {
                  // Already in local mode, show typing bubble then respond
