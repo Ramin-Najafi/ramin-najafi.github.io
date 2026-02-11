@@ -1513,6 +1513,9 @@ class Linen {
                 this.showToast(`Mood saved: ${mood}`);
             });
         });
+
+        // Suggestions
+        document.getElementById('submit-suggestion').addEventListener('click', () => this.submitSuggestion());
     }
 
     async validateAndSaveKey(inputId, errorId, onSuccess) {
@@ -1776,6 +1779,68 @@ class Linen {
         await this.db.clearConversations();
         this.loadChatHistory();
         this.showToast('Chat history cleared.');
+    }
+
+    async submitSuggestion() {
+        const suggestionText = document.getElementById('suggestion-text').value.trim();
+        const statusEl = document.getElementById('suggestion-status');
+        const submitBtn = document.getElementById('submit-suggestion');
+
+        if (!suggestionText) {
+            statusEl.textContent = 'Please enter a suggestion.';
+            statusEl.style.color = '#ff6b6b';
+            return;
+        }
+
+        // Disable button and show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+        statusEl.textContent = '';
+
+        try {
+            // Send suggestion to admin endpoint
+            const response = await fetch('https://formspree.io/f/xvgedlzr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    suggestion: suggestionText,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent
+                })
+            });
+
+            if (response.ok) {
+                // Clear the textarea
+                document.getElementById('suggestion-text').value = '';
+
+                // Show success message
+                statusEl.textContent = 'Thank you! Your suggestion has been received. 🙏';
+                statusEl.style.color = '#4a9eff';
+
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Suggestion';
+
+                // Clear success message after 3 seconds
+                setTimeout(() => {
+                    statusEl.textContent = '';
+                }, 3000);
+
+                console.log('Linen: Suggestion submitted successfully');
+            } else {
+                throw new Error('Failed to submit suggestion');
+            }
+        } catch (e) {
+            console.error('Linen: Error submitting suggestion:', e);
+
+            // Show error message
+            statusEl.textContent = 'Error sending suggestion. Please try again.';
+            statusEl.style.color = '#ff6b6b';
+
+            // Reset button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Suggestion';
+        }
     }
 
     async loadMemories(filter = '') {

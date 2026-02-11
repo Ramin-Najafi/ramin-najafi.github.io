@@ -406,6 +406,47 @@ hr {
     background: #8e44ad;
 }
 
+/* Suggestions form */
+#suggestions-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#suggestions-form h3 {
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+#suggestions-form textarea {
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+#submit-suggestion {
+    background: var(--accent);
+    color: #000;
+    font-weight: 500;
+}
+
+#submit-suggestion:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+#submit-suggestion:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#suggestion-status {
+    text-align: center;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    min-height: 1.2em;
+}
+
 #pitch-modal, #trial-limit-modal {
     max-width: 500px;
     padding: 2rem;
