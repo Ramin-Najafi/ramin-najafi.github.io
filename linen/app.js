@@ -2390,34 +2390,50 @@ class Linen {
         const settingsModal = document.getElementById('settings-modal');
         const backdrop = document.getElementById('modal-backdrop');
 
-        logo.addEventListener('click', (e) => {
-            e.stopPropagation();
-            logoMenu.classList.toggle('hidden');
-        });
+        if (logo && logoMenu) {
+            logo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                logoMenu.classList.toggle('hidden');
+            });
 
-        // Close menu when clicking outside
-        document.addEventListener('click', () => {
-            logoMenu.classList.add('hidden');
-        });
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!logo.contains(e.target) && !logoMenu.contains(e.target)) {
+                    logoMenu.classList.add('hidden');
+                }
+            });
 
-        // Logo menu items
-        document.getElementById('logo-memories').addEventListener('click', () => {
-            this.loadMemories();
-            memoriesPanel.classList.add('active');
-            backdrop.classList.add('active');
-            logoMenu.classList.add('hidden');
-        });
+            // Logo menu items
+            const logoMemoriesBtn = document.getElementById('logo-memories');
+            const logoNewChatBtn = document.getElementById('logo-new-chat');
+            const logoSettingsBtn = document.getElementById('logo-settings');
 
-        document.getElementById('logo-new-chat').addEventListener('click', () => {
-            logoMenu.classList.add('hidden');
-            this.startNewChat();
-        });
+            if (logoMemoriesBtn) {
+                logoMemoriesBtn.addEventListener('click', () => {
+                    this.loadMemories();
+                    memoriesPanel.classList.add('active');
+                    backdrop.classList.add('active');
+                    logoMenu.classList.add('hidden');
+                });
+            }
 
-        document.getElementById('logo-settings').addEventListener('click', () => {
-            settingsModal.classList.add('active');
-            backdrop.classList.add('active');
-            logoMenu.classList.add('hidden');
-        });
+            if (logoNewChatBtn) {
+                logoNewChatBtn.addEventListener('click', () => {
+                    logoMenu.classList.add('hidden');
+                    this.startNewChat();
+                });
+            }
+
+            if (logoSettingsBtn) {
+                logoSettingsBtn.addEventListener('click', () => {
+                    settingsModal.classList.add('active');
+                    backdrop.classList.add('active');
+                    logoMenu.classList.add('hidden');
+                });
+            }
+        } else {
+            console.warn('Linen: Logo menu elements not found');
+        }
 
         const closeModal = () => {
             memoriesPanel.classList.remove('active');
