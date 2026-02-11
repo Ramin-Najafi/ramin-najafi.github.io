@@ -2373,8 +2373,12 @@ class Linen {
     }
 
     bindEvents() {
-        if (this._eventsBound) return;
+        if (this._eventsBound) {
+            console.log("Linen: Events already bound, skipping");
+            return;
+        }
         this._eventsBound = true;
+        console.log("Linen: Binding events");
 
         // Re-enter key modal
         const reEnterSave = () => this.validateAndSaveKey('re-enter-api-key', 're-enter-error', () => this.startApp(this.assistant.apiKey));
@@ -2465,24 +2469,40 @@ class Linen {
         const chatTypeBtn = document.getElementById('chat-type');
         const chatTalkBtn = document.getElementById('chat-talk');
 
+        console.log("Linen: Chat elements - input:", !!chatInput, "typeBtn:", !!chatTypeBtn, "talkBtn:", !!chatTalkBtn);
+
         if (chatTypeBtn) {
             chatTypeBtn.addEventListener('click', () => {
-                chatInput.style.display = 'block';
-                chatInput.focus();
+                console.log("Linen: Text button clicked");
+                if (chatInput) {
+                    chatInput.style.display = 'block';
+                    chatInput.focus();
+                }
             });
+        } else {
+            console.warn("Linen: Chat Type button not found");
         }
 
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendChat();
-                chatInput.style.display = 'none';
-            }
-        });
+        if (chatInput) {
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendChat();
+                    chatInput.style.display = 'none';
+                }
+            });
+        } else {
+            console.warn("Linen: Chat input element not found");
+        }
 
         // Voice input
         if (chatTalkBtn) {
-            chatTalkBtn.addEventListener('click', () => this.toggleVoiceInput());
+            chatTalkBtn.addEventListener('click', () => {
+                console.log("Linen: Talk button clicked");
+                this.toggleVoiceInput();
+            });
+        } else {
+            console.warn("Linen: Chat Talk button not found");
         }
 
         // Settings actions
