@@ -1839,15 +1839,22 @@ class Linen {
                 this.isLocalMode = true;
             }
 
-            // Start the app immediately - users can chat with LocalAssistant
-            this.startApp(apiKey);
+            // Check if user has memories (has used the app before)
+            const memories = await this.db.getAllMemories();
+            const hasMemories = memories && memories.length > 0;
 
-            // Show pitch modal EVERY TIME if no API key/agent configured
-            // This lets users discover the option to add an API key
-            if (!apiKey && !primaryAgentId) {
-                console.log("Linen: No API configured, showing pitch modal.");
-                // Show after a brief delay so app renders first
-                setTimeout(() => this.showPitchModal(), 500);
+            console.log(`Linen: User has memories: ${hasMemories}, API configured: ${!!(apiKey || primaryAgentId)}`);
+
+            // If no API key and no memories, show onboarding splash first
+            if (!apiKey && !primaryAgentId && !hasMemories) {
+                console.log("Linen: New user with no API - showing onboarding splash.");
+                // Don't start app yet, just show onboarding
+                this.startApp(apiKey);
+                this.showOnboarding();
+            } else {
+                // Returning user or has API - go straight to app
+                console.log("Linen: Starting app directly (returning user or has API).");
+                this.startApp(apiKey);
             }
         } catch (e) {
             console.error('Linen: Init error:', e);
@@ -2016,7 +2023,9 @@ class Linen {
             addKeyBtn.addEventListener('click', () => {
                 modal.classList.remove('active');
                 backdrop.classList.remove('active');
-                this.showOnboarding();
+                // Show onboarding at step 2 (provider selection)
+                document.getElementById('onboarding-overlay').style.display = 'flex';
+                this.showOnboardingStep(2);
             });
         }
     }
@@ -2331,12 +2340,20 @@ class Linen {
         if (this._onboardingBound) return;
         this._onboardingBound = true;
 
-        document.getElementById('get-started').addEventListener('click', () => this.showOnboardingStep(2));
+        document.getElementById('get-started').addEventListener('click', () => {
+            // Hide onboarding and show pitch modal
+            document.getElementById('onboarding-overlay').style.display = 'none';
+            this.showPitchModal();
+        });
 
         // Back buttons
         const backFromStep2 = document.getElementById('back-from-step-2');
         if (backFromStep2) {
-            backFromStep2.addEventListener('click', () => this.showOnboardingStep(1));
+            backFromStep2.addEventListener('click', () => {
+                // Hide onboarding and show pitch modal instead
+                document.getElementById('onboarding-overlay').style.display = 'none';
+                this.showPitchModal();
+            });
         }
 
         const backFromStep3 = document.getElementById('back-from-step-3');
