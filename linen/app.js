@@ -1799,36 +1799,35 @@ class Linen {
             // If no primary agent, check for API key
             if (!primaryAgent) {
                 if (!apiKey) {
-                    console.log("Linen: No API Key found, showing pitch modal.");
-                    this.showPitchModal();
-                    return;
-                }
-
-                // API key exists - validate and start
-                const geminiAssistant = new GeminiAssistant(apiKey);
-                const result = await geminiAssistant.validateKey();
-                if (result.valid) {
-                    console.log("Linen: API Key validated successfully, starting app with Gemini.");
-                    this.assistant = geminiAssistant;
-                    this.isLocalMode = false;
+                    console.log("Linen: No API Key found, will start with LocalAssistant.");
+                    // Don't return early - we need to call startApp()
                 } else {
-                    // Check if the error is due to network or quota, in which case we can fallback to local.
-                    // Otherwise, the key is truly invalid and requires re-entry via onboarding.
-                    const isRecoverableError = (result.error && (
-                        result.error.toLowerCase().includes('quota') ||
-                        result.error.toLowerCase().includes('network error') ||
-                        result.error.toLowerCase().includes('too many requests')
-                    ));
-
-                    if (isRecoverableError) {
-                        console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
-                        this.assistant = new LocalAssistant();
-                        this.isLocalMode = true;
-                        this.showLocalModeToast(result.error);
+                    // API key exists - validate and start
+                    const geminiAssistant = new GeminiAssistant(apiKey);
+                    const result = await geminiAssistant.validateKey();
+                    if (result.valid) {
+                        console.log("Linen: API Key validated successfully, starting app with Gemini.");
+                        this.assistant = geminiAssistant;
+                        this.isLocalMode = false;
                     } else {
-                        console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
-                        this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
-                        return;
+                        // Check if the error is due to network or quota, in which case we can fallback to local.
+                        // Otherwise, the key is truly invalid and requires re-entry via onboarding.
+                        const isRecoverableError = (result.error && (
+                            result.error.toLowerCase().includes('quota') ||
+                            result.error.toLowerCase().includes('network error') ||
+                            result.error.toLowerCase().includes('too many requests')
+                        ));
+
+                        if (isRecoverableError) {
+                            console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
+                            this.assistant = new LocalAssistant();
+                            this.isLocalMode = true;
+                            this.showLocalModeToast(result.error);
+                        } else {
+                            console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
+                            this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
+                            return;
+                        }
                     }
                 }
             }
