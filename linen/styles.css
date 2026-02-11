@@ -713,6 +713,51 @@ hr {
     color: white;
 }
 
+/* Button styles */
+.btn {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    color: #000;
+}
+
+.btn-primary:hover {
+    background-color: #e8ba86;
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background-color: #555;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #666;
+    opacity: 0.9;
+}
+
+/* Memory modal actions */
+.memory-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+}
+
+.memory-modal-actions button {
+    flex: 1;
+}
+
 /* Voice input styles */
 #voice-btn {
     background: none;

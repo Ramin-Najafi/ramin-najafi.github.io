@@ -964,13 +964,30 @@ class Linen {
                 messagesHtml += `<div class="${className}">${msg.text}</div>`;
             });
         }
-        modal.innerHTML = `<div class="memory-modal-content"><button class="close-modal" id="close-memory-modal">×</button><h2>${title}</h2><p class="memory-modal-date">${date}</p><div class="memory-messages-container">${messagesHtml}</div></div>`;
+        // Add Continue button if there are messages
+        const continueButton = memory.messages && memory.messages.length > 0
+            ? `<button id="continue-conversation" class="btn btn-primary">Continue Conversation</button>`
+            : '';
+
+        modal.innerHTML = `<div class="memory-modal-content"><button class="close-modal" id="close-memory-modal">×</button><h2>${title}</h2><p class="memory-modal-date">${date}</p><div class="memory-messages-container">${messagesHtml}</div><div class="memory-modal-actions">${continueButton}</div></div>`;
         modal.classList.add('active');
         backdrop.classList.add('active');
+
         document.getElementById('close-memory-modal').addEventListener('click', () => {
             modal.classList.remove('active');
             backdrop.classList.remove('active');
         });
+
+        const continueBtn = document.getElementById('continue-conversation');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', async () => {
+                // Restore the conversation to current session
+                await this.restoreConversation(memory);
+                modal.classList.remove('active');
+                backdrop.classList.remove('active');
+            });
+        }
+
         backdrop.addEventListener('click', (e) => {
             if (e.target === backdrop) {
                 modal.classList.remove('active');
@@ -1065,6 +1082,36 @@ class Linen {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    async restoreConversation(memory) {
+        console.log("Linen: Restoring conversation from memory:", memory.title);
+
+        // Close memories panel
+        document.getElementById('memories-panel').classList.remove('active');
+        document.getElementById('modal-backdrop').classList.remove('active');
+
+        // Clear current chat
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+
+        // Reload the conversation messages into the chat
+        if (memory.messages && memory.messages.length > 0) {
+            memory.messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = msg.sender === 'user' ? 'user-message' : 'assistant-message';
+                div.textContent = msg.text;
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
+
+            // Restore messages to current session so user can continue the conversation
+            for (const msg of memory.messages) {
+                await this.db.addConversation(msg);
+            }
+
+            this.showToast(`Restored: ${memory.title}`);
+        }
     }
 
     showOnboarding(errorMsg = '') {
