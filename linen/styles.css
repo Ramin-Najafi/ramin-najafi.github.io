@@ -219,8 +219,6 @@ header {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-    flex-direction: column;
-    gap: 15px;
 }
 
 #memories-panel {
@@ -236,6 +234,7 @@ header {
 
 #memories-panel.active, .modal.active {
     display: flex;
+    flex-direction: column;
     opacity: 1;
     pointer-events: auto;
     transform: translateX(0);
@@ -249,7 +248,9 @@ header {
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     transform: translate(-50%, -50%) scale(0.9);
 }
 
