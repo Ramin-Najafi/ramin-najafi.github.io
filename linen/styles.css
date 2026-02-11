@@ -42,7 +42,7 @@ header {
 }
 
 #logo {
-    height: 80px;
+    height: 100px;
     cursor: pointer;
     transition: transform 0.2s;
 }
@@ -378,10 +378,30 @@ button:hover {
     flex-direction: column;
     gap: 20px;
     align-items: center;
+    position: relative;
 }
 
 #onboarding-wizard .step.active {
     display: flex;
+}
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.back-btn:hover {
+    opacity: 0.8;
+    transform: translateX(-2px);
 }
 
 #onboarding-wizard h1, #onboarding-wizard h2 {
@@ -700,6 +720,27 @@ hr {
     margin-top: 1.2rem;
 }
 
+/* Voice Lightbox Modal */
+.voice-lightbox {
+    max-width: 400px;
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-voice-display {
+    font-size: 3rem;
+    padding: 2rem;
+    background: rgba(74, 158, 255, 0.1);
+    border-radius: 12px;
+    border: 2px solid #4a9eff;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
 /* Crisis Modal */
 .crisis-modal {
     max-width: 600px;
@@ -750,26 +791,39 @@ hr {
     background-color: var(--header-bg);
     border-top: 1px solid var(--border);
     gap: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+#chat-input-area.expanded {
+    padding: 0;
+    align-items: stretch;
+    justify-content: flex-start;
 }
 
 /* Default button state */
 .input-buttons {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    justify-content: center;
 }
 
 .input-btn {
     flex: 1;
     border: none;
-    font-size: 1rem;
+    font-size: 1.1rem;
     cursor: pointer;
-    padding: 14px 20px;
+    padding: 18px 30px;
     transition: all 0.2s;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 50px;
+    min-height: 60px;
+    min-width: 140px;
     color: #000;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -806,20 +860,23 @@ hr {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 100%;
+    flex: 1;
+    padding: 16px;
 }
 
 #chat-input {
     flex: 1;
-    resize: vertical;
+    resize: none;
     background: #333;
     color: var(--primary);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 12px;
+    padding: 16px;
     font-size: 1rem;
     font-family: inherit;
-    max-height: 150px;
-    min-height: 50px;
+    max-height: none;
+    min-height: 120px;
 }
 
 #chat-input:focus {

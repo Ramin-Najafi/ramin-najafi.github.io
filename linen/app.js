@@ -2333,6 +2333,17 @@ class Linen {
 
         document.getElementById('get-started').addEventListener('click', () => this.showOnboardingStep(2));
 
+        // Back buttons
+        const backFromStep2 = document.getElementById('back-from-step-2');
+        if (backFromStep2) {
+            backFromStep2.addEventListener('click', () => this.showOnboardingStep(1));
+        }
+
+        const backFromStep3 = document.getElementById('back-from-step-3');
+        if (backFromStep3) {
+            backFromStep3.addEventListener('click', () => this.showOnboardingStep(2));
+        }
+
         // AI Provider selection
         const providerButtons = document.querySelectorAll('.ai-provider-btn');
         providerButtons.forEach(btn => {
@@ -2493,7 +2504,9 @@ class Linen {
         if (chatTypeBtn) {
             chatTypeBtn.addEventListener('click', () => {
                 console.log("Linen: Text button clicked");
-                // Show text input mode, hide buttons
+                // Expand chat input area and show text input mode
+                const chatInputArea = document.getElementById('chat-input-area');
+                chatInputArea.classList.add('expanded');
                 inputButtonsDiv.style.display = 'none';
                 voiceInputMode.style.display = 'none';
                 textInputMode.style.display = 'flex';
@@ -2506,11 +2519,14 @@ class Linen {
         if (chatTalkBtn) {
             chatTalkBtn.addEventListener('click', () => {
                 console.log("Linen: Talk button clicked");
-                // Show voice input mode, hide buttons
-                inputButtonsDiv.style.display = 'none';
-                textInputMode.style.display = 'none';
-                voiceInputMode.style.display = 'flex';
-                this.startVoiceInput();
+                // Open voice modal lightbox instead of inline
+                const voiceModal = document.getElementById('voice-modal');
+                const modalBackdrop = document.getElementById('modal-backdrop');
+                if (voiceModal && modalBackdrop) {
+                    voiceModal.style.display = 'flex';
+                    modalBackdrop.style.display = 'block';
+                    this.startVoiceInput();
+                }
             });
         } else {
             console.warn("Linen: Chat Talk button not found");
@@ -2521,6 +2537,8 @@ class Linen {
             sendBtn.addEventListener('click', () => {
                 this.sendChat();
                 // Hide text mode, show buttons
+                const chatInputArea = document.getElementById('chat-input-area');
+                chatInputArea.classList.remove('expanded');
                 textInputMode.style.display = 'none';
                 voiceInputMode.style.display = 'none';
                 inputButtonsDiv.style.display = 'flex';
@@ -2534,6 +2552,8 @@ class Linen {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendChat();
+                    const chatInputArea = document.getElementById('chat-input-area');
+                    chatInputArea.classList.remove('expanded');
                     textInputMode.style.display = 'none';
                     voiceInputMode.style.display = 'none';
                     inputButtonsDiv.style.display = 'flex';
@@ -2544,9 +2564,11 @@ class Linen {
             console.warn("Linen: Chat input element not found");
         }
 
-        // Mode switcher from text to voice
+        // Mode switcher from text back to buttons
         if (modeSwitcher) {
             modeSwitcher.addEventListener('click', () => {
+                const chatInputArea = document.getElementById('chat-input-area');
+                chatInputArea.classList.remove('expanded');
                 textInputMode.style.display = 'none';
                 inputButtonsDiv.style.display = 'flex';
             });
@@ -2585,6 +2607,28 @@ class Linen {
 
         // Suggestions
         document.getElementById('submit-suggestion').addEventListener('click', () => this.submitSuggestion());
+
+        // Voice Modal Lightbox
+        const voiceModal = document.getElementById('voice-modal');
+        const closeVoiceModal = document.getElementById('close-voice-modal');
+        const lightboxStopBtn = document.getElementById('lightbox-stop-btn');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+
+        if (closeVoiceModal) {
+            closeVoiceModal.addEventListener('click', () => {
+                this.stopVoiceInput();
+                voiceModal.style.display = 'none';
+                modalBackdrop.style.display = 'none';
+            });
+        }
+
+        if (lightboxStopBtn) {
+            lightboxStopBtn.addEventListener('click', () => {
+                this.stopVoiceInput();
+                voiceModal.style.display = 'none';
+                modalBackdrop.style.display = 'none';
+            });
+        }
 
         // Agent Management
         const addAgentBtn = document.getElementById('add-agent-btn');

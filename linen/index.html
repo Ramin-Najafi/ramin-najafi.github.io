@@ -21,6 +21,7 @@
             <button id="get-started">Get Started</button>
         </div>
         <div class="step" id="step-2">
+            <button class="back-btn" id="back-from-step-2">← Back</button>
             <h2>Choose Your AI</h2>
             <p>Pick your favorite AI assistant. All are supported by Linen.</p>
             <div class="ai-provider-grid">
@@ -51,6 +52,7 @@
             <p class="error-message" id="onboarding-error"></p>
         </div>
         <div class="step" id="step-3">
+            <button class="back-btn" id="back-from-step-3">← Back</button>
             <h2>Install as App</h2>
             <p>What device are you using?</p>
             <div class="device-selector">
@@ -129,6 +131,13 @@
     <input type="password" id="re-enter-api-key" placeholder="Paste your new API key here">
     <button id="save-re-enter-api-key">Save Key</button>
     <p class="error-message" id="re-enter-error"></p>
+</div>
+
+<div id="voice-modal" class="modal voice-lightbox">
+    <button class="close-modal" id="close-voice-modal">×</button>
+    <h2>Voice Input</h2>
+    <div id="lightbox-voice-display" class="lightbox-voice-display">🎤 Listening...</div>
+    <button id="lightbox-stop-btn" class="button-primary">Stop Recording</button>
 </div>
 
 <div id="crisis-modal" class="modal crisis-modal">
@@ -278,6 +287,14 @@
             <textarea id="suggestion-text" placeholder="What would make Linen better for you?" style="min-height: 100px;"></textarea>
             <button id="submit-suggestion">Send Suggestion</button>
             <p id="suggestion-status" style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;"></p>
+        </div>
+        <hr>
+        <div id="about-section" style="text-align: center;">
+            <h3 style="color: var(--accent); margin-bottom: 0.5rem;">ℹ️ About Linen</h3>
+            <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 1rem;">Linen is created by <strong>Ramin Najafi</strong>. Powered by <a href="https://www.anthropic.com/" target="_blank" style="color: var(--accent); text-decoration: none;">Anthropic's Claude</a> AI.</p>
+            <p style="font-size: 0.85rem; color: var(--text-light);">
+                <a href="https://ramin-najafi.github.io/" target="_blank" style="color: #4a9eff; text-decoration: none;">View Creator's Portfolio →</a>
+            </p>
         </div>
         <p id="version-info">v1.1.1 [beta]</p>
     </div>
