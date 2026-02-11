@@ -301,7 +301,7 @@ class ModelVersionManager {
         try {
             // Attempt to fetch latest model versions from remote config
             // Falls back to current versions if fetch fails
-            const response = await fetch('/linen-model-versions.json', { cache: 'no-cache' });
+            const response = await fetch('./linen-model-versions.json', { cache: 'no-cache' });
             if (response.ok) {
                 return await response.json();
             }
