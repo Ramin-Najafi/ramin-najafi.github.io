@@ -2330,11 +2330,20 @@ class Linen {
         const saveNewAgent = document.getElementById('save-new-agent');
         const agentTypeSelect = document.getElementById('agent-type');
 
+        console.log("Linen: Agent Management - addAgentBtn:", addAgentBtn, "addAgentModal:", addAgentModal);
+
         if (addAgentBtn) {
             addAgentBtn.addEventListener('click', () => {
-                addAgentModal.classList.add('active');
-                backdrop.classList.add('active');
+                console.log("Linen: Add Agent button clicked");
+                if (addAgentModal) {
+                    addAgentModal.classList.add('active');
+                    backdrop.classList.add('active');
+                } else {
+                    console.error("Linen: add-agent-modal not found!");
+                }
             });
+        } else {
+            console.warn("Linen: add-agent-btn not found in DOM");
         }
 
         if (closeAddAgent) {
