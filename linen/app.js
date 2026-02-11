@@ -1478,9 +1478,7 @@ class LocalAssistant {
                 "I'm built to listen and support you, not to answer factual questions like that. What's really on your mind?",
             ],
             creator: [
-                "I'm Linen, created by Ramin Najafi! He designed and built me to be a personal AI assistant that prioritizes your privacy and keeps everything on your device. You can check out his work at https://ramin-najafi.github.io/",
-                "Ramin Najafi is who built me! He's a developer passionate about privacy-first tech. Check out his portfolio at https://ramin-najafi.github.io/ to see his other projects.",
-                "I was created by Ramin Najafi. He developed me to be your personal memory companion while keeping all your data safe on your device. Learn more about his work at https://ramin-najafi.github.io/",
+                "I was built by Ramin Najafi. You can find more information about my creator at ramin-najafi.github.io",
             ],
             topicWork: [
                 "Work stuff, huh? What's going on?",
@@ -1562,7 +1560,7 @@ class LocalAssistant {
         const words = msg.split(/\s+/);
 
         // Creator question detection
-        const creatorKeywords = ['who created you', 'who made you', 'who built you', 'who is your creator', 'who developed you', 'who is ramin', 'ramin najafi', 'your creator'];
+        const creatorKeywords = ['who created you', 'who made you', 'who built you', 'who is your creator', 'who developed you', 'who is ramin', 'ramin najafi', 'your creator', 'who are you', 'what company', 'which company', 'who works for', 'whos your creator', 'made by', 'created by', 'built by', 'developer', 'creator'];
         if (creatorKeywords.some(k => msg.includes(k))) return 'creator';
 
         // Context awareness — detect references to previous messages
