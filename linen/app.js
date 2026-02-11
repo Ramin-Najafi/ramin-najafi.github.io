@@ -839,8 +839,10 @@ class Linen {
             await this.db.init();
 
             const existingConvs = await this.db.getConversations();
-            // Only archive if there's meaningful conversation (more than just a greeting)
-            if (existingConvs && existingConvs.length > 2) {
+            // Only archive if there's actual user interaction (more than just initial greeting/bot messages)
+            // Check if there are user messages and more than just one exchange
+            const hasUserMessages = existingConvs && existingConvs.some(c => c.sender === 'user');
+            if (existingConvs && existingConvs.length > 2 && hasUserMessages) {
                 const sessionTitle = this.generateSessionTitle(existingConvs);
                 await this.db.archiveSession({ title: sessionTitle, messages: existingConvs, date: Date.now(), preview: existingConvs[existingConvs.length - 1]?.text || 'Previous conversation', messageCount: existingConvs.length });
             }
@@ -1355,8 +1357,10 @@ class Linen {
             container.appendChild(rdiv);
             container.scrollTop = container.scrollHeight;
 
-            // Only save conversation if it's a real user message (not initial greeting)
-            if (!initialMessage) {
+            // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
+            // Don't save if it's the initial greeting message
+            const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
+            if (!initialMessage && !isInitialGreeting) {
                 await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
                 await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
             }
@@ -1411,8 +1415,9 @@ class Linen {
                 } else {
                     this.showLocalModeToast(msgText);
                 }
-                // Only save conversation if it's a real user message (not initial greeting)
-                if (!initialMessage) {
+                // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
+                const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
+                if (!initialMessage && !isInitialGreeting) {
                     await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
                     await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
                 }
