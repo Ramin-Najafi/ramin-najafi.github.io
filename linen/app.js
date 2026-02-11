@@ -1412,6 +1412,13 @@ class LocalAssistant {
                 "I don't have the full answer for that, but I'm curious what you think. What's your take?",
                 "I can't really search for things right now, but I'm happy to talk it through. What do you think?",
             ],
+            outOfScope: [
+                "That's not really my area — I'm here to listen and help you navigate your thoughts, feelings, and daily tasks. What's on your mind?",
+                "I'm not the right tool for that kind of question, but I'm here if you want to talk about what's really going on with you.",
+                "I can't help with that, but if something's weighing on you, I'm all ears.",
+                "That's outside my wheelhouse, but I'm here to help with what matters to you — how are you really doing?",
+                "I'm built to listen and support you, not to answer factual questions like that. What's really on your mind?",
+            ],
             topicWork: [
                 "Work stuff, huh? What's going on?",
                 "Tell me about it. Is it stressing you out or just on your mind?",
@@ -1529,6 +1536,10 @@ class LocalAssistant {
         if (['hobby', 'play', 'music', 'read', 'game', 'art', 'write', 'draw', 'cook', 'sport', 'watch', 'movie', 'show'].some(k => msg.includes(k))) return 'topicHobbies';
         if (['goal', 'dream', 'achieve', 'trying', 'plan', 'future', 'career', 'aspire', 'ambition'].some(k => msg.includes(k))) return 'topicGoals';
 
+        // Out-of-scope factual question detection — common factual queries
+        const factualKeywords = ['price', 'cost', 'weather', 'temperature', 'stock', 'score', 'result', 'who won', 'when is', 'what is the', 'how much', 'how many', 'capital of', 'population of', 'definition of'];
+        if (factualKeywords.some(k => msg.includes(k))) return 'outOfScope';
+
         // Question detection — only for genuine standalone questions, not conversational phrases
         const isQuestion = message.trim().endsWith('?');
         const startsWithQuestionWord = ['what ', 'why ', 'how ', 'when ', 'where ', 'who ', 'which '].some(q => msg.startsWith(q));
@@ -1580,7 +1591,10 @@ class LocalAssistant {
         if (userMsgCount === 1) {
             response = this.pick('greeting');
         }
-        // Priority intents — frustration, distress, and referencing back
+        // Priority intents — out-of-scope, frustration, distress, and referencing back
+        else if (intent === 'outOfScope') {
+            response = this.pick('outOfScope');
+        }
         else if (intent === 'frustrated') {
             response = this.pick('frustrated');
         }
@@ -1739,11 +1753,41 @@ class Linen {
                 }
             }
 
-            // Fall back to legacy Gemini API key if no agent
-            if (!primaryAgent && apiKey) {
-                console.log("Linen: Using legacy Gemini API key.");
-                this.assistant = new GeminiAssistant(apiKey);
-                this.isLocalMode = false;
+            // If no primary agent, check for API key
+            if (!primaryAgent) {
+                if (!apiKey) {
+                    console.log("Linen: No API Key found, showing pitch modal.");
+                    this.showPitchModal();
+                    return;
+                }
+
+                // API key exists - validate and start
+                const geminiAssistant = new GeminiAssistant(apiKey);
+                const result = await geminiAssistant.validateKey();
+                if (result.valid) {
+                    console.log("Linen: API Key validated successfully, starting app with Gemini.");
+                    this.assistant = geminiAssistant;
+                    this.isLocalMode = false;
+                } else {
+                    // Check if the error is due to network or quota, in which case we can fallback to local.
+                    // Otherwise, the key is truly invalid and requires re-entry via onboarding.
+                    const isRecoverableError = (result.error && (
+                        result.error.toLowerCase().includes('quota') ||
+                        result.error.toLowerCase().includes('network error') ||
+                        result.error.toLowerCase().includes('too many requests')
+                    ));
+
+                    if (isRecoverableError) {
+                        console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
+                        this.assistant = new LocalAssistant();
+                        this.isLocalMode = true;
+                        this.showLocalModeToast(result.error);
+                    } else {
+                        console.warn(`Linen: Saved API key invalid: ${result.error}. Showing onboarding.`);
+                        this.showOnboarding(`Your saved API key is invalid: ${result.error}`);
+                        return;
+                    }
+                }
             }
 
             // If still no assistant, use local mode (always available)

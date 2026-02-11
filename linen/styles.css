@@ -85,10 +85,6 @@ header button {
     padding: 10px;
 }
 
-#chat-send {
-    background: var(--accent);
-}
-
 .assistant-message, .user-message {
     padding: 8px 12px;
     border-radius: 18px;
@@ -700,28 +696,44 @@ hr {
     align-items: flex-end;
 }
 
-#quick-capture-btn,
-#mood-check-btn {
+.input-btn {
     background: none;
-    border: none;
+    border: 1px solid #444;
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0.5rem;
-    transition: transform 0.2s;
+    transition: all 0.2s;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    color: var(--primary);
 }
 
-#quick-capture-btn:hover,
-#mood-check-btn:hover {
-    transform: scale(1.2);
-}
-
-#chat-input {
-    flex: 1;
+#quick-capture-btn,
+#mood-check-btn {
+    font-size: 1.5rem;
 }
 
 #chat-send {
+    background: var(--accent);
+    border: none;
+    color: #000;
+    font-weight: bold;
     padding: 0.8rem 1.5rem;
 }
+
+.input-btn:hover {
+    border-color: var(--accent);
+    background: rgba(212, 165, 116, 0.1);
+}
+
+.input-btn:active {
+    transform: scale(0.95);
+}
+
 
 /* Mood Options Grid */
 .mood-options {
