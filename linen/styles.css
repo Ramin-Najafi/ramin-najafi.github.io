@@ -867,3 +867,99 @@ hr {
     margin-top: 1.5rem;
     flex-direction: column;
 }
+
+/* Agent Management Styles */
+.form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.3rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group select {
+    background: #333;
+    color: var(--primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+}
+
+.form-group input[type="checkbox"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.form-group label[for*="agent-primary"] {
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+}
+
+.agent-card {
+    background: #2a2a2a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agent-info {
+    flex: 1;
+}
+
+.agent-name {
+    font-weight: bold;
+    color: var(--accent);
+    font-size: 0.95rem;
+}
+
+.agent-type {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.3rem;
+}
+
+.agent-primary-badge {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 0.3rem;
+    width: fit-content;
+}
+
+.agent-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.agent-actions button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--primary);
+    border-radius: 4px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.agent-actions button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}

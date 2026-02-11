@@ -169,6 +169,88 @@ class LinenDB {
     }
 }
 
+class AgentManager {
+    constructor(db = null) {
+        this.agents = []; // Array of available agents
+        this.primaryAgent = null; // Currently active agent
+        this.agentHistory = []; // Track which agents were used
+        this.db = db;
+    }
+
+    async loadAgents() {
+        console.log("Linen: Loading saved agents from database...");
+        if (!this.db) {
+            console.warn("Linen: Database not available for loading agents");
+            return;
+        }
+        // Load agents from database (implementation when db is passed)
+    }
+
+    async addAgent(agentConfig) {
+        console.log("Linen: Adding new agent:", agentConfig.name);
+        const agent = {
+            id: Date.now(),
+            name: agentConfig.name,
+            type: agentConfig.type, // 'gemini', 'openai', 'claude', 'deepseek', 'openrouter'
+            apiKey: agentConfig.apiKey,
+            model: agentConfig.model,
+            isPrimary: agentConfig.isPrimary || false,
+            createdAt: Date.now(),
+            successCount: 0,
+            failureCount: 0
+        };
+
+        this.agents.push(agent);
+        if (agent.isPrimary) {
+            this.primaryAgent = agent;
+        }
+
+        return agent;
+    }
+
+    setPrimaryAgent(agentId) {
+        const agent = this.agents.find(a => a.id === agentId);
+        if (agent) {
+            // Unset previous primary
+            if (this.primaryAgent) {
+                this.primaryAgent.isPrimary = false;
+            }
+            agent.isPrimary = true;
+            this.primaryAgent = agent;
+            console.log("Linen: Primary agent changed to:", agent.name);
+            return true;
+        }
+        return false;
+    }
+
+    switchToNextAvailableAgent(failedAgentId) {
+        // Find the next working agent
+        const availableAgents = this.agents.filter(a => a.id !== failedAgentId);
+        if (availableAgents.length > 0) {
+            const nextAgent = availableAgents[0];
+            this.setPrimaryAgent(nextAgent.id);
+            return nextAgent;
+        }
+        return null;
+    }
+
+    getAgents() {
+        return this.agents;
+    }
+
+    removeAgent(agentId) {
+        const index = this.agents.findIndex(a => a.id === agentId);
+        if (index > -1) {
+            const removed = this.agents.splice(index, 1)[0];
+            if (removed.isPrimary && this.agents.length > 0) {
+                this.setPrimaryAgent(this.agents[0].id);
+            }
+            return true;
+        }
+        return false;
+    }
+}
+
 class GeminiAssistant {
     constructor(apiKey) {
         this.apiKey = apiKey;
@@ -1001,6 +1083,7 @@ class Linen {
         this.analytics = new Analytics();
         this.voiceManager = new VoiceManager();
         this.eventManager = new EventManager();
+        this.agentManager = new AgentManager(this.db);
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
         this.isLocalMode = false;
         this.savedApiKey = null; // Store API key for lazy validation
@@ -1013,6 +1096,7 @@ class Linen {
         this._localModeToastShown = false;
         this._voiceInputActive = false;
         this._eventPermissionAsked = false;
+        this._showAgentSwitchMessage = false;
     }
 
     showLocalModeToast(reason) {
@@ -1516,6 +1600,40 @@ class Linen {
 
         // Suggestions
         document.getElementById('submit-suggestion').addEventListener('click', () => this.submitSuggestion());
+
+        // Agent Management
+        const addAgentBtn = document.getElementById('add-agent-btn');
+        const addAgentModal = document.getElementById('add-agent-modal');
+        const closeAddAgent = document.getElementById('close-add-agent');
+        const saveNewAgent = document.getElementById('save-new-agent');
+        const agentTypeSelect = document.getElementById('agent-type');
+
+        if (addAgentBtn) {
+            addAgentBtn.addEventListener('click', () => {
+                addAgentModal.classList.add('active');
+                backdrop.classList.add('active');
+            });
+        }
+
+        if (closeAddAgent) {
+            closeAddAgent.addEventListener('click', () => {
+                addAgentModal.classList.remove('active');
+                backdrop.classList.remove('active');
+                this.clearAddAgentForm();
+            });
+        }
+
+        if (saveNewAgent) {
+            saveNewAgent.addEventListener('click', () => this.addNewAgent());
+        }
+
+        // Agent type changes (for future model selection)
+        if (agentTypeSelect) {
+            agentTypeSelect.addEventListener('change', (e) => this.updateAgentModelOptions(e.target.value));
+        }
+
+        // Load agents list
+        this.loadAgentsList();
     }
 
     async validateAndSaveKey(inputId, errorId, onSuccess) {
@@ -1546,6 +1664,203 @@ class Linen {
             console.error(`Linen: API key validation failed: ${result.error}`);
             errorEl.textContent = `Key validation failed: ${result.error}`;
         }
+    }
+
+    async addNewAgent() {
+        console.log("Linen: Adding new agent...");
+        const nameInput = document.getElementById('agent-name');
+        const typeSelect = document.getElementById('agent-type');
+        const keyInput = document.getElementById('agent-api-key');
+        const modelInput = document.getElementById('agent-model');
+        const primaryCheckbox = document.getElementById('agent-primary');
+        const errorEl = document.getElementById('add-agent-error');
+
+        const name = nameInput.value.trim();
+        const type = typeSelect.value;
+        const apiKey = keyInput.value.trim();
+        const model = modelInput.value.trim();
+        const isPrimary = primaryCheckbox.checked;
+
+        // Validation
+        if (!name) {
+            errorEl.textContent = 'Please enter an agent name.';
+            return;
+        }
+        if (!type) {
+            errorEl.textContent = 'Please select an AI provider.';
+            return;
+        }
+        if (!apiKey) {
+            errorEl.textContent = 'Please enter an API key.';
+            return;
+        }
+
+        errorEl.textContent = 'Adding agent...';
+
+        try {
+            // For now, validate only Gemini keys (can expand for other providers)
+            if (type === 'gemini') {
+                const tempAssistant = new GeminiAssistant(apiKey);
+                const result = await tempAssistant.validateKey();
+                if (!result.valid) {
+                    errorEl.textContent = `Key validation failed: ${result.error}`;
+                    return;
+                }
+            }
+
+            // Add agent to AgentManager
+            const agentConfig = {
+                name: name,
+                type: type,
+                apiKey: apiKey,
+                model: model || this.getDefaultModel(type),
+                isPrimary: isPrimary
+            };
+
+            const agent = await this.agentManager.addAgent(agentConfig);
+
+            // Save agent to database
+            await this.db.setSetting(`agent-${agent.id}`, JSON.stringify(agent));
+
+            // If set as primary, update the saved agents list
+            if (isPrimary) {
+                await this.db.setSetting('primary-agent-id', agent.id);
+            }
+
+            console.log("Linen: Agent added successfully:", agent);
+            errorEl.textContent = '';
+            this.clearAddAgentForm();
+
+            // Close modal
+            const addAgentModal = document.getElementById('add-agent-modal');
+            const backdrop = document.getElementById('modal-backdrop');
+            addAgentModal.classList.remove('active');
+            backdrop.classList.remove('active');
+
+            // Reload agents list
+            this.loadAgentsList();
+            this.showToast(`Agent "${name}" added successfully!`);
+        } catch (err) {
+            console.error("Linen: Error adding agent:", err);
+            errorEl.textContent = `Error: ${err.message}`;
+        }
+    }
+
+    clearAddAgentForm() {
+        document.getElementById('agent-name').value = '';
+        document.getElementById('agent-type').value = '';
+        document.getElementById('agent-api-key').value = '';
+        document.getElementById('agent-model').value = '';
+        document.getElementById('agent-primary').checked = false;
+        document.getElementById('add-agent-error').textContent = '';
+    }
+
+    async loadAgentsList() {
+        console.log("Linen: Loading agents list...");
+        const agentsList = document.getElementById('agents-list');
+        if (!agentsList) return;
+
+        const agents = this.agentManager.getAgents();
+
+        if (agents.length === 0) {
+            agentsList.innerHTML = '<p style="color: var(--text-light); font-size: 0.9rem; text-align: center; padding: 1rem;">No agents added yet. Add one to get started!</p>';
+            return;
+        }
+
+        agentsList.innerHTML = '';
+        agents.forEach(agent => {
+            const card = document.createElement('div');
+            card.className = 'agent-card';
+
+            const info = document.createElement('div');
+            info.className = 'agent-info';
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'agent-name';
+            nameEl.textContent = agent.name;
+
+            const typeEl = document.createElement('div');
+            typeEl.className = 'agent-type';
+            typeEl.textContent = this.getProviderLabel(agent.type);
+
+            info.appendChild(nameEl);
+            info.appendChild(typeEl);
+
+            if (agent.isPrimary) {
+                const badgeEl = document.createElement('div');
+                badgeEl.className = 'agent-primary-badge';
+                badgeEl.textContent = '⭐ PRIMARY';
+                info.appendChild(badgeEl);
+            }
+
+            const actions = document.createElement('div');
+            actions.className = 'agent-actions';
+
+            if (!agent.isPrimary) {
+                const setAsBtn = document.createElement('button');
+                setAsBtn.textContent = 'Set Primary';
+                setAsBtn.addEventListener('click', () => this.setAgentAsPrimary(agent.id));
+                actions.appendChild(setAsBtn);
+            }
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => this.deleteAgent(agent.id));
+            actions.appendChild(deleteBtn);
+
+            card.appendChild(info);
+            card.appendChild(actions);
+            agentsList.appendChild(card);
+        });
+    }
+
+    async setAgentAsPrimary(agentId) {
+        console.log("Linen: Setting agent as primary:", agentId);
+        this.agentManager.setPrimaryAgent(agentId);
+        await this.db.setSetting('primary-agent-id', agentId);
+        this.loadAgentsList();
+        this.showToast('Primary agent updated!');
+    }
+
+    async deleteAgent(agentId) {
+        console.log("Linen: Deleting agent:", agentId);
+        if (!confirm('Are you sure you want to delete this agent?')) return;
+
+        this.agentManager.removeAgent(agentId);
+        await this.db.setSetting(`agent-${agentId}`, null);
+
+        this.loadAgentsList();
+        this.showToast('Agent deleted!');
+    }
+
+    updateAgentModelOptions(providerType) {
+        const modelInput = document.getElementById('agent-model');
+        if (!modelInput) return;
+
+        const defaultModel = this.getDefaultModel(providerType);
+        modelInput.placeholder = `e.g., ${defaultModel}`;
+    }
+
+    getDefaultModel(providerType) {
+        const models = {
+            'gemini': 'gemini-2.0-flash',
+            'openai': 'gpt-4',
+            'claude': 'claude-3-opus-20240229',
+            'deepseek': 'deepseek-chat',
+            'openrouter': 'openrouter/auto'
+        };
+        return models[providerType] || 'default';
+    }
+
+    getProviderLabel(providerType) {
+        const labels = {
+            'gemini': '🔵 Google Gemini',
+            'openai': '🟢 OpenAI',
+            'claude': '🔴 Anthropic Claude',
+            'deepseek': '🟠 DeepSeek',
+            'openrouter': '🟣 OpenRouter'
+        };
+        return labels[providerType] || providerType;
     }
 
     async loadChatHistory() {

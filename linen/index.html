@@ -147,6 +147,42 @@
     </div>
 </div>
 
+<div id="add-agent-modal" class="modal">
+    <button class="close-modal" id="close-add-agent">×</button>
+    <h2>Add New Agent</h2>
+    <div class="form-group">
+        <label for="agent-name">Agent Name:</label>
+        <input type="text" id="agent-name" placeholder="e.g., My Claude, ChatGPT Pro">
+    </div>
+    <div class="form-group">
+        <label for="agent-type">AI Provider:</label>
+        <select id="agent-type">
+            <option value="">Select a provider</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="openai">OpenAI (ChatGPT)</option>
+            <option value="claude">Anthropic Claude</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="openrouter">OpenRouter</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="agent-api-key">API Key:</label>
+        <input type="password" id="agent-api-key" placeholder="Paste your API key">
+    </div>
+    <div class="form-group">
+        <label for="agent-model">Model (optional):</label>
+        <input type="text" id="agent-model" placeholder="e.g., gpt-4, claude-3-opus">
+    </div>
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="agent-primary">
+            Set as primary agent
+        </label>
+    </div>
+    <button id="save-new-agent" class="button-primary">Add Agent</button>
+    <p class="error-message" id="add-agent-error"></p>
+</div>
+
 <div id="app-container">
     <header>
         <button id="settings-button">⚙</button>
@@ -178,7 +214,11 @@
 
     <div class="modal" id="settings-modal">
         <button class="close-modal" id="close-settings-modal">×</button>
-        <input id="api-key-input" placeholder="Paste Gemini API key">
+        <h3 style="color: var(--accent); margin-bottom: 1rem;">🤖 AI Agents</h3>
+        <button id="add-agent-btn" style="width: 100%; margin-bottom: 1rem;">+ Add New Agent</button>
+        <div id="agents-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;"></div>
+        <hr>
+        <input id="api-key-input" placeholder="Paste Gemini API key (Legacy)">
         <button id="save-api-key">Save API Key</button>
         <button id="clear-chat-history">Clear Chat History</button>
         <button id="export-data">Export Memories</button>
@@ -200,7 +240,7 @@
             <button id="submit-suggestion">Send Suggestion</button>
             <p id="suggestion-status" style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;"></p>
         </div>
-        <p id="version-info">v1.0.6 [beta]</p>
+        <p id="version-info">v1.0.7 [beta]</p>
     </div>
 </div>
 
