@@ -5,7 +5,7 @@
  * See LICENSE file for details.
  */
 
-const CACHE_NAME = 'linen-v100';
+const CACHE_NAME = 'linen-v101';
 const BASE_PATH = '/linen';
 const urlsToCache = [
     `${BASE_PATH}/`,
