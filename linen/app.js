@@ -251,6 +251,78 @@ class AgentManager {
     }
 }
 
+class ModelVersionManager {
+    constructor() {
+        this.modelVersions = {
+            'gemini': { primary: 'gemini-2.5-flash', fallback: 'gemini-2.0-flash-lite', lastUpdated: Date.now() },
+            'openai': { primary: 'gpt-4-turbo', fallback: 'gpt-3.5-turbo', lastUpdated: Date.now() },
+            'claude': { primary: 'claude-3-5-sonnet-20241022', fallback: 'claude-3-opus-20240229', lastUpdated: Date.now() },
+            'deepseek': { primary: 'deepseek-chat', fallback: 'deepseek-coder', lastUpdated: Date.now() },
+            'openrouter': { primary: 'openrouter/auto', fallback: 'openrouter/auto', lastUpdated: Date.now() }
+        };
+        this.checkInterval = 24 * 60 * 60 * 1000; // Check once per day
+        this.initAutoUpdate();
+    }
+
+    initAutoUpdate() {
+        console.log("Linen: Initializing auto-update for model versions...");
+        // Check on startup
+        this.checkAndUpdateModels();
+        // Then check periodically
+        setInterval(() => this.checkAndUpdateModels(), this.checkInterval);
+    }
+
+    async checkAndUpdateModels() {
+        console.log("Linen: Checking for updated model versions...");
+        try {
+            const latestVersions = await this.fetchLatestVersions();
+            if (latestVersions) {
+                Object.keys(latestVersions).forEach(provider => {
+                    if (this.modelVersions[provider]) {
+                        const oldPrimary = this.modelVersions[provider].primary;
+                        const newPrimary = latestVersions[provider].primary;
+
+                        if (oldPrimary !== newPrimary) {
+                            console.log(`Linen: Updating ${provider} model from ${oldPrimary} to ${newPrimary}`);
+                            this.modelVersions[provider] = {
+                                ...latestVersions[provider],
+                                lastUpdated: Date.now()
+                            };
+                        }
+                    }
+                });
+            }
+        } catch (err) {
+            console.warn("Linen: Failed to check for model updates:", err);
+        }
+    }
+
+    async fetchLatestVersions() {
+        try {
+            // Attempt to fetch latest model versions from remote config
+            // Falls back to current versions if fetch fails
+            const response = await fetch('/linen-model-versions.json', { cache: 'no-cache' });
+            if (response.ok) {
+                return await response.json();
+            }
+            return null;
+        } catch (err) {
+            console.warn("Linen: Could not fetch remote model versions:", err);
+            return null;
+        }
+    }
+
+    getModel(provider, type = 'primary') {
+        const versions = this.modelVersions[provider];
+        if (!versions) return null;
+        return versions[type] || versions.primary;
+    }
+
+    getAllVersions() {
+        return this.modelVersions;
+    }
+}
+
 class GeminiAssistant {
     constructor(apiKey) {
         this.apiKey = apiKey;
@@ -396,6 +468,479 @@ Core Directives:
         return chats.slice(-10).map(m => ({
             role: m.sender === 'user' ? 'user' : 'model',
             parts: [{ text: m.text }]
+        }));
+    }
+
+    detectCrisis(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
+        return crisisKeywords.some(keyword => msg.includes(keyword));
+    }
+}
+
+class OpenAIAssistant {
+    constructor(apiKey, model = 'gpt-4-turbo') {
+        this.apiKey = apiKey;
+        this.model = model;
+        this.endpoint = 'https://api.openai.com/v1/chat/completions';
+    }
+
+    async validateKey() {
+        console.log("Validating OpenAI key...");
+        try {
+            const res = await fetch('https://api.openai.com/v1/models', {
+                headers: { 'Authorization': `Bearer ${this.apiKey}` }
+            });
+            if (res.ok) return { valid: true };
+
+            const err = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            }
+            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
+        } catch (e) {
+            console.error("OpenAI key validation failed:", e);
+            return { valid: false, error: 'Network error. Check your internet connection.' };
+        }
+    }
+
+    async chat(msg, chats, mems, loadingId) {
+        if (!this.apiKey) throw new Error('API key not configured.');
+
+        const memoryContext = this.buildMemoryContext(mems);
+        const conversationContext = this.buildConversationContext(chats);
+        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+Core Directives:
+1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
+2.  **Seamlessly Recall Memories:** Reference past memories naturally to show you remember. For example, 'How is project X going? I remember you were feeling stressed about it last week.'
+3.  **Identify and Save Memories:** Your most important job is to identify when a user shares something meaningful that should be remembered. This includes events, feelings, decisions, people, plans, likes/dislikes, or personal details.
+4.  **STRICT SAVE_MEMORY Marker Format:** When you identify a memory, you MUST conclude your conversational response with a single, perfectly formatted [SAVE_MEMORY: ...] marker on a new line. The entire marker, including brackets and valid JSON, MUST be the very last thing in your response. Do NOT add any text or characters after the closing bracket.
+    The JSON inside MUST contain:
+    - "text": A concise summary of what to remember.
+    - "tags": An array of relevant keywords (e.g., ["work", "project", "feeling"]).
+    - "emotion": A single word describing the user's feeling (e.g., 'happy', 'stressed', 'excited').
+    Example: Your response text.
+    [SAVE_MEMORY: { "text": "User is starting a new personal project to learn pottery.", "tags": ["pottery", "hobbies", "learning"], "emotion": "excited" }]
+5.  **Do NOT confirm saving in the chat.** The app will handle this.
+6.  **Handle Memory Queries:** If the user asks 'what do you remember about X', search the provided memory context and synthesize an answer. Do not use the SAVE_MEMORY marker for this.
+7.  **Offer Support:** If you detect distress, offer gentle support. If the user mentions a crisis, refer them to a crisis line.
+8.  **Tone:** Be warm, genuine, concise, and match the user's tone.`;
+
+        const messages = [
+            ...conversationContext,
+            { role: 'user', content: `${memoryContext}\n\nUser: ${msg}` }
+        ];
+
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...messages
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2048
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const error = new Error(errorData.error?.message || 'API request failed');
+                error.status = res.status;
+                throw error;
+            }
+
+            const data = await res.json();
+            const reply = data.choices?.[0]?.message?.content;
+            if (!reply) throw new Error('No response from assistant');
+            return reply;
+        } catch (e) {
+            document.getElementById(loadingId)?.remove();
+            throw e;
+        }
+    }
+
+    buildMemoryContext(mems) {
+        if (!mems || mems.length === 0) return 'No memories yet.';
+        let c = 'Relevant memories for context:\n';
+        mems.slice(0, 25).forEach(m => {
+            const d = new Date(m.date).toLocaleDateString();
+            c += `- ${d}: ${m.text}${m.emotion ? ` (felt ${m.emotion})` : ''}${m.tags?.length ? ` [${m.tags.join(',')}]` : ''}\n`;
+        });
+        return c;
+    }
+
+    buildConversationContext(chats) {
+        if (!chats || chats.length === 0) return [];
+        return chats.slice(-10).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text
+        }));
+    }
+
+    detectCrisis(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
+        return crisisKeywords.some(keyword => msg.includes(keyword));
+    }
+}
+
+class ClaudeAssistant {
+    constructor(apiKey, model = 'claude-3-5-sonnet-20241022') {
+        this.apiKey = apiKey;
+        this.model = model;
+        this.endpoint = 'https://api.anthropic.com/v1/messages';
+    }
+
+    async validateKey() {
+        console.log("Validating Claude key...");
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'x-api-key': this.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    max_tokens: 100,
+                    messages: [{ role: 'user', content: 'Hi' }]
+                })
+            });
+            if (res.ok) return { valid: true };
+
+            const err = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            }
+            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
+        } catch (e) {
+            console.error("Claude key validation failed:", e);
+            return { valid: false, error: 'Network error. Check your internet connection.' };
+        }
+    }
+
+    async chat(msg, chats, mems, loadingId) {
+        if (!this.apiKey) throw new Error('API key not configured.');
+
+        const memoryContext = this.buildMemoryContext(mems);
+        const conversationContext = this.buildConversationContext(chats);
+        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+Core Directives:
+1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
+2.  **Seamlessly Recall Memories:** Reference past memories naturally to show you remember. For example, 'How is project X going? I remember you were feeling stressed about it last week.'
+3.  **Identify and Save Memories:** Your most important job is to identify when a user shares something meaningful that should be remembered. This includes events, feelings, decisions, people, plans, likes/dislikes, or personal details.
+4.  **STRICT SAVE_MEMORY Marker Format:** When you identify a memory, you MUST conclude your conversational response with a single, perfectly formatted [SAVE_MEMORY: ...] marker on a new line. The entire marker, including brackets and valid JSON, MUST be the very last thing in your response. Do NOT add any text or characters after the closing bracket.
+    The JSON inside MUST contain:
+    - "text": A concise summary of what to remember.
+    - "tags": An array of relevant keywords (e.g., ["work", "project", "feeling"]).
+    - "emotion": A single word describing the user's feeling (e.g., 'happy', 'stressed', 'excited').
+    Example: Your response text.
+    [SAVE_MEMORY: { "text": "User is starting a new personal project to learn pottery.", "tags": ["pottery", "hobbies", "learning"], "emotion": "excited" }]
+5.  **Do NOT confirm saving in the chat.** The app will handle this.
+6.  **Handle Memory Queries:** If the user asks 'what do you remember about X', search the provided memory context and synthesize an answer. Do not use the SAVE_MEMORY marker for this.
+7.  **Offer Support:** If you detect distress, offer gentle support. If the user mentions a crisis, refer them to a crisis line.
+8.  **Tone:** Be warm, genuine, concise, and match the user's tone.`;
+
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'x-api-key': this.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    max_tokens: 2048,
+                    system: systemPrompt,
+                    messages: [
+                        ...conversationContext,
+                        { role: 'user', content: `${memoryContext}\n\nUser: ${msg}` }
+                    ]
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const error = new Error(errorData.error?.message || 'API request failed');
+                error.status = res.status;
+                throw error;
+            }
+
+            const data = await res.json();
+            const reply = data.content?.[0]?.text;
+            if (!reply) throw new Error('No response from assistant');
+            return reply;
+        } catch (e) {
+            document.getElementById(loadingId)?.remove();
+            throw e;
+        }
+    }
+
+    buildMemoryContext(mems) {
+        if (!mems || mems.length === 0) return 'No memories yet.';
+        let c = 'Relevant memories for context:\n';
+        mems.slice(0, 25).forEach(m => {
+            const d = new Date(m.date).toLocaleDateString();
+            c += `- ${d}: ${m.text}${m.emotion ? ` (felt ${m.emotion})` : ''}${m.tags?.length ? ` [${m.tags.join(',')}]` : ''}\n`;
+        });
+        return c;
+    }
+
+    buildConversationContext(chats) {
+        if (!chats || chats.length === 0) return [];
+        return chats.slice(-10).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text
+        }));
+    }
+
+    detectCrisis(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
+        return crisisKeywords.some(keyword => msg.includes(keyword));
+    }
+}
+
+class DeepSeekAssistant {
+    constructor(apiKey, model = 'deepseek-chat') {
+        this.apiKey = apiKey;
+        this.model = model;
+        this.endpoint = 'https://api.deepseek.com/chat/completions';
+    }
+
+    async validateKey() {
+        console.log("Validating DeepSeek key...");
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    messages: [{ role: 'user', content: 'Hi' }],
+                    max_tokens: 10
+                })
+            });
+            if (res.ok) return { valid: true };
+
+            const err = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            }
+            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
+        } catch (e) {
+            console.error("DeepSeek key validation failed:", e);
+            return { valid: false, error: 'Network error. Check your internet connection.' };
+        }
+    }
+
+    async chat(msg, chats, mems, loadingId) {
+        if (!this.apiKey) throw new Error('API key not configured.');
+
+        const memoryContext = this.buildMemoryContext(mems);
+        const conversationContext = this.buildConversationContext(chats);
+        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+Core Directives:
+1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
+2.  **Seamlessly Recall Memories:** Reference past memories naturally to show you remember. For example, 'How is project X going? I remember you were feeling stressed about it last week.'
+3.  **Identify and Save Memories:** Your most important job is to identify when a user shares something meaningful that should be remembered. This includes events, feelings, decisions, people, plans, likes/dislikes, or personal details.
+4.  **STRICT SAVE_MEMORY Marker Format:** When you identify a memory, you MUST conclude your conversational response with a single, perfectly formatted [SAVE_MEMORY: ...] marker on a new line. The entire marker, including brackets and valid JSON, MUST be the very last thing in your response. Do NOT add any text or characters after the closing bracket.
+    The JSON inside MUST contain:
+    - "text": A concise summary of what to remember.
+    - "tags": An array of relevant keywords (e.g., ["work", "project", "feeling"]).
+    - "emotion": A single word describing the user's feeling (e.g., 'happy', 'stressed', 'excited').
+    Example: Your response text.
+    [SAVE_MEMORY: { "text": "User is starting a new personal project to learn pottery.", "tags": ["pottery", "hobbies", "learning"], "emotion": "excited" }]
+5.  **Do NOT confirm saving in the chat.** The app will handle this.
+6.  **Handle Memory Queries:** If the user asks 'what do you remember about X', search the provided memory context and synthesize an answer. Do not use the SAVE_MEMORY marker for this.
+7.  **Offer Support:** If you detect distress, offer gentle support. If the user mentions a crisis, refer them to a crisis line.
+8.  **Tone:** Be warm, genuine, concise, and match the user's tone.`;
+
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...conversationContext,
+                        { role: 'user', content: `${memoryContext}\n\nUser: ${msg}` }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2048
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const error = new Error(errorData.error?.message || 'API request failed');
+                error.status = res.status;
+                throw error;
+            }
+
+            const data = await res.json();
+            const reply = data.choices?.[0]?.message?.content;
+            if (!reply) throw new Error('No response from assistant');
+            return reply;
+        } catch (e) {
+            document.getElementById(loadingId)?.remove();
+            throw e;
+        }
+    }
+
+    buildMemoryContext(mems) {
+        if (!mems || mems.length === 0) return 'No memories yet.';
+        let c = 'Relevant memories for context:\n';
+        mems.slice(0, 25).forEach(m => {
+            const d = new Date(m.date).toLocaleDateString();
+            c += `- ${d}: ${m.text}${m.emotion ? ` (felt ${m.emotion})` : ''}${m.tags?.length ? ` [${m.tags.join(',')}]` : ''}\n`;
+        });
+        return c;
+    }
+
+    buildConversationContext(chats) {
+        if (!chats || chats.length === 0) return [];
+        return chats.slice(-10).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text
+        }));
+    }
+
+    detectCrisis(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
+        return crisisKeywords.some(keyword => msg.includes(keyword));
+    }
+}
+
+class OpenRouterAssistant {
+    constructor(apiKey, model = 'openrouter/auto') {
+        this.apiKey = apiKey;
+        this.model = model;
+        this.endpoint = 'https://openrouter.ai/api/v1/chat/completions';
+    }
+
+    async validateKey() {
+        console.log("Validating OpenRouter key...");
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'openrouter/auto',
+                    messages: [{ role: 'user', content: 'Hi' }],
+                    max_tokens: 10
+                })
+            });
+            if (res.ok) return { valid: true };
+
+            const err = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            }
+            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
+        } catch (e) {
+            console.error("OpenRouter key validation failed:", e);
+            return { valid: false, error: 'Network error. Check your internet connection.' };
+        }
+    }
+
+    async chat(msg, chats, mems, loadingId) {
+        if (!this.apiKey) throw new Error('API key not configured.');
+
+        const memoryContext = this.buildMemoryContext(mems);
+        const conversationContext = this.buildConversationContext(chats);
+        const systemPrompt = `You are Linen, a smart personal assistant. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+Core Directives:
+1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
+2.  **Seamlessly Recall Memories:** Reference past memories naturally to show you remember. For example, 'How is project X going? I remember you were feeling stressed about it last week.'
+3.  **Identify and Save Memories:** Your most important job is to identify when a user shares something meaningful that should be remembered. This includes events, feelings, decisions, people, plans, likes/dislikes, or personal details.
+4.  **STRICT SAVE_MEMORY Marker Format:** When you identify a memory, you MUST conclude your conversational response with a single, perfectly formatted [SAVE_MEMORY: ...] marker on a new line. The entire marker, including brackets and valid JSON, MUST be the very last thing in your response. Do NOT add any text or characters after the closing bracket.
+    The JSON inside MUST contain:
+    - "text": A concise summary of what to remember.
+    - "tags": An array of relevant keywords (e.g., ["work", "project", "feeling"]).
+    - "emotion": A single word describing the user's feeling (e.g., 'happy', 'stressed', 'excited').
+    Example: Your response text.
+    [SAVE_MEMORY: { "text": "User is starting a new personal project to learn pottery.", "tags": ["pottery", "hobbies", "learning"], "emotion": "excited" }]
+5.  **Do NOT confirm saving in the chat.** The app will handle this.
+6.  **Handle Memory Queries:** If the user asks 'what do you remember about X', search the provided memory context and synthesize an answer. Do not use the SAVE_MEMORY marker for this.
+7.  **Offer Support:** If you detect distress, offer gentle support. If the user mentions a crisis, refer them to a crisis line.
+8.  **Tone:** Be warm, genuine, concise, and match the user's tone.`;
+
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': window.location.origin
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...conversationContext,
+                        { role: 'user', content: `${memoryContext}\n\nUser: ${msg}` }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2048
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const error = new Error(errorData.error?.message || 'API request failed');
+                error.status = res.status;
+                throw error;
+            }
+
+            const data = await res.json();
+            const reply = data.choices?.[0]?.message?.content;
+            if (!reply) throw new Error('No response from assistant');
+            return reply;
+        } catch (e) {
+            document.getElementById(loadingId)?.remove();
+            throw e;
+        }
+    }
+
+    buildMemoryContext(mems) {
+        if (!mems || mems.length === 0) return 'No memories yet.';
+        let c = 'Relevant memories for context:\n';
+        mems.slice(0, 25).forEach(m => {
+            const d = new Date(m.date).toLocaleDateString();
+            c += `- ${d}: ${m.text}${m.emotion ? ` (felt ${m.emotion})` : ''}${m.tags?.length ? ` [${m.tags.join(',')}]` : ''}\n`;
+        });
+        return c;
+    }
+
+    buildConversationContext(chats) {
+        if (!chats || chats.length === 0) return [];
+        return chats.slice(-10).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text
         }));
     }
 
@@ -1084,7 +1629,9 @@ class Linen {
         this.voiceManager = new VoiceManager();
         this.eventManager = new EventManager();
         this.agentManager = new AgentManager(this.db);
+        this.modelVersionManager = new ModelVersionManager();
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
+        this.currentAgent = null; // Track current agent
         this.isLocalMode = false;
         this.savedApiKey = null; // Store API key for lazy validation
         this._onboardingBound = false;
@@ -1180,10 +1727,39 @@ class Linen {
 
             console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}`);
 
-            // Always start in local mode by default to conserve API usage
-            console.log("Linen: Starting in local mode by default to conserve API quota.");
-            this.assistant = new LocalAssistant();
-            this.isLocalMode = true;
+            // Try to load primary agent from multi-agent system
+            const primaryAgentId = await this.db.getSetting('primary-agent-id');
+            let primaryAgent = null;
+
+            if (primaryAgentId) {
+                const agentData = await this.db.getSetting(`agent-${primaryAgentId}`);
+                if (agentData) {
+                    try {
+                        primaryAgent = JSON.parse(agentData);
+                        console.log("Linen: Found primary agent:", primaryAgent.name);
+                        this.currentAgent = primaryAgent;
+                        this.assistant = this.createAssistantFromAgent(primaryAgent);
+                        this.isLocalMode = false;
+                    } catch (err) {
+                        console.warn("Linen: Failed to load primary agent, falling back:", err);
+                    }
+                }
+            }
+
+            // Fall back to legacy Gemini API key if no agent
+            if (!primaryAgent && apiKey) {
+                console.log("Linen: Using legacy Gemini API key.");
+                this.assistant = new GeminiAssistant(apiKey);
+                this.isLocalMode = false;
+            }
+
+            // If still no assistant, use local mode
+            if (!this.assistant) {
+                console.log("Linen: Starting in local mode by default to conserve API quota.");
+                this.assistant = new LocalAssistant();
+                this.isLocalMode = true;
+            }
+
             this.startApp(apiKey); // Pass apiKey for lazy validation when needed
         } catch (e) {
             console.error('Linen: Init error:', e);
@@ -1191,6 +1767,25 @@ class Linen {
             this.isLocalMode = true;
             this.startApp(null);
             console.error('Linen: Fatal error during init, starting in local-only mode.', e);
+        }
+    }
+
+    createAssistantFromAgent(agent) {
+        console.log("Linen: Creating assistant from agent:", agent.name, agent.type);
+        const model = agent.model || this.modelVersionManager.getModel(agent.type, 'primary');
+
+        switch (agent.type) {
+            case 'openai':
+                return new OpenAIAssistant(agent.apiKey, model);
+            case 'claude':
+                return new ClaudeAssistant(agent.apiKey, model);
+            case 'deepseek':
+                return new DeepSeekAssistant(agent.apiKey, model);
+            case 'openrouter':
+                return new OpenRouterAssistant(agent.apiKey, model);
+            case 'gemini':
+            default:
+                return new GeminiAssistant(agent.apiKey);
         }
     }
 
@@ -1695,17 +2290,35 @@ class Linen {
             return;
         }
 
-        errorEl.textContent = 'Adding agent...';
+        errorEl.textContent = 'Validating API key...';
 
         try {
-            // For now, validate only Gemini keys (can expand for other providers)
-            if (type === 'gemini') {
-                const tempAssistant = new GeminiAssistant(apiKey);
-                const result = await tempAssistant.validateKey();
-                if (!result.valid) {
-                    errorEl.textContent = `Key validation failed: ${result.error}`;
-                    return;
-                }
+            // Validate API key for the selected provider
+            let tempAssistant;
+            const model = model || this.getDefaultModel(type);
+
+            switch (type) {
+                case 'openai':
+                    tempAssistant = new OpenAIAssistant(apiKey, model);
+                    break;
+                case 'claude':
+                    tempAssistant = new ClaudeAssistant(apiKey, model);
+                    break;
+                case 'deepseek':
+                    tempAssistant = new DeepSeekAssistant(apiKey, model);
+                    break;
+                case 'openrouter':
+                    tempAssistant = new OpenRouterAssistant(apiKey, model);
+                    break;
+                case 'gemini':
+                default:
+                    tempAssistant = new GeminiAssistant(apiKey);
+            }
+
+            const result = await tempAssistant.validateKey();
+            if (!result.valid) {
+                errorEl.textContent = `Key validation failed: ${result.error}`;
+                return;
             }
 
             // Add agent to AgentManager
@@ -1923,8 +2536,8 @@ class Linen {
                 await new Promise(resolve => setTimeout(resolve, delay));
                 reply = await this.assistant.chat(msg);
             } else {
-                // Try GeminiAssistant
-                console.log("Linen: Attempting to use GeminiAssistant.");
+                // Use primary agent or fallback to next available
+                console.log("Linen: Attempting to use primary agent:", this.currentAgent?.name || 'Unknown');
                 if (!initialMessage && this.assistant.detectCrisis(msg)) {
                     this.showCrisisModal();
                 }
@@ -1986,47 +2599,65 @@ class Linen {
             document.getElementById(id)?.remove();
             const msgText = e.message || '';
             const status = e.status || 0;
-        
-            console.error(`Linen: sendChat failed (Status: ${status}, Message: ${msgText}). Attempting fallback to LocalAssistant.`, e);
-        
-            // Determine if we should fall back to LocalAssistant
+
+            console.error(`Linen: sendChat failed (Status: ${status}, Message: ${msgText}). Checking for fallback options.`, e);
+
+            // Determine if we should try to fallback
             const canFallback = (status === 0 && !navigator.onLine) || // Offline
                                 (status === 429) || // Rate limited
                                 (status === 403 && msgText.toLowerCase().includes('quota')) || // Quota exceeded
                                 (msgText.includes('API key not configured')); // No API key
-        
+
             if (canFallback && !this.isLocalMode) {
-                console.log("Linen: Falling back to LocalAssistant.");
-                this.assistant = new LocalAssistant();
-                this.isLocalMode = true;
-                // Show typing bubble with delay
-                const typingDiv = document.createElement('div');
-                typingDiv.className = 'assistant-message typing-indicator';
-                typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-                container.appendChild(typingDiv);
-                container.scrollTop = container.scrollHeight;
-                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
-                typingDiv.remove();
-                const localReply = await this.assistant.chat(msg);
-                const rdiv = document.createElement('div');
-                rdiv.className = 'assistant-message';
-                rdiv.textContent = localReply;
-                container.appendChild(rdiv);
-                container.scrollTop = container.scrollHeight;
+                // Try to switch to next available agent
+                const agents = this.agentManager.getAgents();
+                let nextAgent = null;
 
-                // Show toast once when switching to local mode
-                if (this.trialMode) {
-                    this.showLocalModeToast('trial');
+                if (this.currentAgent && agents.length > 1) {
+                    // Try to switch to next agent
+                    nextAgent = this.agentManager.switchToNextAvailableAgent(this.currentAgent.id);
+                }
+
+                if (nextAgent) {
+                    console.log("Linen: Switching to next available agent:", nextAgent.name);
+                    this.currentAgent = nextAgent;
+                    this.assistant = this.createAssistantFromAgent(nextAgent);
+                    this.showToast(`Switched to ${nextAgent.name}`);
+                    // Retry the chat with new agent
+                    return this.sendChat(initialMessage);
                 } else {
-                    this.showLocalModeToast(msgText);
-                }
-                // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
-                const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
-                if (!initialMessage && !isInitialGreeting) {
-                    await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
-                    await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
-                }
+                    // No alternative agents, fall back to LocalAssistant
+                    console.log("Linen: No alternative agents available. Falling back to LocalAssistant.");
+                    this.assistant = new LocalAssistant();
+                    this.isLocalMode = true;
+                    // Show typing bubble with delay
+                    const typingDiv = document.createElement('div');
+                    typingDiv.className = 'assistant-message typing-indicator';
+                    typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+                    container.appendChild(typingDiv);
+                    container.scrollTop = container.scrollHeight;
+                    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+                    typingDiv.remove();
+                    const localReply = await this.assistant.chat(msg);
+                    const rdiv = document.createElement('div');
+                    rdiv.className = 'assistant-message';
+                    rdiv.textContent = localReply;
+                    container.appendChild(rdiv);
+                    container.scrollTop = container.scrollHeight;
 
+                    // Show toast once when switching to local mode
+                    if (this.trialMode) {
+                        this.showLocalModeToast('trial');
+                    } else {
+                        this.showLocalModeToast(msgText);
+                    }
+                    // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
+                    const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
+                    if (!initialMessage && !isInitialGreeting) {
+                        await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
+                        await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
+                    }
+                }
             } else if (canFallback && this.isLocalMode) {
                  // Already in local mode, show typing bubble then respond
                  console.log("Linen: Already in local mode. LocalAssistant responding to error.");
