@@ -3278,21 +3278,13 @@ class Linen {
 
     startVoiceInput() {
         this._voiceInputActive = true;
-        const voiceBtn = document.getElementById('voice-btn');
-        voiceBtn.style.background = '#ff6b6b';
-        voiceBtn.textContent = '🔴';
-
-        const statusDiv = document.getElementById('voice-status');
-        statusDiv.textContent = 'Listening...';
-        statusDiv.style.display = 'block';
+        console.log("Linen: Starting voice input");
 
         this.voiceManager.startListening(
             (transcript, isInterim) => {
-                const chatInput = document.getElementById('chat-input');
-                chatInput.value = transcript;
-                if (!isInterim) {
-                    chatInput.value = transcript.charAt(0).toUpperCase() + transcript.slice(1);
-                }
+                // In new messenger UI, voice input is handled directly
+                // Just log for now
+                console.log("Linen: Voice transcript:", transcript, isInterim);
             },
             (error) => {
                 console.error('Voice input error:', error);
@@ -3304,14 +3296,7 @@ class Linen {
 
     stopVoiceInput() {
         this._voiceInputActive = false;
-        const voiceBtn = document.getElementById('voice-btn');
-        voiceBtn.style.background = '';
-        voiceBtn.textContent = '🎤';
-
-        const statusDiv = document.getElementById('voice-status');
-        statusDiv.textContent = '';
-        statusDiv.style.display = 'none';
-
+        console.log("Linen: Stopping voice input");
         this.voiceManager.stopListening();
     }
 
