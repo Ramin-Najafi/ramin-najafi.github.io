@@ -2271,20 +2271,40 @@ class Linen {
             if (e.key === 'Enter') { e.preventDefault(); reEnterSave(); }
         });
 
-        // Memories panel
+        // Logo menu interactions
+        const logo = document.getElementById('logo');
+        const logoMenu = document.getElementById('logo-menu');
         const memoriesPanel = document.getElementById('memories-panel');
         const settingsModal = document.getElementById('settings-modal');
         const backdrop = document.getElementById('modal-backdrop');
 
-        document.getElementById('memories-button').addEventListener('click', () => {
+        logo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            logoMenu.classList.toggle('hidden');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            logoMenu.classList.add('hidden');
+        });
+
+        // Logo menu items
+        document.getElementById('logo-memories').addEventListener('click', () => {
             this.loadMemories();
             memoriesPanel.classList.add('active');
             backdrop.classList.add('active');
+            logoMenu.classList.add('hidden');
         });
 
-        document.getElementById('settings-button').addEventListener('click', () => {
+        document.getElementById('logo-new-chat').addEventListener('click', () => {
+            logoMenu.classList.add('hidden');
+            this.clearChatHistory();
+        });
+
+        document.getElementById('logo-settings').addEventListener('click', () => {
             settingsModal.classList.add('active');
             backdrop.classList.add('active');
+            logoMenu.classList.add('hidden');
         });
 
         const closeModal = () => {
@@ -2314,7 +2334,13 @@ class Linen {
 
         // Chat
         const chatInput = document.getElementById('chat-input');
-        document.getElementById('chat-send').addEventListener('click', () => this.sendChat());
+        const chatTypeBtn = document.getElementById('chat-type');
+        const chatTalkBtn = document.getElementById('chat-talk');
+
+        if (chatTypeBtn) {
+            chatTypeBtn.addEventListener('click', () => this.sendChat());
+        }
+
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -2323,7 +2349,9 @@ class Linen {
         });
 
         // Voice input
-        document.getElementById('voice-btn').addEventListener('click', () => this.toggleVoiceInput());
+        if (chatTalkBtn) {
+            chatTalkBtn.addEventListener('click', () => this.toggleVoiceInput());
+        }
 
         // Settings actions
         const settingsSaveKey = () => this.saveApiKey();
@@ -2337,49 +2365,6 @@ class Linen {
         document.getElementById('clear-chat-history').addEventListener('click', () => this.clearChatHistory());
         document.getElementById('memory-search').addEventListener('input', (e) => this.loadMemories(e.target.value));
 
-        // Quick Capture
-        document.getElementById('quick-capture-btn').addEventListener('click', () => {
-            document.getElementById('quick-capture-modal').classList.add('active');
-            backdrop.classList.add('active');
-        });
-        document.getElementById('close-quick-capture').addEventListener('click', () => {
-            document.getElementById('quick-capture-modal').classList.remove('active');
-            backdrop.classList.remove('active');
-        });
-        document.getElementById('save-quick-capture').addEventListener('click', async () => {
-            const title = document.getElementById('quick-capture-title').value.trim();
-            const text = document.getElementById('quick-capture-text').value.trim();
-            if (!text) {
-                this.showToast('Please enter something to save.');
-                return;
-            }
-            await this.db.addMemory({ title: title || text.substring(0, 30), text: text, tags: ['quick-capture'], date: Date.now() });
-            document.getElementById('quick-capture-title').value = '';
-            document.getElementById('quick-capture-text').value = '';
-            document.getElementById('quick-capture-modal').classList.remove('active');
-            backdrop.classList.remove('active');
-            this.showToast('Thought saved!');
-        });
-
-        // Mood Check
-        document.getElementById('mood-check-btn').addEventListener('click', () => {
-            document.getElementById('mood-check-modal').classList.add('active');
-            backdrop.classList.add('active');
-        });
-        document.getElementById('close-mood-check').addEventListener('click', () => {
-            document.getElementById('mood-check-modal').classList.remove('active');
-            backdrop.classList.remove('active');
-        });
-        document.querySelectorAll('.mood-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const mood = e.target.dataset.mood;
-                const moodText = e.target.textContent;
-                await this.db.addMemory({ title: `Mood check-in: ${moodText}`, text: `Feeling: ${moodText} ${mood}`, tags: ['mood-check'], emotion: moodText.toLowerCase(), date: Date.now() });
-                document.getElementById('mood-check-modal').classList.remove('active');
-                backdrop.classList.remove('active');
-                this.showToast(`Mood saved: ${mood}`);
-            });
-        });
 
         // Suggestions
         document.getElementById('submit-suggestion').addEventListener('click', () => this.submitSuggestion());

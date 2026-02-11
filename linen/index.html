@@ -159,27 +159,6 @@
     <button id="acknowledge-crisis" class="button-primary">I'm Safe / Need to Talk</button>
 </div>
 
-<div id="quick-capture-modal" class="modal">
-    <button class="close-modal" id="close-quick-capture">×</button>
-    <h2>Save a Thought</h2>
-    <input type="text" id="quick-capture-title" placeholder="Title (optional)">
-    <textarea id="quick-capture-text" placeholder="What's on your mind?" style="min-height: 120px;"></textarea>
-    <button id="save-quick-capture" class="button-primary">Save Memory</button>
-</div>
-
-<div id="mood-check-modal" class="modal">
-    <button class="close-modal" id="close-mood-check">×</button>
-    <h2>How are you feeling?</h2>
-    <div class="mood-options">
-        <button class="mood-btn" data-mood="😊">Happy</button>
-        <button class="mood-btn" data-mood="😌">Calm</button>
-        <button class="mood-btn" data-mood="😐">Neutral</button>
-        <button class="mood-btn" data-mood="😟">Worried</button>
-        <button class="mood-btn" data-mood="😢">Sad</button>
-        <button class="mood-btn" data-mood="😠">Angry</button>
-        <button class="mood-btn" data-mood="😴">Tired</button>
-    </div>
-</div>
 
 <div id="add-agent-modal" class="modal">
     <button class="close-modal" id="close-add-agent">×</button>
@@ -219,19 +198,22 @@
 
 <div id="app-container">
     <header>
-        <button id="settings-button">⚙</button>
-        <img src="./logo.png" alt="Linen Logo" id="logo">
-        <button id="memories-button">📚</button>
+        <div class="header-logo-container">
+            <img src="./logo.png" alt="Linen Logo" id="logo" class="interactive-logo">
+            <div id="logo-menu" class="logo-menu hidden">
+                <button id="logo-memories" class="menu-item">📚 Memories</button>
+                <button id="logo-new-chat" class="menu-item">💬 New Chat</button>
+                <button id="logo-settings" class="menu-item">⚙ Settings</button>
+            </div>
+        </div>
     </header>
 
     <main class="main-content" id="chat-view">
         <div id="chat-messages"></div>
         <div id="chat-input-area">
-            <button id="quick-capture-btn" class="input-btn" title="Save a quick thought to memories">💭</button>
             <textarea id="chat-input" placeholder="Ask me anything..."></textarea>
-            <button id="mood-check-btn" class="input-btn" title="Quick mood check-in">😊</button>
-            <button id="voice-btn" class="input-btn" title="Voice input">🎤</button>
-            <button id="chat-send" class="input-btn">Send</button>
+            <button id="chat-type" class="input-btn" title="Type message">✍️</button>
+            <button id="chat-talk" class="input-btn" title="Voice input">🎤</button>
         </div>
     </main>
 
