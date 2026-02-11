@@ -2488,7 +2488,7 @@ class Linen {
         const voiceModeSwitcher = document.getElementById('voice-mode-switcher');
         const stopVoiceBtn = document.getElementById('stop-voice-btn');
 
-        console.log("Linen: Chat elements - input:", !!chatInput, "typeBtn:", !!chatTypeBtn, "talkBtn:", !!chatTalkBtn);
+        console.log("Linen: Chat elements - input:", !!chatInput, "typeBtn:", !!chatTypeBtn, "talkBtn:", !!chatTalkBtn, "buttons:", !!inputButtonsDiv, "textMode:", !!textInputMode, "voiceMode:", !!voiceInputMode);
 
         if (chatTypeBtn) {
             chatTypeBtn.addEventListener('click', () => {
