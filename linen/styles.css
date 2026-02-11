@@ -202,6 +202,11 @@ header button {
     transform: translate(-50%, -50%) scale(0.9);
 }
 
+/* Ensure add-agent-modal appears on top */
+#add-agent-modal {
+    z-index: 10000 !important;
+}
+
 .modal.active {
     transform: translate(-50%, -50%) scale(1);
 }
