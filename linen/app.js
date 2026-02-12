@@ -2327,9 +2327,9 @@ class Linen {
             },
             'claude': {
                 name: 'Anthropic Claude',
-                url: 'https://console.anthropic.com/keys',
+                url: 'https://platform.claude.com/login?returnTo=%2F%3F',
                 steps: [
-                    'Tap the button below to go to Anthropic Console',
+                    'Tap the button below to go to Claude Platform',
                     'Sign in with your Anthropic account',
                     'Go to API Keys',
                     'Click "Create Key"',

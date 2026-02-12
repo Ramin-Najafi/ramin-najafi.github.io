@@ -686,7 +686,7 @@ hr {
     margin-bottom: 1.5rem;
 }
 
-#pitch-modal.pitch-accordion .accordion-container {
+#pitch-modal.pitch-accordion .pitch-content {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
@@ -700,6 +700,37 @@ hr {
 
 #pitch-modal.pitch-accordion .accordion-item {
     flex-shrink: 0;
+}
+
+.pitch-description {
+    color: #ddd;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+}
+
+.pitch-section {
+    margin: 1.2rem 0;
+}
+
+.pitch-section h3 {
+    color: var(--primary);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+}
+
+.pitch-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.pitch-features li {
+    padding: 0.4rem 0;
+    color: #ccc;
+    font-size: 0.9rem;
 }
 
 #pitch-modal h2, #trial-limit-modal h2 {
@@ -873,26 +904,33 @@ hr {
 /* Voice Lightbox Modal */
 .voice-lightbox {
     max-width: 400px;
-    width: 90%;
+    width: 85%;
     padding: 2rem;
     text-align: center;
-    display: flex;
-    flex-direction: column;
     gap: 1.5rem;
-    align-items: center;
-    justify-content: center;
+}
+
+.voice-lightbox h2 {
+    margin-bottom: 0;
 }
 
 .lightbox-voice-display {
-    font-size: 2.5rem;
-    padding: 2rem;
-    width: 100%;
+    font-size: 2rem;
+    padding: 1.5rem 1rem;
+    margin: 1rem auto;
+    width: calc(100% - 2rem);
     text-align: center;
     background: rgba(74, 158, 255, 0.1);
     border-radius: 12px;
     border: 2px solid #4a9eff;
     animation: pulse 1.5s ease-in-out infinite;
     box-sizing: border-box;
+    word-break: break-word;
+}
+
+#lightbox-stop-btn {
+    margin: 0 auto;
+    display: block;
 }
 
 /* Ensure voice modal buttons are clickable */
