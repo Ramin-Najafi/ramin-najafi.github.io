@@ -3363,7 +3363,8 @@ class Linen {
                 body: JSON.stringify({
                     message: suggestionText,
                     type: 'suggestion',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    _replyto: 'rnajafi.dev@gmail.com'
                 })
             });
 
