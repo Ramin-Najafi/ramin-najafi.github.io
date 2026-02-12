@@ -3315,7 +3315,7 @@ class Linen {
         try {
             const response = await fetch('https://formspree.io/f/xaqdnyzw', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ name, email, message, _replyto: email })
             });
 
@@ -3359,11 +3359,11 @@ class Linen {
             // Send suggestion to formspree endpoint
             const response = await fetch('https://formspree.io/f/xaqdnyzw', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
                     message: suggestionText,
-                    timestamp: new Date().toISOString(),
-                    _replyto: 'feedback'
+                    type: 'suggestion',
+                    timestamp: new Date().toISOString()
                 })
             });
 
