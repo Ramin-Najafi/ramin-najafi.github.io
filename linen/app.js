@@ -1734,9 +1734,9 @@ class Linen {
         this._localModeToastShown = true;
         const isQuota = reason && (reason.toLowerCase().includes('quota') || reason.toLowerCase().includes('rate') || reason.toLowerCase().includes('429'));
         if (isQuota) {
-            this.showToast("You've hit your API usage limit. Switching to local mode — I can still chat!");
+            this.showToast("You've hit your API usage limit. Switching to local mode.", 'warning');
         } else {
-            this.showToast("API unavailable right now. Switching to local mode — I can still chat!");
+            this.showToast("API unavailable right now. Switching to local mode.", 'warning');
         }
     }
 
@@ -1772,7 +1772,7 @@ class Linen {
             acknowledgeBtn.addEventListener('click', () => {
                 modal.classList.remove('active');
                 backdrop.classList.remove('active');
-                this.showToast('You can talk to me anytime. I\'m here to listen.');
+                this.showToast('You can talk to me anytime. I\'m here to listen.', 'info');
             });
         }
         if (closeBtn) {
@@ -2224,7 +2224,7 @@ class Linen {
             await this.db.updateMemory(updatedMemory);
             closeModal();
             this.loadMemories(document.getElementById('memory-search').value);
-            this.showToast('Memory updated!');
+            this.showToast('Memory updated!', 'success');
         });
 
         closeBtn.addEventListener('click', closeModal);
@@ -2268,7 +2268,7 @@ class Linen {
                 await this.db.addConversation(msg);
             }
 
-            this.showToast(`Restored: ${memory.title}`);
+            this.showToast(`Restored: ${memory.title}`, 'success');
         }
     }
 
@@ -2388,7 +2388,7 @@ class Linen {
             } else {
                 // For other providers, just save the key for now
                 // TODO: Add provider-specific validation
-                this.showToast(`${config.name} API key saved!`);
+                this.showToast(`${config.name} API key saved successfully`, 'success');
                 this.showOnboardingStep(3);
             }
         };
@@ -2505,7 +2505,8 @@ class Linen {
 
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
-                if (!logo.contains(e.target) && !logoMenu.contains(e.target)) {
+                const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+                if (!logo.contains(e.target) && !logoMenu.contains(e.target) && !(hamburgerBtn && hamburgerBtn.contains(e.target))) {
                     logoMenu.classList.add('hidden');
                 }
             });
@@ -2569,6 +2570,15 @@ class Linen {
             });
         }
 
+        // Hamburger menu button in input area
+        const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+        if (hamburgerBtn && logoMenu) {
+            hamburgerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                logoMenu.classList.toggle('hidden');
+            });
+        }
+
         // Chat - Messenger-style input
         const chatInput = document.getElementById('chat-input');
         const chatTypeBtn = document.getElementById('chat-type');
@@ -2586,9 +2596,7 @@ class Linen {
         if (chatTypeBtn) {
             chatTypeBtn.addEventListener('click', () => {
                 console.log("Linen: Text button clicked");
-                // Expand chat input area and show text input mode
-                const chatInputArea = document.getElementById('chat-input-area');
-                chatInputArea.classList.add('expanded');
+                // Show send actions, hide buttons row
                 inputButtonsDiv.style.display = 'none';
                 voiceInputMode.style.display = 'none';
                 textInputMode.style.display = 'flex';
@@ -2649,8 +2657,6 @@ class Linen {
         // Mode switcher from text back to buttons
         if (modeSwitcher) {
             modeSwitcher.addEventListener('click', () => {
-                const chatInputArea = document.getElementById('chat-input-area');
-                chatInputArea.classList.remove('expanded');
                 textInputMode.style.display = 'none';
                 inputButtonsDiv.style.display = 'flex';
             });
@@ -2816,6 +2822,11 @@ class Linen {
         }
     }
 
+    clearFieldErrors() {
+        document.querySelectorAll('.form-field-error').forEach(el => el.textContent = '');
+        document.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
+    }
+
     async addNewAgent() {
         console.log("Linen: Adding new agent...");
         const nameInput = document.getElementById('agent-name');
@@ -2824,6 +2835,7 @@ class Linen {
         const modelInput = document.getElementById('agent-model');
         const primaryCheckbox = document.getElementById('agent-primary');
         const errorEl = document.getElementById('add-agent-error');
+        const saveBtn = document.getElementById('save-new-agent');
 
         const name = nameInput.value.trim();
         const type = typeSelect.value;
@@ -2831,18 +2843,43 @@ class Linen {
         const model = modelInput.value.trim();
         const isPrimary = primaryCheckbox.checked;
 
-        // Validation
+        // Clear previous field errors
+        this.clearFieldErrors();
+        errorEl.textContent = '';
+
+        // Per-field validation
+        let hasErrors = false;
+
         if (!name) {
-            errorEl.textContent = 'Please enter an agent name.';
-            return;
+            const err = document.getElementById('agent-name-error');
+            if (err) err.textContent = 'Agent name is required';
+            nameInput.classList.add('field-invalid');
+            hasErrors = true;
         }
         if (!type) {
-            errorEl.textContent = 'Please select an AI provider.';
-            return;
+            const err = document.getElementById('agent-type-error');
+            if (err) err.textContent = 'Please select a provider';
+            typeSelect.classList.add('field-invalid');
+            hasErrors = true;
         }
         if (!apiKey) {
-            errorEl.textContent = 'Please enter an API key.';
-            return;
+            const err = document.getElementById('agent-api-key-error');
+            if (err) err.textContent = 'API key is required';
+            keyInput.classList.add('field-invalid');
+            hasErrors = true;
+        } else if (apiKey.length < 10) {
+            const err = document.getElementById('agent-api-key-error');
+            if (err) err.textContent = 'API key looks too short. Check it was copied completely.';
+            keyInput.classList.add('field-invalid');
+            hasErrors = true;
+        }
+
+        if (hasErrors) return;
+
+        // Disable button while processing
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Adding...';
         }
 
         errorEl.textContent = 'Validating API key...';
@@ -2907,10 +2944,21 @@ class Linen {
 
             // Reload agents list
             this.loadAgentsList();
-            this.showToast(`Agent "${name}" added successfully!`);
+            this.showToast(`Agent '${name}' added successfully!`, 'success');
+
+            // Re-enable button
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Add Agent';
+            }
         } catch (err) {
             console.error("Linen: Error adding agent:", err);
             errorEl.textContent = `Error: ${err.message}`;
+            // Re-enable button on error
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Add Agent';
+            }
         }
     }
 
@@ -2921,6 +2969,12 @@ class Linen {
         document.getElementById('agent-model').value = '';
         document.getElementById('agent-primary').checked = false;
         document.getElementById('add-agent-error').textContent = '';
+        this.clearFieldErrors();
+        const saveBtn = document.getElementById('save-new-agent');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Add Agent';
+        }
     }
 
     async loadAgentsList() {
@@ -2931,7 +2985,17 @@ class Linen {
         const agents = this.agentManager.getAgents();
 
         if (agents.length === 0) {
-            agentsList.innerHTML = '<p style="color: var(--text-light); font-size: 0.9rem; text-align: center; padding: 1rem;">No agents added yet. Add one to get started!</p>';
+            agentsList.innerHTML = `
+                <div class="empty-state-container">
+                    <div class="empty-state-icon">🤖</div>
+                    <h3 class="empty-state-title">No AI Agents Yet</h3>
+                    <p class="empty-state-text">Default: Using Linen's built-in AI</p>
+                    <ul class="empty-state-benefits">
+                        <li>\u2713 Use your favorite AI (ChatGPT, Claude, etc.)</li>
+                        <li>\u2713 Have more control over responses</li>
+                        <li>\u2713 Use your own API keys (you own your data)</li>
+                    </ul>
+                </div>`;
             return;
         }
 
@@ -2987,7 +3051,7 @@ class Linen {
         this.agentManager.setPrimaryAgent(agentId);
         await this.db.setSetting('primary-agent-id', agentId);
         this.loadAgentsList();
-        this.showToast('Primary agent updated!');
+        this.showToast('Primary agent updated!', 'success');
     }
 
     async deleteAgent(agentId) {
@@ -2998,7 +3062,7 @@ class Linen {
         await this.db.setSetting(`agent-${agentId}`, null);
 
         this.loadAgentsList();
-        this.showToast('Agent deleted!');
+        this.showToast('Agent deleted!', 'info');
     }
 
     updateAgentModelOptions(providerType) {
@@ -3173,7 +3237,7 @@ class Linen {
                     console.log("Linen: Switching to next available agent:", nextAgent.name);
                     this.currentAgent = nextAgent;
                     this.assistant = this.createAssistantFromAgent(nextAgent);
-                    this.showToast(`Switched to ${nextAgent.name}`);
+                    this.showToast(`Switched to ${nextAgent.name}`, 'info');
                     // Retry the chat with new agent
                     return this.sendChat(initialMessage);
                 } else {
@@ -3245,7 +3309,7 @@ class Linen {
 
     async saveApiKey() {
         await this.validateAndSaveKey('api-key-input', 'settings-error', () => {
-            this.showToast('API Key saved!');
+            this.showToast('API key saved successfully', 'success');
             document.getElementById('api-key-input').value = '';
             document.getElementById('settings-modal').classList.remove('active');
             document.getElementById('modal-backdrop').classList.remove('active');
@@ -3282,7 +3346,7 @@ class Linen {
             this.assistant.clearSession();
         }
 
-        this.showToast('New chat started! 💬');
+        this.showToast('New chat started!', 'success');
 
         // Start with greeting
         this.sendChat('[INITIAL_GREETING]');
@@ -3292,7 +3356,7 @@ class Linen {
         if (!confirm('Are you sure you want to clear all chat history? This cannot be undone.')) return;
         await this.db.clearConversations();
         this.loadChatHistory();
-        this.showToast('Chat history cleared.');
+        this.showToast('Chat history cleared.', 'info');
     }
 
     async submitContactForm() {
@@ -3418,7 +3482,29 @@ class Linen {
         });
 
         if (filtered.length === 0) {
-            memoriesList.innerHTML = '<p class="empty-state">No memories yet.</p>';
+            memoriesList.innerHTML = `
+                <div class="empty-state-container">
+                    <div class="empty-state-icon">📚</div>
+                    <h3 class="empty-state-title">No Memories Yet</h3>
+                    <p class="empty-state-text">Memories are saved when you add an API key. They help Linen learn about you over time.</p>
+                    <button class="empty-state-btn" id="empty-state-add-key">+ Add My API Key</button>
+                </div>`;
+            const addKeyBtn = document.getElementById('empty-state-add-key');
+            if (addKeyBtn) {
+                addKeyBtn.addEventListener('click', () => {
+                    // Close memories panel, open settings and scroll to AI Agents
+                    document.getElementById('memories-panel').classList.remove('active');
+                    const settingsModal = document.getElementById('settings-modal');
+                    const backdrop = document.getElementById('modal-backdrop');
+                    settingsModal.classList.add('active');
+                    backdrop.classList.add('active');
+                    // Scroll to AI Agents section
+                    const agentsHeading = settingsModal.querySelector('h3');
+                    if (agentsHeading) {
+                        setTimeout(() => agentsHeading.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                    }
+                });
+            }
             return;
         }
 
@@ -3490,7 +3576,10 @@ class Linen {
             },
             (error) => {
                 console.error('Voice input error:', error);
-                this.showToast(`Voice input error: ${error}`);
+                const voiceErrorMsg = error === 'no-speech'
+                    ? "Couldn't hear you. Try again or use text input."
+                    : `Voice input error: ${error}`;
+                this.showToast(voiceErrorMsg, 'error');
                 this.stopVoiceInput();
             }
         );
@@ -3568,7 +3657,7 @@ class Linen {
 
         // Check if notifications are already supported
         if (!('Notification' in window)) {
-            this.showToast('Your browser does not support reminders.');
+            this.showToast('Your browser does not support reminders.', 'warning');
             return;
         }
 
@@ -3598,7 +3687,7 @@ class Linen {
                 modal.remove();
                 backdrop.classList.remove('active');
                 if (granted) {
-                    this.showToast('Reminders enabled! ✓');
+                    this.showToast('Reminders enabled!', 'success');
                 }
                 resolve(granted);
             });
@@ -3611,28 +3700,70 @@ class Linen {
         });
     }
 
-    showToast(message) {
+    showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
         if (!toast) return;
 
+        // Clear any existing toast timer
+        if (this._toastTimer) {
+            clearTimeout(this._toastTimer);
+            this._toastTimer = null;
+        }
+
+        // Remove previous type classes
+        toast.classList.remove('toast-success', 'toast-error', 'toast-warning', 'toast-info', 'show');
+
+        const icons = {
+            success: '\u2713',
+            error: '\u2715',
+            warning: '\u26A0',
+            info: '\u2139'
+        };
+
+        const icon = icons[type] || icons.info;
+
         toast.innerHTML = `
-            <span>${message}</span>
-            <button class="close-toast">×</button>
+            <span class="toast-icon">${icon}</span>
+            <span class="toast-message">${message}</span>
+            <button class="close-toast">\u00D7</button>
         `;
+
+        toast.classList.add(`toast-${type}`);
+        // Force reflow before adding show class for animation
+        void toast.offsetWidth;
         toast.classList.add('show');
 
         const closeButton = toast.querySelector('.close-toast');
         if (closeButton) {
             closeButton.onclick = () => {
                 toast.classList.remove('show');
-                toast.innerHTML = ''; // Clear content after hiding
+                if (this._toastTimer) {
+                    clearTimeout(this._toastTimer);
+                    this._toastTimer = null;
+                }
             };
         }
+
+        // Auto-dismiss after 4 seconds
+        this._toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+            this._toastTimer = null;
+        }, 4000);
     }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     try {
+        // Keyboard navigation detection — add golden focus outlines only when using Tab
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                document.body.classList.add('keyboard-nav');
+            }
+        });
+        document.addEventListener('mousedown', () => {
+            document.body.classList.remove('keyboard-nav');
+        });
+
         window.addEventListener('appinstalled', () => {
             window.app.analytics.trackPWAInstall();
         });

@@ -200,6 +200,8 @@
     <div class="form-group">
         <label for="agent-name">Agent Name:</label>
         <input type="text" id="agent-name" placeholder="e.g., My Claude, ChatGPT Pro">
+        <span class="form-help">Give your agent a nickname to remember it</span>
+        <span class="form-field-error" id="agent-name-error"></span>
     </div>
     <div class="form-group">
         <label for="agent-type">AI Provider:</label>
@@ -211,14 +213,19 @@
             <option value="deepseek">DeepSeek</option>
             <option value="openrouter">OpenRouter</option>
         </select>
+        <span class="form-help">Choose your preferred AI provider</span>
+        <span class="form-field-error" id="agent-type-error"></span>
     </div>
     <div class="form-group">
         <label for="agent-api-key">API Key:</label>
         <input type="password" id="agent-api-key" placeholder="Paste your API key">
+        <span class="form-help">Your API key is stored locally. We never see it or send it anywhere.</span>
+        <span class="form-field-error" id="agent-api-key-error"></span>
     </div>
     <div class="form-group">
         <label for="agent-model">Model (optional):</label>
         <input type="text" id="agent-model" placeholder="e.g., gpt-4, claude-3-opus">
+        <span class="form-help">Leave blank to use default. Examples: gpt-4, claude-3-opus</span>
     </div>
     <div class="form-group">
         <label>
@@ -231,6 +238,7 @@
 </div>
 
 <div id="app-container">
+    <a href="#chat-input" class="skip-link" id="skip-to-chat">Skip to main chat</a>
     <header>
         <div class="header-logo-container">
             <img src="./logo.png" alt="Linen Logo" id="logo" class="interactive-logo">
@@ -245,15 +253,18 @@
     <main class="main-content" id="chat-view">
         <div id="chat-messages"></div>
         <div id="chat-input-area">
-            <!-- Default state: Two buttons -->
+            <!-- Default state: Hamburger + Input + Two buttons -->
+            <div id="input-default-row" class="input-default-row">
+                <button id="hamburger-menu-btn" class="hamburger-menu-btn" aria-label="Open navigation menu" title="Open navigation menu">&#9776;</button>
+                <textarea id="chat-input" placeholder="Ask me anything..." rows="1"></textarea>
+            </div>
             <div id="input-buttons" class="input-buttons">
-                <button id="chat-type" class="input-btn" title="Type message">Text</button>
-                <button id="chat-talk" class="input-btn" title="Voice input">Talk</button>
+                <button id="chat-type" class="input-btn" aria-label="Switch to text input mode" title="Type message">Text</button>
+                <button id="chat-talk" class="input-btn" aria-label="Switch to voice input mode" title="Voice input">Talk</button>
             </div>
 
             <!-- Text input mode -->
             <div id="text-input-mode" class="input-mode" style="display: none;">
-                <textarea id="chat-input" placeholder="Ask me anything..."></textarea>
                 <div class="input-actions">
                     <button id="mode-switcher" class="mode-btn" title="Switch mode">+</button>
                     <button id="send-btn" class="send-btn">Send</button>
@@ -276,13 +287,13 @@
     <!-- Modals and Panels -->
     <div id="modal-backdrop"></div>
 
-    <aside id="memories-panel">
+    <aside id="memories-panel" aria-label="Memories sidebar">
         <button class="close-panel" id="close-memories">×</button>
         <input id="memory-search" placeholder="Search memories...">
-        <div id="memories-list">No memories yet.</div>
+        <div id="memories-list"></div>
     </aside>
 
-    <div class="modal" id="settings-modal">
+    <div class="modal" id="settings-modal" aria-label="Settings panel">
         <button class="close-modal" id="close-settings-modal">×</button>
 
         <div class="settings-section">
@@ -332,7 +343,7 @@
             </div>
         </div>
 
-        <p id="version-info">Version 1.1.3 [beta]</p>
+        <p id="version-info">v1.1.4 [beta]</p>
     </div>
 </div>
 

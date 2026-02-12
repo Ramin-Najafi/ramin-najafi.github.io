@@ -52,14 +52,12 @@ header {
 }
 
 .logo-menu {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
+    bottom: 120px;
+    left: 16px;
     background: #222;
     border: 1px solid #444;
     border-radius: 8px;
-    margin-top: 10px;
     z-index: 1000;
     min-width: 180px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -114,28 +112,6 @@ header {
     gap: 10px;
     padding: 20px;
     min-height: 0; /* Allows it to shrink if necessary without pushing input area */
-}
-
-#chat-input-area {
-    display: flex;
-    padding: 12px;
-    background-color: var(--header-bg);
-    border-top: 1px solid var(--border);
-    margin-top: auto;
-    gap: 8px;
-    align-items: flex-end;
-}
-
-#chat-input {
-    flex: 1;
-    resize: none;
-    background: #333;
-    color: var(--primary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 1rem;
-    max-height: 100px;
 }
 
 .assistant-message, .user-message {
@@ -323,42 +299,6 @@ button:hover {
     margin-top: 5px;
     padding: 5px 10px;
     font-size: 0.8rem;
-}
-
-#toast {
-    position: fixed;
-    bottom: -100px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--accent);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 6px;
-    transition: bottom 0.5s;
-    z-index: 2000;
-}
-
-#toast.show {
-    bottom: 30px;
-    display: flex; /* Ensure flexbox for positioning button */
-    align-items: center;
-    justify-content: space-between;
-    padding-right: 10px; /* Adjust padding for button */
-}
-
-#toast .close-toast {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    margin-left: 10px;
-    padding: 0;
-    line-height: 1; /* Ensure button text aligns vertically */
-}
-
-#toast .close-toast:hover {
-    opacity: 0.7;
 }
 
 #onboarding-overlay {
@@ -986,11 +926,11 @@ hr {
 #chat-input-area {
     display: flex;
     flex-direction: column;
-    padding: 16px;
+    padding: 12px 16px;
     background-color: var(--header-bg);
     border-top: 1px solid var(--border);
-    gap: 0;
-    align-items: center;
+    gap: 8px;
+    align-items: stretch;
     justify-content: center;
 }
 
@@ -1000,6 +940,52 @@ hr {
     justify-content: flex-start;
 }
 
+/* Default row: hamburger + input */
+.input-default-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Hamburger menu button */
+.hamburger-menu-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.hamburger-menu-btn:hover {
+    background: #2a2a2a;
+}
+
+#chat-input-area #chat-input {
+    flex: 1;
+    resize: none;
+    background: #333;
+    color: var(--primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    min-height: 44px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
 /* Default button state */
 .input-buttons {
     display: flex;
@@ -1007,7 +993,7 @@ hr {
     width: 100%;
     max-width: 500px;
     margin: 0 auto;
-    justify-content: center;
+    justify-content: space-between;
 }
 
 .input-btn {
@@ -1062,20 +1048,6 @@ hr {
     width: 100%;
     flex: 1;
     padding: 16px;
-}
-
-#chat-input {
-    flex: 1;
-    resize: none;
-    background: #333;
-    color: var(--primary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 16px;
-    font-size: 1rem;
-    font-family: inherit;
-    max-height: none;
-    min-height: 120px;
 }
 
 #chat-input:focus {
@@ -1486,4 +1458,216 @@ hr {
 .agent-actions button:hover {
     border-color: var(--accent);
     color: var(--accent);
+}
+
+/* ========== CHANGE 2: Empty States ========== */
+.empty-state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    gap: 0.75rem;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-title {
+    font-size: 1.2rem;
+    color: var(--primary);
+    font-weight: 600;
+    margin: 0;
+}
+
+.empty-state-text {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    max-width: 280px;
+    margin: 0;
+}
+
+.empty-state-btn {
+    margin-top: 0.5rem;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.empty-state-btn:hover {
+    opacity: 0.9;
+}
+
+.empty-state-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+    text-align: left;
+}
+
+.empty-state-benefits li {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    padding: 0.25rem 0;
+}
+
+/* ========== CHANGE 3: Color-coded Toast Notifications ========== */
+#toast {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 8px;
+    transition: bottom 0.4s ease-out;
+    z-index: 2000;
+    min-width: 280px;
+    max-width: 90vw;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+#toast.show {
+    bottom: 30px;
+}
+
+#toast .toast-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+#toast .toast-message {
+    flex: 1;
+    color: white;
+}
+
+#toast .close-toast {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+#toast .close-toast:hover {
+    color: white;
+}
+
+#toast.toast-success {
+    background: #2d5a2d;
+}
+
+#toast.toast-error {
+    background: #5a2d2d;
+}
+
+#toast.toast-warning {
+    background: #5a502d;
+}
+
+#toast.toast-info {
+    background: #2d4a5a;
+}
+
+/* ========== CHANGE 4: Form Validation Styles ========== */
+.form-help {
+    display: block;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 0.3rem;
+    line-height: 1.3;
+}
+
+.form-field-error {
+    display: block;
+    font-size: 0.8rem;
+    color: #e74c3c;
+    margin-top: 0.25rem;
+    min-height: 0;
+    line-height: 1.3;
+}
+
+.form-field-error:not(:empty) {
+    min-height: 1em;
+}
+
+.form-group input.field-invalid,
+.form-group select.field-invalid {
+    border-color: #e74c3c;
+}
+
+#save-new-agent:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ========== CHANGE 5: Keyboard Accessibility ========== */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: #000;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    z-index: 10000;
+    border-radius: 0 0 6px 0;
+    text-decoration: none;
+}
+
+.skip-link:focus {
+    left: 0;
+    outline: 3px solid #FFD700;
+    outline-offset: 2px;
+}
+
+/* Golden focus outline for keyboard navigation only */
+body.keyboard-nav button:focus,
+body.keyboard-nav input:focus,
+body.keyboard-nav textarea:focus,
+body.keyboard-nav select:focus,
+body.keyboard-nav a:focus,
+body.keyboard-nav [tabindex]:focus {
+    outline: 3px solid #FFD700;
+    outline-offset: 2px;
+}
+
+/* ========== Responsive adjustments ========== */
+@media (max-width: 360px) {
+    .input-default-row {
+        gap: 6px;
+    }
+    .hamburger-menu-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        font-size: 1.2rem;
+    }
+    .input-buttons {
+        gap: 0.5rem;
+    }
+    .input-btn {
+        min-width: 100px;
+        min-height: 50px;
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
 }
