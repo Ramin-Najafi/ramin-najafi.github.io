@@ -1460,6 +1460,86 @@ hr {
     color: var(--accent);
 }
 
+/* Agent status indicators */
+.agent-status {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.agent-status-valid {
+    color: #4caf50;
+}
+
+.agent-status-invalid {
+    color: #e74c3c;
+}
+
+.agent-status-rate-limited {
+    color: #ff9800;
+}
+
+.agent-status-expired {
+    color: #ff5722;
+}
+
+.agent-status-unknown {
+    color: #888;
+}
+
+/* Masked key preview */
+.agent-key-preview {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.2rem;
+    font-family: monospace;
+}
+
+/* Auto-detected provider display */
+.detected-provider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #2a2a2a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.detected-provider span:first-child {
+    font-size: 1.3rem;
+}
+
+.detected-provider span:nth-child(2) {
+    flex: 1;
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.change-provider-link {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.change-provider-link:hover {
+    color: var(--accent);
+}
+
+/* Settings info text */
+.settings-info {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-align: center;
+    line-height: 1.4;
+}
+
 /* ========== CHANGE 2: Empty States ========== */
 .empty-state-container {
     display: flex;

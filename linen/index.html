@@ -195,15 +195,23 @@
 
 
 <div id="add-agent-modal" class="modal">
-    <button class="close-modal" id="close-add-agent">×</button>
-    <h2>Add New Agent</h2>
+    <button class="close-modal" id="close-add-agent">&times;</button>
+    <h2>Add API Key</h2>
+
     <div class="form-group">
-        <label for="agent-name">Agent Name:</label>
-        <input type="text" id="agent-name" placeholder="e.g., My Claude, ChatGPT Pro">
-        <span class="form-help">Give your agent a nickname to remember it</span>
-        <span class="form-field-error" id="agent-name-error"></span>
+        <label for="agent-api-key">API Key:</label>
+        <input type="password" id="agent-api-key" placeholder="Paste your API key here">
+        <span class="form-help">Your API key is stored locally on your device only.</span>
+        <span class="form-field-error" id="agent-api-key-error"></span>
     </div>
-    <div class="form-group">
+
+    <div id="detected-provider-display" class="detected-provider" style="display: none;">
+        <span id="detected-provider-icon"></span>
+        <span id="detected-provider-name"></span>
+        <button id="change-provider-btn" class="change-provider-link">Change</button>
+    </div>
+
+    <div class="form-group" id="provider-select-group" style="display: none;">
         <label for="agent-type">AI Provider:</label>
         <select id="agent-type">
             <option value="">Select a provider</option>
@@ -213,27 +221,28 @@
             <option value="deepseek">DeepSeek</option>
             <option value="openrouter">OpenRouter</option>
         </select>
-        <span class="form-help">Choose your preferred AI provider</span>
         <span class="form-field-error" id="agent-type-error"></span>
     </div>
+
     <div class="form-group">
-        <label for="agent-api-key">API Key:</label>
-        <input type="password" id="agent-api-key" placeholder="Paste your API key">
-        <span class="form-help">Your API key is stored locally. We never see it or send it anywhere.</span>
-        <span class="form-field-error" id="agent-api-key-error"></span>
+        <label for="agent-name">Label (optional):</label>
+        <input type="text" id="agent-name" placeholder="e.g., My Work Key, Personal Claude">
+        <span class="form-help">Give this key a nickname to tell it apart from others</span>
     </div>
-    <div class="form-group">
+
+    <div class="form-group" id="model-group" style="display: none;">
         <label for="agent-model">Model (optional):</label>
-        <input type="text" id="agent-model" placeholder="e.g., gpt-4, claude-3-opus">
-        <span class="form-help">Leave blank to use default. Examples: gpt-4, claude-3-opus</span>
+        <input type="text" id="agent-model" placeholder="Leave blank for default">
     </div>
+
     <div class="form-group">
         <label>
-            <input type="checkbox" id="agent-primary">
-            Set as primary agent
+            <input type="checkbox" id="agent-primary" checked>
+            Set as primary key
         </label>
     </div>
-    <button id="save-new-agent" class="button-primary">Add Agent</button>
+
+    <button id="save-new-agent" class="button-primary">Add Key</button>
     <p class="error-message" id="add-agent-error"></p>
 </div>
 
@@ -296,22 +305,68 @@
     <div class="modal" id="settings-modal" aria-label="Settings panel">
         <button class="close-modal" id="close-settings-modal">×</button>
 
+        <div class="settings-section" id="profile-section">
+            <h3 class="settings-heading">👤 User Profile</h3>
+            <div id="profile-form" class="profile-form">
+                <div class="form-group">
+                    <label for="profile-first-name">First Name</label>
+                    <input type="text" id="profile-first-name" placeholder="Your first name" autocomplete="given-name">
+                </div>
+                <div class="form-group">
+                    <label for="profile-last-name">Last Name</label>
+                    <input type="text" id="profile-last-name" placeholder="Your last name" autocomplete="family-name">
+                </div>
+                <div class="form-group">
+                    <label for="profile-email">Email (optional)</label>
+                    <input type="email" id="profile-email" placeholder="your@email.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="profile-pronouns">Pronouns</label>
+                    <select id="profile-pronouns">
+                        <option value="">Select pronouns</option>
+                        <option value="he/him">he/him</option>
+                        <option value="she/her">she/her</option>
+                        <option value="they/them">they/them</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                    <input type="text" id="profile-pronouns-custom" placeholder="Enter your pronouns" style="display:none; margin-top:8px;">
+                </div>
+                <div class="form-group" id="profile-dob-group">
+                    <label for="profile-dob">Date of Birth</label>
+                    <input type="date" id="profile-dob">
+                    <span class="form-help">Used for birthday messages — stored only on your device</span>
+                </div>
+                <div id="profile-dob-saved" class="profile-dob-saved" style="display:none;">
+                    <span>✓ Birthday saved</span>
+                </div>
+                <div class="form-group">
+                    <label for="profile-timezone">Timezone</label>
+                    <select id="profile-timezone">
+                        <option value="">Auto-detect</option>
+                    </select>
+                </div>
+                <div class="settings-btn-group" style="margin-top: 8px;">
+                    <button id="save-profile" class="settings-btn settings-btn-primary">Save Profile</button>
+                    <button id="clear-profile" class="settings-btn settings-btn-danger">Clear Profile Data</button>
+                </div>
+            </div>
+        </div>
+
         <div class="settings-section">
             <h3 class="settings-heading">📱 Installation</h3>
             <button id="install-app-btn" class="settings-btn settings-btn-primary">Install Linen as App</button>
         </div>
 
         <div class="settings-section">
-            <h3 class="settings-heading">🤖 AI Agents</h3>
-            <button id="add-agent-btn" class="settings-btn settings-btn-primary">+ Add New Agent</button>
+            <h3 class="settings-heading">🔑 API Keys</h3>
+            <button id="add-agent-btn" class="settings-btn settings-btn-primary">+ Add API Key</button>
             <div id="agents-list"></div>
         </div>
 
-        <div class="settings-section">
-            <h3 class="settings-heading">🔑 Legacy API Key</h3>
-            <input id="api-key-input" placeholder="Paste Gemini API key">
-            <p id="settings-error" class="error-message"></p>
-            <button id="save-api-key" class="settings-btn settings-btn-primary">Save API Key</button>
+        <div class="settings-section" id="legacy-key-section" style="display: none;">
+            <h3 class="settings-heading">🔄 Legacy Key Migration</h3>
+            <p class="settings-info">Your legacy Gemini API key has been migrated to the new system.</p>
+            <button id="dismiss-legacy" class="settings-btn settings-btn-secondary">Dismiss</button>
         </div>
 
         <div class="settings-section">
@@ -343,8 +398,169 @@
             </div>
         </div>
 
-        <p id="version-info">v1.1.4 [beta]</p>
+        <div class="settings-section" id="privacy-section">
+            <h3 class="settings-heading">🔐 Privacy & Terms</h3>
+            <div class="trust-badges">
+                <div class="trust-badge">
+                    <span class="trust-badge-icon">🔒</span>
+                    <div class="trust-badge-text">
+                        <strong>Privacy First</strong>
+                        <span>Your data never leaves your device</span>
+                    </div>
+                </div>
+                <div class="trust-badge">
+                    <span class="trust-badge-icon">🚫</span>
+                    <div class="trust-badge-text">
+                        <strong>Never</strong>
+                        <span>Sell, share, or train AI on your data</span>
+                    </div>
+                </div>
+                <div class="trust-badge">
+                    <span class="trust-badge-icon">💯</span>
+                    <div class="trust-badge-text">
+                        <strong>Free</strong>
+                        <span>No paywalls, no premium, no ads</span>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-btn-group">
+                <button id="show-privacy-policy" class="settings-btn settings-btn-secondary">Privacy Policy</button>
+                <button id="show-terms" class="settings-btn settings-btn-secondary">Terms of Service</button>
+            </div>
+        </div>
+
+        <p id="version-info">v1.2.0 [beta]</p>
     </div>
+</div>
+
+<div id="privacy-modal" class="modal privacy-terms-modal">
+    <button class="close-modal" id="close-privacy-modal">×</button>
+    <h2>Linen Privacy Policy</h2>
+    <div class="privacy-terms-content">
+        <p class="privacy-highlight">Your privacy is Linen's #1 priority.</p>
+
+        <h3>What Data Linen Stores</h3>
+        <ul>
+            <li>Your name, email, pronouns, birthday (only if you add them)</li>
+            <li>Your conversations with Linen</li>
+            <li>Your calendar events and reminders</li>
+            <li>Your API keys (stored locally)</li>
+            <li>Nothing else.</li>
+        </ul>
+
+        <h3>Where Your Data Lives</h3>
+        <ul>
+            <li>100% on YOUR device (your phone, your computer)</li>
+            <li>Linen cannot access it</li>
+        </ul>
+
+        <h3>What Linen Does Not Do</h3>
+        <ul class="privacy-never-list">
+            <li>Never sells your data</li>
+            <li>Never shares your data with anyone</li>
+            <li>Never uses your data for ads or marketing</li>
+            <li>Never trains AI models on your conversations</li>
+            <li>Never accesses your device</li>
+            <li>Never tracks you</li>
+            <li>Never stores your data on any server</li>
+        </ul>
+
+        <h3>Your API Keys</h3>
+        <ul>
+            <li>Your ChatGPT, Claude, Gemini keys stay on YOUR device</li>
+            <li>Linen cannot access them</li>
+            <li>Only used locally by Linen</li>
+            <li>Delete them anytime, they're gone forever</li>
+        </ul>
+
+        <h3>Email (If You Opt-In)</h3>
+        <ul>
+            <li>You can optionally provide your email</li>
+            <li>Linen only sends emails if you enable notifications</li>
+            <li>Unsubscribe anytime</li>
+        </ul>
+
+        <h3>Third Parties</h3>
+        <ul>
+            <li>If you choose to use external AI providers (ChatGPT, Claude, Gemini), they receive only what you send them</li>
+            <li>Read their privacy policies to understand their practices</li>
+            <li>Linen has no access to your API usage or data sent to them</li>
+        </ul>
+
+        <h3>Data Deletion</h3>
+        <ul>
+            <li>"Clear All Data" button in Settings permanently deletes everything</li>
+            <li>No backups, no archives, no recovery</li>
+            <li>Your data is completely yours to delete</li>
+        </ul>
+
+        <h3>Policy Changes</h3>
+        <ul>
+            <li>If this policy ever changes, you'll be notified in-app</li>
+            <li>Changes will never reduce your privacy protections</li>
+        </ul>
+
+        <p class="privacy-date">Last updated: February 2026</p>
+    </div>
+    <button id="close-privacy-btn" class="button-primary" style="margin-top: 1rem;">Got It</button>
+</div>
+
+<div id="terms-modal" class="modal privacy-terms-modal">
+    <button class="close-modal" id="close-terms-modal">×</button>
+    <h2>Linen Terms of Service</h2>
+    <div class="privacy-terms-content">
+        <h3>You Own Your Data</h3>
+        <ul>
+            <li>Everything you create belongs to you</li>
+            <li>Export it, delete it, modify it — it's yours</li>
+        </ul>
+
+        <h3>Linen Provides the App As-Is</h3>
+        <ul>
+            <li>Free to use (as long as operational costs allow)</li>
+            <li>Works offline, on your device</li>
+            <li>No account required</li>
+        </ul>
+
+        <h3>You're Responsible For</h3>
+        <ul>
+            <li>Your API keys — keep them secret, don't share them</li>
+            <li>Your device security</li>
+            <li>What you use Linen for</li>
+        </ul>
+
+        <h3>Linen is Not Liable For</h3>
+        <ul>
+            <li>Lost data (keep backups)</li>
+            <li>Device crashes or errors</li>
+            <li>Third-party service outages</li>
+            <li>Internet connection issues</li>
+        </ul>
+
+        <h3>No Warranty</h3>
+        <ul>
+            <li>Linen is provided as-is without guarantees</li>
+            <li>We try to keep it reliable, but bugs happen</li>
+            <li>Not responsible for unexpected crashes</li>
+        </ul>
+
+        <h3>Data Ownership</h3>
+        <ul>
+            <li>You own all data you create in Linen</li>
+            <li>You can delete it anytime</li>
+            <li>Linen cannot delete your data without your permission</li>
+        </ul>
+
+        <h3>Termination</h3>
+        <ul>
+            <li>Stop using Linen anytime</li>
+            <li>All your data stays yours</li>
+        </ul>
+
+        <p class="privacy-terms-law">Governing Law: Ontario, Canada</p>
+        <p class="privacy-date">Last updated: February 2026</p>
+    </div>
+    <button id="close-terms-btn" class="button-primary" style="margin-top: 1rem;">Got It</button>
 </div>
 
 <div id="toast"></div>

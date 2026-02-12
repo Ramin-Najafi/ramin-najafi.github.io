@@ -183,7 +183,32 @@ class AgentManager {
             console.warn("Linen: Database not available for loading agents");
             return;
         }
-        // Load agents from database (implementation when db is passed)
+        try {
+            const idsJson = await this.db.getSetting('agent-ids');
+            if (!idsJson) return;
+
+            const ids = JSON.parse(idsJson);
+            const primaryAgentId = await this.db.getSetting('primary-agent-id');
+
+            for (const id of ids) {
+                const agentData = await this.db.getSetting(`agent-${id}`);
+                if (agentData) {
+                    try {
+                        const agent = JSON.parse(agentData);
+                        agent.isPrimary = (String(agent.id) === String(primaryAgentId));
+                        this.agents.push(agent);
+                        if (agent.isPrimary) {
+                            this.primaryAgent = agent;
+                        }
+                    } catch (e) {
+                        console.warn(`Linen: Failed to parse agent-${id}:`, e);
+                    }
+                }
+            }
+            console.log(`Linen: Loaded ${this.agents.length} agents from database`);
+        } catch (e) {
+            console.error("Linen: Error loading agents:", e);
+        }
     }
 
     async addAgent(agentConfig) {
@@ -197,7 +222,10 @@ class AgentManager {
             isPrimary: agentConfig.isPrimary || false,
             createdAt: Date.now(),
             successCount: 0,
-            failureCount: 0
+            failureCount: 0,
+            status: 'valid',
+            lastVerified: Date.now(),
+            lastError: null
         };
 
         this.agents.push(agent);
@@ -1783,6 +1811,40 @@ class Linen {
         }
     }
 
+    async migrateLegacyKey() {
+        const legacyKey = await this.db.getSetting('gemini-api-key');
+        const migrated = await this.db.getSetting('legacy-key-migrated');
+
+        if (legacyKey && !migrated) {
+            console.log("Linen: Migrating legacy Gemini API key to agent system...");
+
+            const agentConfig = {
+                name: 'Gemini Key (Migrated)',
+                type: 'gemini',
+                apiKey: legacyKey,
+                model: null,
+                isPrimary: true
+            };
+
+            const agent = await this.agentManager.addAgent(agentConfig);
+            agent.status = 'valid';
+            agent.lastVerified = Date.now();
+
+            await this.db.setSetting(`agent-${agent.id}`, JSON.stringify(agent));
+
+            const existingIds = JSON.parse(await this.db.getSetting('agent-ids') || '[]');
+            existingIds.push(agent.id);
+            await this.db.setSetting('agent-ids', JSON.stringify(existingIds));
+            await this.db.setSetting('primary-agent-id', agent.id);
+            await this.db.setSetting('legacy-key-migrated', 'true');
+
+            console.log("Linen: Legacy key migrated successfully as agent:", agent.name);
+            this.showToast('Migrated your API key to new system', 'info');
+            return agent;
+        }
+        return null;
+    }
+
     async init() {
         console.log("Linen: Initializing app...");
         try {
@@ -1799,36 +1861,30 @@ class Linen {
             }
             await this.db.clearCurrentSession();
 
+            // Migrate legacy key and load all agents
+            await this.migrateLegacyKey();
+            await this.agentManager.loadAgents();
+
             const apiKey = await this.db.getSetting('gemini-api-key');
             const primaryAgentId = await this.db.getSetting('primary-agent-id');
 
-            console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}, Agent: ${primaryAgentId ? 'Yes' : 'No'}`);
+            console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}, Agent: ${primaryAgentId ? 'Yes' : 'No'}, Agents loaded: ${this.agentManager.getAgents().length}`);
 
-            // Try to load primary agent from multi-agent system
-            let primaryAgent = null;
+            // Try to load primary agent from the loaded agents
+            let primaryAgent = this.agentManager.primaryAgent;
 
-            if (primaryAgentId) {
-                const agentData = await this.db.getSetting(`agent-${primaryAgentId}`);
-                if (agentData) {
-                    try {
-                        primaryAgent = JSON.parse(agentData);
-                        console.log("Linen: Found primary agent:", primaryAgent.name);
-                        this.currentAgent = primaryAgent;
-                        this.assistant = this.createAssistantFromAgent(primaryAgent);
-                        this.isLocalMode = false;
-                    } catch (err) {
-                        console.warn("Linen: Failed to load primary agent, falling back:", err);
-                    }
-                }
+            if (primaryAgent) {
+                console.log("Linen: Found primary agent:", primaryAgent.name);
+                this.currentAgent = primaryAgent;
+                this.assistant = this.createAssistantFromAgent(primaryAgent);
+                this.isLocalMode = false;
             }
 
-            // If no primary agent, check for API key
+            // If no primary agent, check for standalone API key (backward compat)
             if (!primaryAgent) {
                 if (!apiKey) {
                     console.log("Linen: No API Key found, will start with LocalAssistant.");
-                    // Don't return early - we need to call startApp()
                 } else {
-                    // API key exists - validate and start
                     const geminiAssistant = new GeminiAssistant(apiKey);
                     const result = await geminiAssistant.validateKey();
                     if (result.valid) {
@@ -1836,8 +1892,6 @@ class Linen {
                         this.assistant = geminiAssistant;
                         this.isLocalMode = false;
                     } else {
-                        // Check if the error is due to network or quota, in which case we can fallback to local.
-                        // Otherwise, the key is truly invalid and requires re-entry via onboarding.
                         const isRecoverableError = (result.error && (
                             result.error.toLowerCase().includes('quota') ||
                             result.error.toLowerCase().includes('network error') ||
@@ -2681,11 +2735,13 @@ class Linen {
         }
 
         // Settings actions
-        const settingsSaveKey = () => this.saveApiKey();
-        document.getElementById('save-api-key').addEventListener('click', settingsSaveKey);
-        document.getElementById('api-key-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); settingsSaveKey(); }
-        });
+        const dismissLegacy = document.getElementById('dismiss-legacy');
+        if (dismissLegacy) {
+            dismissLegacy.addEventListener('click', () => {
+                const section = document.getElementById('legacy-key-section');
+                if (section) section.style.display = 'none';
+            });
+        }
 
         document.getElementById('export-data').addEventListener('click', () => this.exportData());
         document.getElementById('clear-data').addEventListener('click', () => this.clearAll());
@@ -2788,6 +2844,20 @@ class Linen {
             agentTypeSelect.addEventListener('change', (e) => this.updateAgentModelOptions(e.target.value));
         }
 
+        // Auto-detect provider on key paste/input
+        const agentKeyInput = document.getElementById('agent-api-key');
+        if (agentKeyInput) {
+            agentKeyInput.addEventListener('input', () => this.onApiKeyInput());
+            agentKeyInput.addEventListener('paste', () => {
+                setTimeout(() => this.onApiKeyInput(), 0);
+            });
+        }
+
+        const changeProviderBtn = document.getElementById('change-provider-btn');
+        if (changeProviderBtn) {
+            changeProviderBtn.addEventListener('click', () => this.showManualProviderSelect());
+        }
+
         // Load agents list
         this.loadAgentsList();
     }
@@ -2807,13 +2877,51 @@ class Linen {
         errorEl.textContent = 'Validating...';
         console.log("Linen: Validating API key...");
 
-        const tempAssistant = new GeminiAssistant(key);
+        // Auto-detect provider or use onboarding's selected provider
+        const provider = this.detectProvider(key) || this.onboardingProvider || 'gemini';
+        let tempAssistant;
+
+        switch (provider) {
+            case 'openai': tempAssistant = new OpenAIAssistant(key); break;
+            case 'claude': tempAssistant = new ClaudeAssistant(key); break;
+            case 'deepseek': tempAssistant = new DeepSeekAssistant(key); break;
+            case 'openrouter': tempAssistant = new OpenRouterAssistant(key); break;
+            default: tempAssistant = new GeminiAssistant(key);
+        }
+
         const result = await tempAssistant.validateKey();
 
         if (result.valid) {
-            console.log("Linen: API key validated successfully. Saving to DB.");
+            console.log("Linen: API key validated successfully. Saving as agent.");
+
+            // Save as agent in new system
+            const providerNames = {
+                'gemini': 'Gemini', 'openai': 'ChatGPT', 'claude': 'Claude',
+                'deepseek': 'DeepSeek', 'openrouter': 'OpenRouter'
+            };
+            const agentConfig = {
+                name: `${providerNames[provider] || 'API'} Key`,
+                type: provider,
+                apiKey: key,
+                model: null,
+                isPrimary: true
+            };
+            const agent = await this.agentManager.addAgent(agentConfig);
+            agent.status = 'valid';
+            agent.lastVerified = Date.now();
+            await this.db.setSetting(`agent-${agent.id}`, JSON.stringify(agent));
+
+            const existingIds = JSON.parse(await this.db.getSetting('agent-ids') || '[]');
+            existingIds.push(agent.id);
+            await this.db.setSetting('agent-ids', JSON.stringify(existingIds));
+            await this.db.setSetting('primary-agent-id', agent.id);
+
+            // Also save for backward compatibility
             await this.db.setSetting('gemini-api-key', key);
+
             this.assistant = tempAssistant;
+            this.currentAgent = agent;
+            this.isLocalMode = false;
             errorEl.textContent = '';
             onSuccess();
         } else {
@@ -2837,7 +2945,7 @@ class Linen {
         const errorEl = document.getElementById('add-agent-error');
         const saveBtn = document.getElementById('save-new-agent');
 
-        const name = nameInput.value.trim();
+        let name = nameInput.value.trim();
         const type = typeSelect.value;
         const apiKey = keyInput.value.trim();
         const model = modelInput.value.trim();
@@ -2850,16 +2958,10 @@ class Linen {
         // Per-field validation
         let hasErrors = false;
 
-        if (!name) {
-            const err = document.getElementById('agent-name-error');
-            if (err) err.textContent = 'Agent name is required';
-            nameInput.classList.add('field-invalid');
-            hasErrors = true;
-        }
         if (!type) {
             const err = document.getElementById('agent-type-error');
             if (err) err.textContent = 'Please select a provider';
-            typeSelect.classList.add('field-invalid');
+            if (typeSelect) typeSelect.classList.add('field-invalid');
             hasErrors = true;
         }
         if (!apiKey) {
@@ -2876,6 +2978,21 @@ class Linen {
 
         if (hasErrors) return;
 
+        // Auto-generate name if not provided
+        if (!name) {
+            const providerNames = {
+                'gemini': 'Gemini', 'openai': 'ChatGPT', 'claude': 'Claude',
+                'deepseek': 'DeepSeek', 'openrouter': 'OpenRouter'
+            };
+            name = `${providerNames[type] || 'API'} Key`;
+            const existingNames = this.agentManager.getAgents().map(a => a.name);
+            if (existingNames.includes(name)) {
+                let i = 2;
+                while (existingNames.includes(`${name} ${i}`)) i++;
+                name = `${name} ${i}`;
+            }
+        }
+
         // Disable button while processing
         if (saveBtn) {
             saveBtn.disabled = true;
@@ -2887,20 +3004,20 @@ class Linen {
         try {
             // Validate API key for the selected provider
             let tempAssistant;
-            const model = model || this.getDefaultModel(type);
+            const resolvedModel = model || this.getDefaultModel(type);
 
             switch (type) {
                 case 'openai':
-                    tempAssistant = new OpenAIAssistant(apiKey, model);
+                    tempAssistant = new OpenAIAssistant(apiKey, resolvedModel);
                     break;
                 case 'claude':
-                    tempAssistant = new ClaudeAssistant(apiKey, model);
+                    tempAssistant = new ClaudeAssistant(apiKey, resolvedModel);
                     break;
                 case 'deepseek':
-                    tempAssistant = new DeepSeekAssistant(apiKey, model);
+                    tempAssistant = new DeepSeekAssistant(apiKey, resolvedModel);
                     break;
                 case 'openrouter':
-                    tempAssistant = new OpenRouterAssistant(apiKey, model);
+                    tempAssistant = new OpenRouterAssistant(apiKey, resolvedModel);
                     break;
                 case 'gemini':
                 default:
@@ -2910,6 +3027,10 @@ class Linen {
             const result = await tempAssistant.validateKey();
             if (!result.valid) {
                 errorEl.textContent = `Key validation failed: ${result.error}`;
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Add Key';
+                }
                 return;
             }
 
@@ -2918,7 +3039,7 @@ class Linen {
                 name: name,
                 type: type,
                 apiKey: apiKey,
-                model: model || this.getDefaultModel(type),
+                model: resolvedModel,
                 isPrimary: isPrimary
             };
 
@@ -2927,9 +3048,17 @@ class Linen {
             // Save agent to database
             await this.db.setSetting(`agent-${agent.id}`, JSON.stringify(agent));
 
-            // If set as primary, update the saved agents list
+            // Persist agent ID to the list
+            const existingIds = JSON.parse(await this.db.getSetting('agent-ids') || '[]');
+            existingIds.push(agent.id);
+            await this.db.setSetting('agent-ids', JSON.stringify(existingIds));
+
+            // If set as primary, update primary agent
             if (isPrimary) {
                 await this.db.setSetting('primary-agent-id', agent.id);
+                this.currentAgent = agent;
+                this.assistant = this.createAssistantFromAgent(agent);
+                this.isLocalMode = false;
             }
 
             console.log("Linen: Agent added successfully:", agent);
@@ -2944,12 +3073,12 @@ class Linen {
 
             // Reload agents list
             this.loadAgentsList();
-            this.showToast(`Agent '${name}' added successfully!`, 'success');
+            this.showToast(`${name} added successfully!`, 'success');
 
             // Re-enable button
             if (saveBtn) {
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Add Agent';
+                saveBtn.textContent = 'Add Key';
             }
         } catch (err) {
             console.error("Linen: Error adding agent:", err);
@@ -2957,7 +3086,7 @@ class Linen {
             // Re-enable button on error
             if (saveBtn) {
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Add Agent';
+                saveBtn.textContent = 'Add Key';
             }
         }
     }
@@ -2967,13 +3096,19 @@ class Linen {
         document.getElementById('agent-type').value = '';
         document.getElementById('agent-api-key').value = '';
         document.getElementById('agent-model').value = '';
-        document.getElementById('agent-primary').checked = false;
+        document.getElementById('agent-primary').checked = true;
         document.getElementById('add-agent-error').textContent = '';
+        const detectedDisplay = document.getElementById('detected-provider-display');
+        if (detectedDisplay) detectedDisplay.style.display = 'none';
+        const providerGroup = document.getElementById('provider-select-group');
+        if (providerGroup) providerGroup.style.display = 'none';
+        const modelGroup = document.getElementById('model-group');
+        if (modelGroup) modelGroup.style.display = 'none';
         this.clearFieldErrors();
         const saveBtn = document.getElementById('save-new-agent');
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Add Agent';
+            saveBtn.textContent = 'Add Key';
         }
     }
 
@@ -2987,8 +3122,8 @@ class Linen {
         if (agents.length === 0) {
             agentsList.innerHTML = `
                 <div class="empty-state-container">
-                    <div class="empty-state-icon">🤖</div>
-                    <h3 class="empty-state-title">No AI Agents Yet</h3>
+                    <div class="empty-state-icon">🔑</div>
+                    <h3 class="empty-state-title">No API Keys Yet</h3>
                     <p class="empty-state-text">Default: Using Linen's built-in AI</p>
                     <ul class="empty-state-benefits">
                         <li>\u2713 Use your favorite AI (ChatGPT, Claude, etc.)</li>
@@ -3015,13 +3150,36 @@ class Linen {
             typeEl.className = 'agent-type';
             typeEl.textContent = this.getProviderLabel(agent.type);
 
+            // Status indicator
+            const statusEl = document.createElement('div');
+            const agentStatus = agent.status || 'unknown';
+            statusEl.className = `agent-status agent-status-${agentStatus}`;
+            const statusLabels = {
+                'valid': '\u2713 Active',
+                'invalid': '\u2715 Invalid Key',
+                'rate-limited': '\u23F3 Rate Limited',
+                'expired': '\u26A0 Quota Exceeded',
+                'unknown': '? Unknown'
+            };
+            statusEl.textContent = statusLabels[agentStatus] || agentStatus;
+
+            // Masked key preview
+            const keyPreview = document.createElement('div');
+            keyPreview.className = 'agent-key-preview';
+            const maskedKey = agent.apiKey ?
+                agent.apiKey.substring(0, 6) + '...' + agent.apiKey.substring(agent.apiKey.length - 4) :
+                'No key';
+            keyPreview.textContent = maskedKey;
+
             info.appendChild(nameEl);
             info.appendChild(typeEl);
+            info.appendChild(statusEl);
+            info.appendChild(keyPreview);
 
             if (agent.isPrimary) {
                 const badgeEl = document.createElement('div');
                 badgeEl.className = 'agent-primary-badge';
-                badgeEl.textContent = '⭐ PRIMARY';
+                badgeEl.textContent = 'PRIMARY';
                 info.appendChild(badgeEl);
             }
 
@@ -3048,21 +3206,59 @@ class Linen {
 
     async setAgentAsPrimary(agentId) {
         console.log("Linen: Setting agent as primary:", agentId);
+
+        const prevPrimary = this.agentManager.primaryAgent;
         this.agentManager.setPrimaryAgent(agentId);
         await this.db.setSetting('primary-agent-id', agentId);
+
+        // Persist both agents' updated state
+        if (prevPrimary) {
+            await this.db.setSetting(`agent-${prevPrimary.id}`, JSON.stringify(prevPrimary));
+        }
+        const newPrimary = this.agentManager.primaryAgent;
+        if (newPrimary) {
+            await this.db.setSetting(`agent-${newPrimary.id}`, JSON.stringify(newPrimary));
+            this.currentAgent = newPrimary;
+            this.assistant = this.createAssistantFromAgent(newPrimary);
+            this.isLocalMode = false;
+        }
+
         this.loadAgentsList();
-        this.showToast('Primary agent updated!', 'success');
+        this.showToast('Primary key updated!', 'success');
     }
 
     async deleteAgent(agentId) {
         console.log("Linen: Deleting agent:", agentId);
-        if (!confirm('Are you sure you want to delete this agent?')) return;
+        if (!confirm('Are you sure you want to delete this API key?')) return;
 
+        const wasPrimary = this.agentManager.agents.find(a => a.id === agentId)?.isPrimary;
         this.agentManager.removeAgent(agentId);
         await this.db.setSetting(`agent-${agentId}`, null);
 
+        // Remove from agent-ids list
+        const existingIds = JSON.parse(await this.db.getSetting('agent-ids') || '[]');
+        const updatedIds = existingIds.filter(id => String(id) !== String(agentId));
+        await this.db.setSetting('agent-ids', JSON.stringify(updatedIds));
+
+        // If deleted key was primary, promote next or fall back to local
+        if (wasPrimary) {
+            const newPrimary = this.agentManager.primaryAgent;
+            if (newPrimary) {
+                await this.db.setSetting('primary-agent-id', newPrimary.id);
+                await this.db.setSetting(`agent-${newPrimary.id}`, JSON.stringify(newPrimary));
+                this.currentAgent = newPrimary;
+                this.assistant = this.createAssistantFromAgent(newPrimary);
+                this.isLocalMode = false;
+            } else {
+                await this.db.setSetting('primary-agent-id', null);
+                this.currentAgent = null;
+                this.assistant = new LocalAssistant();
+                this.isLocalMode = true;
+            }
+        }
+
         this.loadAgentsList();
-        this.showToast('Agent deleted!', 'info');
+        this.showToast('API key deleted!', 'info');
     }
 
     updateAgentModelOptions(providerType) {
@@ -3093,6 +3289,86 @@ class Linen {
             'openrouter': '🟣 OpenRouter'
         };
         return labels[providerType] || providerType;
+    }
+
+    detectProvider(apiKey) {
+        if (!apiKey || apiKey.length < 5) return null;
+        const key = apiKey.trim();
+
+        if (key.startsWith('sk-ant-')) return 'claude';
+        if (key.startsWith('sk-or-')) return 'openrouter';
+        if (key.startsWith('sk-')) return 'openai';
+        if (key.startsWith('AIza')) return 'gemini';
+
+        return null;
+    }
+
+    onApiKeyInput() {
+        const keyInput = document.getElementById('agent-api-key');
+        const key = keyInput.value.trim();
+
+        if (key.length < 5) {
+            const detectedDisplay = document.getElementById('detected-provider-display');
+            if (detectedDisplay) detectedDisplay.style.display = 'none';
+            const providerGroup = document.getElementById('provider-select-group');
+            if (providerGroup) providerGroup.style.display = 'none';
+            return;
+        }
+
+        const detected = this.detectProvider(key);
+        if (detected) {
+            const label = this.getProviderLabel(detected);
+            const iconEl = document.getElementById('detected-provider-icon');
+            const nameEl = document.getElementById('detected-provider-name');
+            const detectedDisplay = document.getElementById('detected-provider-display');
+            if (iconEl) iconEl.textContent = label.split(' ')[0];
+            if (nameEl) nameEl.textContent = `Detected: ${label.substring(label.indexOf(' ') + 1)}`;
+            if (detectedDisplay) detectedDisplay.style.display = 'flex';
+            const providerGroup = document.getElementById('provider-select-group');
+            if (providerGroup) providerGroup.style.display = 'none';
+
+            const typeSelect = document.getElementById('agent-type');
+            if (typeSelect) typeSelect.value = detected;
+
+            const nameInput = document.getElementById('agent-name');
+            if (nameInput && !nameInput.value.trim()) {
+                const providerNames = {
+                    'gemini': 'Gemini', 'openai': 'ChatGPT', 'claude': 'Claude',
+                    'deepseek': 'DeepSeek', 'openrouter': 'OpenRouter'
+                };
+                nameInput.placeholder = `e.g., My ${providerNames[detected]} Key`;
+            }
+
+            this.updateAgentModelOptions(detected);
+        } else {
+            const detectedDisplay = document.getElementById('detected-provider-display');
+            if (detectedDisplay) detectedDisplay.style.display = 'none';
+            const providerGroup = document.getElementById('provider-select-group');
+            if (providerGroup) providerGroup.style.display = 'block';
+        }
+    }
+
+    showManualProviderSelect() {
+        const detectedDisplay = document.getElementById('detected-provider-display');
+        if (detectedDisplay) detectedDisplay.style.display = 'none';
+        const providerGroup = document.getElementById('provider-select-group');
+        if (providerGroup) providerGroup.style.display = 'block';
+        const typeSelect = document.getElementById('agent-type');
+        if (typeSelect) {
+            typeSelect.value = '';
+            typeSelect.focus();
+        }
+    }
+
+    async updateAgentStatus(agentId, status, error = null) {
+        const agent = this.agentManager.getAgents().find(a => String(a.id) === String(agentId));
+        if (!agent) return;
+
+        agent.status = status;
+        agent.lastVerified = Date.now();
+        agent.lastError = error;
+
+        await this.db.setSetting(`agent-${agent.id}`, JSON.stringify(agent));
     }
 
     async loadChatHistory() {
@@ -3217,6 +3493,15 @@ class Linen {
 
             console.error(`Linen: sendChat failed (Status: ${status}, Message: ${msgText}). Checking for fallback options.`, e);
 
+            // Update agent status based on error
+            if (this.currentAgent) {
+                let newStatus = 'unknown';
+                if (status === 429) newStatus = 'rate-limited';
+                else if (status === 401 || status === 403) newStatus = 'invalid';
+                else if (msgText.toLowerCase().includes('quota')) newStatus = 'expired';
+                this.updateAgentStatus(this.currentAgent.id, newStatus, msgText);
+            }
+
             // Determine if we should try to fallback
             const canFallback = (status === 0 && !navigator.onLine) || // Offline
                                 (status === 429) || // Rate limited
@@ -3307,15 +3592,6 @@ class Linen {
         }
     }
 
-    async saveApiKey() {
-        await this.validateAndSaveKey('api-key-input', 'settings-error', () => {
-            this.showToast('API key saved successfully', 'success');
-            document.getElementById('api-key-input').value = '';
-            document.getElementById('settings-modal').classList.remove('active');
-            document.getElementById('modal-backdrop').classList.remove('active');
-        });
-    }
-
     async exportData() {
         const data = await this.db.exportData();
         const blob = new Blob([data], { type: 'application/json' });
@@ -3332,6 +3608,9 @@ class Linen {
         if (!confirm('Are you sure you want to clear ALL data (memories and settings)? This cannot be undone.')) return;
         await this.db.clearAllMemories();
         await this.db.setSetting('gemini-api-key', null);
+        await this.db.setSetting('agent-ids', null);
+        await this.db.setSetting('primary-agent-id', null);
+        await this.db.setSetting('legacy-key-migrated', null);
         await this.db.setSetting('onboarding-complete', false);
         window.location.reload();
     }
