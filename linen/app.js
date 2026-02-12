@@ -2979,48 +2979,23 @@ class Linen {
 
         if (addAgentBtn) {
             addAgentBtn.addEventListener('click', () => {
-                console.log("Linen: Add Agent button clicked");
-                if (addAgentModal) {
-                    addAgentModal.classList.add('active');
-                    backdrop.classList.add('active');
-                } else {
-                    console.error("Linen: add-agent-modal not found!");
+                console.log("Linen: Add Agent button clicked - opening provider selection");
+                // Close settings modal and show onboarding overlay with step 2 (provider selection)
+                const settingsModal = document.getElementById('settings-modal');
+                if (settingsModal) {
+                    settingsModal.classList.add('hidden');
+                }
+                const onboardingOverlay = document.getElementById('onboarding-overlay');
+                if (onboardingOverlay) {
+                    onboardingOverlay.style.display = 'flex';
+                    this.showOnboardingStep(2);
                 }
             });
         } else {
             console.warn("Linen: add-agent-btn not found in DOM");
         }
 
-        if (closeAddAgent) {
-            closeAddAgent.addEventListener('click', () => {
-                addAgentModal.classList.remove('active');
-                backdrop.classList.remove('active');
-                this.clearAddAgentForm();
-            });
-        }
-
-        if (saveNewAgent) {
-            saveNewAgent.addEventListener('click', () => this.addNewAgent());
-        }
-
-        // Agent type changes (for future model selection)
-        if (agentTypeSelect) {
-            agentTypeSelect.addEventListener('change', (e) => this.updateAgentModelOptions(e.target.value));
-        }
-
-        // Auto-detect provider on key paste/input
-        const agentKeyInput = document.getElementById('agent-api-key');
-        if (agentKeyInput) {
-            agentKeyInput.addEventListener('input', () => this.onApiKeyInput());
-            agentKeyInput.addEventListener('paste', () => {
-                setTimeout(() => this.onApiKeyInput(), 0);
-            });
-        }
-
-        const changeProviderBtn = document.getElementById('change-provider-btn');
-        if (changeProviderBtn) {
-            changeProviderBtn.addEventListener('click', () => this.showManualProviderSelect());
-        }
+        // Add agent modal removed - using onboarding overlay instead
 
         // Load agents list
         this.loadAgentsList();
