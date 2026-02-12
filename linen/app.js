@@ -3361,10 +3361,11 @@ class Linen {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
+                    _subject: 'Linen App Suggestions',
+                    _replyto: 'rnajafi.dev@gmail.com',
                     message: suggestionText,
                     type: 'suggestion',
-                    timestamp: new Date().toISOString(),
-                    _replyto: 'rnajafi.dev@gmail.com'
+                    timestamp: new Date().toISOString()
                 })
             });
 
