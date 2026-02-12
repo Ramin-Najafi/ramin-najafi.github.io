@@ -5,7 +5,7 @@
  * See LICENSE file for details.
  */
 
-const CACHE_NAME = 'linen-v113';
+const CACHE_NAME = 'linen-v114';
 const BASE_PATH = '/linen';
 const urlsToCache = [
     `${BASE_PATH}/`,
@@ -13,8 +13,9 @@ const urlsToCache = [
     `${BASE_PATH}/styles.css`,
     `${BASE_PATH}/app.js`,
     `${BASE_PATH}/manifest.json`,
-    `${BASE_PATH}/favicon.svg`,
-    `${BASE_PATH}/logo.png`
+    `${BASE_PATH}/logo.png`,
+    `${BASE_PATH}/icon-192.png`,
+    `${BASE_PATH}/icon-512.png`
 ];
 
 self.addEventListener('install', e => {
