@@ -195,23 +195,15 @@
 
 
 <div id="add-agent-modal" class="modal">
-    <button class="close-modal" id="close-add-agent">&times;</button>
-    <h2>Add API Key</h2>
-
+    <button class="close-modal" id="close-add-agent">×</button>
+    <h2>Add New Agent</h2>
     <div class="form-group">
-        <label for="agent-api-key">API Key:</label>
-        <input type="password" id="agent-api-key" placeholder="Paste your API key here">
-        <span class="form-help">Your API key is stored locally on your device only.</span>
-        <span class="form-field-error" id="agent-api-key-error"></span>
+        <label for="agent-name">Agent Name:</label>
+        <input type="text" id="agent-name" placeholder="e.g., My Claude, ChatGPT Pro">
+        <span class="form-help">Give your agent a nickname to remember it</span>
+        <span class="form-field-error" id="agent-name-error"></span>
     </div>
-
-    <div id="detected-provider-display" class="detected-provider" style="display: none;">
-        <span id="detected-provider-icon"></span>
-        <span id="detected-provider-name"></span>
-        <button id="change-provider-btn" class="change-provider-link">Change</button>
-    </div>
-
-    <div class="form-group" id="provider-select-group" style="display: none;">
+    <div class="form-group">
         <label for="agent-type">AI Provider:</label>
         <select id="agent-type">
             <option value="">Select a provider</option>
@@ -221,28 +213,27 @@
             <option value="deepseek">DeepSeek</option>
             <option value="openrouter">OpenRouter</option>
         </select>
+        <span class="form-help">Choose your preferred AI provider</span>
         <span class="form-field-error" id="agent-type-error"></span>
     </div>
-
     <div class="form-group">
-        <label for="agent-name">Label (optional):</label>
-        <input type="text" id="agent-name" placeholder="e.g., My Work Key, Personal Claude">
-        <span class="form-help">Give this key a nickname to tell it apart from others</span>
+        <label for="agent-api-key">API Key:</label>
+        <input type="password" id="agent-api-key" placeholder="Paste your API key">
+        <span class="form-help">Your API key is stored locally. We never see it or send it anywhere.</span>
+        <span class="form-field-error" id="agent-api-key-error"></span>
     </div>
-
-    <div class="form-group" id="model-group" style="display: none;">
+    <div class="form-group">
         <label for="agent-model">Model (optional):</label>
-        <input type="text" id="agent-model" placeholder="Leave blank for default">
+        <input type="text" id="agent-model" placeholder="e.g., gpt-4, claude-3-opus">
+        <span class="form-help">Leave blank to use default. Examples: gpt-4, claude-3-opus</span>
     </div>
-
     <div class="form-group">
         <label>
-            <input type="checkbox" id="agent-primary" checked>
-            Set as primary key
+            <input type="checkbox" id="agent-primary">
+            Set as primary agent
         </label>
     </div>
-
-    <button id="save-new-agent" class="button-primary">Add Key</button>
+    <button id="save-new-agent" class="button-primary">Add Agent</button>
     <p class="error-message" id="add-agent-error"></p>
 </div>
 
@@ -358,15 +349,16 @@
         </div>
 
         <div class="settings-section">
-            <h3 class="settings-heading">🔑 API Keys</h3>
-            <button id="add-agent-btn" class="settings-btn settings-btn-primary">+ Add API Key</button>
+            <h3 class="settings-heading">🤖 AI Agents</h3>
+            <button id="add-agent-btn" class="settings-btn settings-btn-primary">+ Add New Agent</button>
             <div id="agents-list"></div>
         </div>
 
-        <div class="settings-section" id="legacy-key-section" style="display: none;">
-            <h3 class="settings-heading">🔄 Legacy Key Migration</h3>
-            <p class="settings-info">Your legacy Gemini API key has been migrated to the new system.</p>
-            <button id="dismiss-legacy" class="settings-btn settings-btn-secondary">Dismiss</button>
+        <div class="settings-section">
+            <h3 class="settings-heading">🔑 Legacy API Key</h3>
+            <input id="api-key-input" placeholder="Paste Gemini API key">
+            <p id="settings-error" class="error-message"></p>
+            <button id="save-api-key" class="settings-btn settings-btn-primary">Save API Key</button>
         </div>
 
         <div class="settings-section">
@@ -429,7 +421,7 @@
             </div>
         </div>
 
-        <p id="version-info">v1.2.0 [beta]</p>
+        <p id="version-info">v1.1.5 [beta]</p>
     </div>
 </div>
 

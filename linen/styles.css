@@ -1730,6 +1730,168 @@ body.keyboard-nav [tabindex]:focus {
     outline-offset: 2px;
 }
 
+/* ========== User Profile Form ========== */
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-form .form-group label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.profile-form input,
+.profile-form select {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #333;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+.profile-form select {
+    appearance: auto;
+}
+
+.profile-dob-saved {
+    color: #4caf50;
+    font-size: 0.9rem;
+    padding: 8px 0;
+}
+
+/* ========== Trust Badges ========== */
+.trust-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.trust-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #222;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.trust-badge-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.trust-badge-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trust-badge-text strong {
+    font-size: 0.9rem;
+    color: var(--primary);
+}
+
+.trust-badge-text span {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+/* ========== Privacy & Terms Modals ========== */
+.privacy-terms-modal {
+    max-width: 500px;
+    padding: 24px;
+}
+
+.privacy-terms-modal h2 {
+    color: var(--accent);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    padding-right: 30px;
+}
+
+.privacy-terms-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.privacy-terms-content h3 {
+    color: var(--primary);
+    font-size: 0.95rem;
+    margin: 1.2rem 0 0.5rem 0;
+    font-weight: 600;
+}
+
+.privacy-terms-content h3:first-child {
+    margin-top: 0;
+}
+
+.privacy-terms-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.privacy-terms-content li {
+    padding: 0.25rem 0;
+    color: #ccc;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    padding-left: 1.2rem;
+    position: relative;
+}
+
+.privacy-terms-content li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+}
+
+.privacy-never-list li::before {
+    content: '✕';
+    color: #e74c3c;
+}
+
+.privacy-highlight {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.privacy-date {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.privacy-terms-law {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-top: 1rem;
+}
+
+/* System message (birthday etc.) */
+.system-message {
+    background: linear-gradient(135deg, #2a3a2a, #333);
+    border-left: 3px solid var(--accent);
+    font-style: italic;
+}
+
 /* ========== Responsive adjustments ========== */
 @media (max-width: 360px) {
     .input-default-row {

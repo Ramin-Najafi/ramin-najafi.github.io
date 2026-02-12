@@ -11,7 +11,7 @@ class LinenDB {
     }
     async init() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('linen-db', 3);
+            const request = indexedDB.open('linen-db', 4);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 this.db = request.result;
@@ -34,6 +34,9 @@ class LinenDB {
                 }
                 if (!db.objectStoreNames.contains('settings')) {
                     db.createObjectStore('settings', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('userProfile')) {
+                    db.createObjectStore('userProfile', { keyPath: 'id' });
                 }
             };
         });
@@ -1733,6 +1736,133 @@ class LocalAssistant {
         this.usedResponses.clear();
     }
 }
+
+class ProfileManager {
+    constructor(db) {
+        this.db = db;
+        this._cache = null;
+    }
+
+    async getProfile() {
+        if (this._cache) return this._cache;
+        return new Promise((resolve, reject) => {
+            const t = this.db.db.transaction(['userProfile'], 'readonly');
+            const s = t.objectStore('userProfile');
+            const req = s.get('default');
+            req.onsuccess = () => {
+                this._cache = req.result || null;
+                resolve(this._cache);
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async saveProfile(data) {
+        const existing = await this.getProfile();
+        const profile = {
+            id: 'default',
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            email: data.email || '',
+            pronouns: data.pronouns || '',
+            dateOfBirth: data.dateOfBirth || '',
+            timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+            notifications: {
+                birthdayMessage: data.notifications?.birthdayMessage ?? true,
+                emailNotifications: data.notifications?.emailNotifications ?? false
+            },
+            preferences: {
+                chatStyle: data.preferences?.chatStyle || 'friendly'
+            },
+            createdAt: existing?.createdAt || Date.now(),
+            updatedAt: Date.now()
+        };
+        return new Promise((resolve, reject) => {
+            const t = this.db.db.transaction(['userProfile'], 'readwrite');
+            const s = t.objectStore('userProfile');
+            const req = s.put(profile);
+            req.onsuccess = () => {
+                this._cache = profile;
+                resolve(profile);
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async deleteProfile() {
+        return new Promise((resolve, reject) => {
+            const t = this.db.db.transaction(['userProfile'], 'readwrite');
+            const s = t.objectStore('userProfile');
+            const req = s.delete('default');
+            req.onsuccess = () => {
+                this._cache = null;
+                resolve();
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async getFirstName() {
+        const p = await this.getProfile();
+        return p?.firstName || '';
+    }
+
+    async getPronouns() {
+        const p = await this.getProfile();
+        return p?.pronouns || '';
+    }
+
+    async isBirthday() {
+        const p = await this.getProfile();
+        if (!p?.dateOfBirth) return false;
+        const today = new Date();
+        const birth = new Date(p.dateOfBirth);
+        return today.getMonth() === birth.getMonth() && today.getDate() === birth.getDate();
+    }
+
+    generateBirthdayMessage(firstName, age) {
+        const messages = [
+            `🎉 Happy Birthday, ${firstName}! Hope your day is as wonderful as you are. Enjoy every moment! 🎂`,
+            `🎂 Another year around the sun! Happy ${age}${this._ordinalSuffix(age)} Birthday! Wishing you joy, laughter, and great conversations.`,
+            `✨ It's your day to shine! Happy Birthday, ${firstName}! Hope this year brings you everything you're hoping for.`,
+            `🎈 Celebrate you today, ${firstName}! You've made it another year—that's amazing! Enjoy every bit of this day.`,
+            `🎉 ${firstName}, today is all about you! Happy Birthday—make it unforgettable! 🎊`
+        ];
+        return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    _ordinalSuffix(n) {
+        const s = ['th', 'st', 'nd', 'rd'];
+        const v = n % 100;
+        return s[(v - 20) % 10] || s[v] || s[0];
+    }
+
+    async checkBirthday(showToastFn, addSystemMessageFn) {
+        try {
+            const p = await this.getProfile();
+            if (!p?.dateOfBirth || !p.notifications?.birthdayMessage) return;
+
+            const today = new Date();
+            const shownDate = localStorage.getItem('linen-birthday-shown-date');
+            const todayStr = today.toISOString().split('T')[0];
+            if (shownDate === todayStr) return;
+
+            if (await this.isBirthday()) {
+                const birth = new Date(p.dateOfBirth);
+                const age = today.getFullYear() - birth.getFullYear();
+                const name = p.firstName || 'friend';
+                const message = this.generateBirthdayMessage(name, age);
+
+                addSystemMessageFn(message, 'birthday');
+                showToastFn('🎉 Happy Birthday!', 'success');
+                localStorage.setItem('linen-birthday-shown-date', todayStr);
+            }
+        } catch (e) {
+            // Silent fail — birthday check is non-critical
+        }
+    }
+}
+
 class Linen {
     constructor() {
         this.db = new LinenDB();
@@ -1741,6 +1871,7 @@ class Linen {
         this.eventManager = new EventManager();
         this.agentManager = new AgentManager(this.db);
         this.modelVersionManager = new ModelVersionManager();
+        this.profileManager = null; // Initialized after db.init()
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
         this.currentAgent = null; // Track current agent
         this.isLocalMode = false;
@@ -1850,6 +1981,7 @@ class Linen {
         try {
             this.analytics.trackPageView();
             await this.db.init();
+            this.profileManager = new ProfileManager(this.db);
 
             const existingConvs = await this.db.getConversations();
             // Only archive if there's actual user interaction (more than just initial greeting/bot messages)
@@ -2000,6 +2132,16 @@ class Linen {
         } else {
             // Start with initial greeting if not first time
             this.sendChat('[INITIAL_GREETING]');
+        }
+
+        // Check for birthday after a short delay to let chat render
+        if (this.profileManager) {
+            setTimeout(() => {
+                this.profileManager.checkBirthday(
+                    (msg, type) => this.showToast(msg, type),
+                    (msg, type) => this.addSystemMessage(msg, type)
+                );
+            }, 2000);
         }
 
         console.log("Linen: App started in", this.isLocalMode ? 'local mode' : 'Gemini mode');
@@ -2603,6 +2745,8 @@ class Linen {
             memoriesPanel.classList.remove('active');
             settingsModal.classList.remove('active');
             document.getElementById('re-enter-key-modal').classList.remove('active');
+            document.getElementById('privacy-modal')?.classList.remove('active');
+            document.getElementById('terms-modal')?.classList.remove('active');
             backdrop.classList.remove('active');
         };
 
@@ -2860,6 +3004,226 @@ class Linen {
 
         // Load agents list
         this.loadAgentsList();
+
+        // Profile form events
+        this.bindProfileEvents();
+
+        // Privacy & Terms modals
+        this.bindPrivacyEvents();
+    }
+
+    bindProfileEvents() {
+        const saveBtn = document.getElementById('save-profile');
+        const clearBtn = document.getElementById('clear-profile');
+        const pronounsSelect = document.getElementById('profile-pronouns');
+        const pronounsCustom = document.getElementById('profile-pronouns-custom');
+
+        if (pronounsSelect) {
+            pronounsSelect.addEventListener('change', () => {
+                if (pronounsCustom) {
+                    pronounsCustom.style.display = pronounsSelect.value === 'custom' ? 'block' : 'none';
+                }
+            });
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveProfile());
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearProfile());
+        }
+
+        // Populate timezone dropdown
+        this.populateTimezones();
+
+        // Load existing profile data into form
+        this.loadProfileForm();
+    }
+
+    populateTimezones() {
+        const select = document.getElementById('profile-timezone');
+        if (!select) return;
+        const zones = [
+            'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+            'America/Toronto', 'America/Vancouver', 'America/Mexico_City',
+            'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
+            'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Dubai', 'Asia/Kolkata',
+            'Australia/Sydney', 'Pacific/Auckland', 'Africa/Cairo', 'Africa/Lagos'
+        ];
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        zones.forEach(tz => {
+            const opt = document.createElement('option');
+            opt.value = tz;
+            opt.textContent = tz.replace(/_/g, ' ');
+            if (tz === detected) opt.textContent += ' (detected)';
+            select.appendChild(opt);
+        });
+        // If detected timezone not in list, add it
+        if (!zones.includes(detected)) {
+            const opt = document.createElement('option');
+            opt.value = detected;
+            opt.textContent = detected.replace(/_/g, ' ') + ' (detected)';
+            select.insertBefore(opt, select.children[1]);
+        }
+    }
+
+    async loadProfileForm() {
+        if (!this.profileManager) return;
+        try {
+            const profile = await this.profileManager.getProfile();
+            if (!profile) return;
+
+            const fn = document.getElementById('profile-first-name');
+            const ln = document.getElementById('profile-last-name');
+            const email = document.getElementById('profile-email');
+            const pronouns = document.getElementById('profile-pronouns');
+            const pronounsCustom = document.getElementById('profile-pronouns-custom');
+            const dob = document.getElementById('profile-dob');
+            const dobGroup = document.getElementById('profile-dob-group');
+            const dobSaved = document.getElementById('profile-dob-saved');
+            const tz = document.getElementById('profile-timezone');
+
+            if (fn) fn.value = profile.firstName || '';
+            if (ln) ln.value = profile.lastName || '';
+            if (email) email.value = profile.email || '';
+
+            if (pronouns) {
+                const stdPronouns = ['he/him', 'she/her', 'they/them'];
+                if (profile.pronouns && stdPronouns.includes(profile.pronouns)) {
+                    pronouns.value = profile.pronouns;
+                } else if (profile.pronouns) {
+                    pronouns.value = 'custom';
+                    if (pronounsCustom) {
+                        pronounsCustom.style.display = 'block';
+                        pronounsCustom.value = profile.pronouns;
+                    }
+                }
+            }
+
+            if (profile.dateOfBirth) {
+                if (dobGroup) dobGroup.style.display = 'none';
+                if (dobSaved) dobSaved.style.display = 'block';
+            }
+
+            if (tz && profile.timezone) tz.value = profile.timezone;
+        } catch (e) {
+            // Silent fail
+        }
+    }
+
+    async saveProfile() {
+        const firstName = document.getElementById('profile-first-name')?.value.trim() || '';
+        const lastName = document.getElementById('profile-last-name')?.value.trim() || '';
+        const email = document.getElementById('profile-email')?.value.trim() || '';
+        const pronounsSelect = document.getElementById('profile-pronouns');
+        const pronounsCustom = document.getElementById('profile-pronouns-custom');
+        const dob = document.getElementById('profile-dob')?.value || '';
+        const tz = document.getElementById('profile-timezone')?.value || '';
+
+        let pronouns = pronounsSelect?.value || '';
+        if (pronouns === 'custom') {
+            pronouns = pronounsCustom?.value.trim() || '';
+        }
+
+        // Get existing profile to preserve DOB if already saved
+        const existing = this.profileManager ? await this.profileManager.getProfile() : null;
+        const dateOfBirth = dob || existing?.dateOfBirth || '';
+
+        try {
+            await this.profileManager.saveProfile({
+                firstName,
+                lastName,
+                email,
+                pronouns,
+                dateOfBirth,
+                timezone: tz,
+                notifications: { birthdayMessage: true, emailNotifications: false },
+                preferences: { chatStyle: 'friendly' }
+            });
+
+            // Also update the user-name setting for backward compatibility with name prompt
+            if (firstName) {
+                await this.db.setSetting('user-name', firstName);
+                if (this.assistant && this.assistant.userProfile) {
+                    this.assistant.userProfile.name = firstName;
+                }
+            }
+
+            // If DOB was just saved, hide the input and show the saved indicator
+            if (dob) {
+                const dobGroup = document.getElementById('profile-dob-group');
+                const dobSaved = document.getElementById('profile-dob-saved');
+                if (dobGroup) dobGroup.style.display = 'none';
+                if (dobSaved) dobSaved.style.display = 'block';
+            }
+
+            this.showToast('Profile updated!', 'success');
+        } catch (e) {
+            this.showToast('Failed to save profile.', 'error');
+        }
+    }
+
+    async clearProfile() {
+        if (!confirm('Are you sure you want to clear all profile data? This cannot be undone.')) return;
+        try {
+            await this.profileManager.deleteProfile();
+            // Reset form fields
+            const fields = ['profile-first-name', 'profile-last-name', 'profile-email', 'profile-pronouns', 'profile-pronouns-custom', 'profile-dob', 'profile-timezone'];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            // Show DOB input again
+            const dobGroup = document.getElementById('profile-dob-group');
+            const dobSaved = document.getElementById('profile-dob-saved');
+            if (dobGroup) dobGroup.style.display = 'block';
+            if (dobSaved) dobSaved.style.display = 'none';
+            // Clear birthday shown flag
+            localStorage.removeItem('linen-birthday-shown-date');
+
+            this.showToast('Profile data cleared.', 'info');
+        } catch (e) {
+            this.showToast('Failed to clear profile.', 'error');
+        }
+    }
+
+    bindPrivacyEvents() {
+        const showPrivacy = document.getElementById('show-privacy-policy');
+        const showTerms = document.getElementById('show-terms');
+        const backdrop = document.getElementById('modal-backdrop');
+
+        if (showPrivacy) {
+            showPrivacy.addEventListener('click', () => {
+                const modal = document.getElementById('privacy-modal');
+                if (modal) {
+                    modal.classList.add('active');
+                    backdrop.classList.add('active');
+                }
+            });
+        }
+
+        if (showTerms) {
+            showTerms.addEventListener('click', () => {
+                const modal = document.getElementById('terms-modal');
+                if (modal) {
+                    modal.classList.add('active');
+                    backdrop.classList.add('active');
+                }
+            });
+        }
+
+        // Close buttons for privacy/terms modals
+        ['close-privacy-modal', 'close-privacy-btn', 'close-terms-modal', 'close-terms-btn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    document.getElementById('privacy-modal')?.classList.remove('active');
+                    document.getElementById('terms-modal')?.classList.remove('active');
+                    backdrop.classList.remove('active');
+                });
+            }
+        });
     }
 
     async validateAndSaveKey(inputId, errorId, onSuccess) {
@@ -3612,6 +3976,10 @@ class Linen {
         await this.db.setSetting('primary-agent-id', null);
         await this.db.setSetting('legacy-key-migrated', null);
         await this.db.setSetting('onboarding-complete', false);
+        if (this.profileManager) {
+            await this.profileManager.deleteProfile();
+        }
+        localStorage.removeItem('linen-birthday-shown-date');
         window.location.reload();
     }
     async startNewChat() {
@@ -4028,6 +4396,17 @@ class Linen {
             toast.classList.remove('show');
             this._toastTimer = null;
         }, 4000);
+    }
+
+    addSystemMessage(message, type) {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = 'assistant-message system-message';
+        if (type) div.dataset.type = type;
+        div.textContent = message;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
     }
 }
 
