@@ -2286,18 +2286,6 @@ class Linen {
         }
 
         // "Add My API Key" button - show onboarding to add API
-        const addKeyBtn = document.getElementById('add-api-key-btn');
-        if (addKeyBtn && !addKeyBtn.dataset.listenerAttached) {
-            addKeyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                closePitchModal();
-                // Show onboarding at step 2 (provider selection)
-                document.getElementById('onboarding-overlay').style.display = 'flex';
-                this.showOnboardingStep(2);
-            });
-            addKeyBtn.dataset.listenerAttached = 'true';
-        }
-
         // "Get API Keys" button - show onboarding at step 2
         const getApiKeyDirect = document.getElementById('get-api-key-direct');
         if (getApiKeyDirect && !getApiKeyDirect.dataset.listenerAttached) {
