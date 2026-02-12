@@ -15,6 +15,7 @@
 
 <div id="onboarding-overlay">
     <div id="onboarding-wizard">
+        <button class="close-onboarding" id="close-onboarding">×</button>
         <div class="step" id="step-1">
             <img src="./logo.png" alt="Linen Logo" class="onboarding-logo">
             <h1>Linen</h1>
@@ -22,30 +23,41 @@
             <button id="get-started">Get Started</button>
         </div>
         <div class="step" id="step-2">
-            <button class="back-btn" id="back-from-step-2">← Back</button>
             <h2>Choose Your AI</h2>
             <p>Pick your favorite AI assistant. All are supported by Linen.</p>
             <div class="ai-provider-grid">
-                <button class="ai-provider-btn" data-provider="gemini" id="provider-gemini">
-                    <span class="provider-icon">🔵</span>
-                    <span class="provider-name">Gemini</span>
-                    <span class="provider-info">Free tier available</span>
-                </button>
-                <button class="ai-provider-btn" data-provider="chatgpt" id="provider-openai">
-                    <span class="provider-icon">🟢</span>
-                    <span class="provider-name">ChatGPT</span>
-                    <span class="provider-info">GPT-4 / GPT-4 Turbo</span>
-                </button>
-                <button class="ai-provider-btn" data-provider="claude" id="provider-claude">
-                    <span class="provider-icon">🔴</span>
-                    <span class="provider-name">Claude</span>
-                    <span class="provider-info">Claude Pro / API</span>
-                </button>
-                <button class="ai-provider-btn" data-provider="deepseek" id="provider-deepseek">
-                    <span class="provider-icon">🟠</span>
-                    <span class="provider-name">DeepSeek</span>
-                    <span class="provider-info">Free & affordable</span>
-                </button>
+                <div class="ai-provider-card">
+                    <button class="ai-provider-btn" data-provider="gemini" id="provider-gemini">
+                        <span class="provider-icon">🔵</span>
+                        <span class="provider-name">Gemini</span>
+                        <span class="provider-info">Free tier available</span>
+                    </button>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-api-key-btn">Get API Key</a>
+                </div>
+                <div class="ai-provider-card">
+                    <button class="ai-provider-btn" data-provider="chatgpt" id="provider-openai">
+                        <span class="provider-icon">🟢</span>
+                        <span class="provider-name">ChatGPT</span>
+                        <span class="provider-info">GPT-4 / GPT-4 Turbo</span>
+                    </button>
+                    <a href="https://platform.openai.com/api/keys" target="_blank" class="get-api-key-btn">Get API Key</a>
+                </div>
+                <div class="ai-provider-card">
+                    <button class="ai-provider-btn" data-provider="claude" id="provider-claude">
+                        <span class="provider-icon">🔴</span>
+                        <span class="provider-name">Claude</span>
+                        <span class="provider-info">Claude Pro / API</span>
+                    </button>
+                    <a href="https://console.anthropic.com/keys" target="_blank" class="get-api-key-btn">Get API Key</a>
+                </div>
+                <div class="ai-provider-card">
+                    <button class="ai-provider-btn" data-provider="deepseek" id="provider-deepseek">
+                        <span class="provider-icon">🟠</span>
+                        <span class="provider-name">DeepSeek</span>
+                        <span class="provider-info">Free & affordable</span>
+                    </button>
+                    <a href="https://platform.deepseek.com/keys" target="_blank" class="get-api-key-btn">Get API Key</a>
+                </div>
             </div>
             <div id="provider-setup">
                 <!-- Provider-specific setup will be shown here -->
@@ -53,7 +65,6 @@
             <p class="error-message" id="onboarding-error"></p>
         </div>
         <div class="step" id="step-3">
-            <button class="back-btn" id="back-from-step-3">← Back</button>
             <h2>Install as App</h2>
             <p>What device are you using?</p>
             <div class="device-selector">
@@ -94,6 +105,7 @@
 </div>
 
 <div id="pitch-modal" class="modal pitch-accordion">
+    <button class="close-modal" id="close-pitch-modal-btn">×</button>
     <h2>Welcome to Linen</h2>
     <p>Your AI companion that respects your privacy.</p>
 
@@ -140,6 +152,7 @@
     <div class="pitch-buttons">
         <button id="close-pitch-modal" class="button-primary">Start Chatting</button>
         <button id="add-api-key-btn" class="button-secondary">Add My API Key</button>
+        <button id="get-api-key-direct" class="button-secondary">Get API Keys</button>
     </div>
 </div>
 

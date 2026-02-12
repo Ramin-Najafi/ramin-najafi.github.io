@@ -2265,6 +2265,16 @@ class Linen {
             });
         };
 
+        // Close button (×) - just close modal
+        const closePitchBtn = document.getElementById('close-pitch-modal-btn');
+        if (closePitchBtn && !closePitchBtn.dataset.listenerAttached) {
+            closePitchBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePitchModal();
+            });
+            closePitchBtn.dataset.listenerAttached = 'true';
+        }
+
         // "Start Chatting" button - just close modal and start using app
         const closeBtn = document.getElementById('close-pitch-modal');
         if (closeBtn && !closeBtn.dataset.listenerAttached) {
@@ -2286,6 +2296,19 @@ class Linen {
                 this.showOnboardingStep(2);
             });
             addKeyBtn.dataset.listenerAttached = 'true';
+        }
+
+        // "Get API Keys" button - show onboarding at step 2
+        const getApiKeyDirect = document.getElementById('get-api-key-direct');
+        if (getApiKeyDirect && !getApiKeyDirect.dataset.listenerAttached) {
+            getApiKeyDirect.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePitchModal();
+                // Show onboarding at step 2 (provider selection with direct links)
+                document.getElementById('onboarding-overlay').style.display = 'flex';
+                this.showOnboardingStep(2);
+            });
+            getApiKeyDirect.dataset.listenerAttached = 'true';
         }
     }
 
@@ -2605,20 +2628,17 @@ class Linen {
             this.showPitchModal();
         });
 
-        // Back buttons
-        const backFromStep2 = document.getElementById('back-from-step-2');
-        if (backFromStep2) {
-            backFromStep2.addEventListener('click', () => {
-                // Hide onboarding and show pitch modal instead
+        // Close onboarding button (×)
+        const closeOnboarding = document.getElementById('close-onboarding');
+        if (closeOnboarding) {
+            closeOnboarding.addEventListener('click', () => {
+                // Hide onboarding overlay and show pitch modal
                 document.getElementById('onboarding-overlay').style.display = 'none';
                 this.showPitchModal();
             });
         }
 
-        const backFromStep3 = document.getElementById('back-from-step-3');
-        if (backFromStep3) {
-            backFromStep3.addEventListener('click', () => this.showOnboardingStep(2));
-        }
+        // Back buttons removed - users can close onboarding overlay with X or finish with Done button
 
         // AI Provider selection
         const providerButtons = document.querySelectorAll('.ai-provider-btn');
