@@ -1971,11 +1971,11 @@ class Linen {
         modal.className = 'modal';
         modal.style.zIndex = '2000';
         modal.innerHTML = `
-            <div style="max-width: 400px; text-align: center;">
-                <h2>What's your name?</h2>
+            <div style="max-width: 400px; margin: 0 auto; text-align: center;">
+                <h2 style="margin-bottom: 0.5rem;">What's your name?</h2>
                 <p style="color: var(--text-light); margin-bottom: 1.5rem;">I'd love to know who I'm talking to so I can personalize our conversations.</p>
                 <div style="display: flex; gap: 10px; flex-direction: column;">
-                    <input type="text" id="name-input" placeholder="Enter your name" style="padding: 12px; border: 1px solid #444; border-radius: 6px; background: #333; color: #fff; font-size: 1rem;" autocomplete="off">
+                    <input type="text" id="name-input" placeholder="Enter your name" style="padding: 12px; border: 1px solid #444; border-radius: 6px; background: #333; color: #fff; font-size: 1rem; text-align: center;" autocomplete="off">
                     <button id="name-submit" class="button-primary" style="background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Let's Chat!</button>
                     <button id="name-skip" style="background: none; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 6px; cursor: pointer;">Skip for now</button>
                 </div>
@@ -2060,12 +2060,21 @@ class Linen {
             }
         });
 
+        const closePitchModal = () => {
+            modal.classList.remove('active');
+            backdrop.classList.remove('active');
+            // Restore pointer-events on all modals
+            document.querySelectorAll('.modal').forEach(m => {
+                m.style.pointerEvents = '';
+            });
+        };
+
         // "Start Chatting" button - just close modal and start using app
         const closeBtn = document.getElementById('close-pitch-modal');
         if (closeBtn && !closeBtn.dataset.listenerAttached) {
-            closeBtn.addEventListener('click', () => {
-                modal.classList.remove('active');
-                backdrop.classList.remove('active');
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePitchModal();
             });
             closeBtn.dataset.listenerAttached = 'true';
         }
@@ -2073,9 +2082,9 @@ class Linen {
         // "Add My API Key" button - show onboarding to add API
         const addKeyBtn = document.getElementById('add-api-key-btn');
         if (addKeyBtn && !addKeyBtn.dataset.listenerAttached) {
-            addKeyBtn.addEventListener('click', () => {
-                modal.classList.remove('active');
-                backdrop.classList.remove('active');
+            addKeyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePitchModal();
                 // Show onboarding at step 2 (provider selection)
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 this.showOnboardingStep(2);
@@ -2524,6 +2533,8 @@ class Linen {
 
             if (logoSettingsBtn) {
                 logoSettingsBtn.addEventListener('click', () => {
+                    // Clear any stuck inline pointer-events from pitch modal
+                    settingsModal.style.pointerEvents = '';
                     settingsModal.classList.add('active');
                     backdrop.classList.add('active');
                     logoMenu.classList.add('hidden');
@@ -2610,32 +2621,25 @@ class Linen {
             console.warn("Linen: Chat Talk button not found");
         }
 
-        // Text input send button
+        // Text input send button - keep input open after sending
         if (sendBtn) {
             sendBtn.addEventListener('click', () => {
                 this.sendChat();
-                // Hide text mode, show buttons
-                const chatInputArea = document.getElementById('chat-input-area');
-                chatInputArea.classList.remove('expanded');
-                textInputMode.style.display = 'none';
-                voiceInputMode.style.display = 'none';
-                inputButtonsDiv.style.display = 'flex';
-                if (chatInput) chatInput.value = '';
+                if (chatInput) {
+                    chatInput.value = '';
+                    chatInput.focus();
+                }
             });
         }
 
-        // Text input Enter to send
+        // Text input Enter to send - keep input open after sending
         if (chatInput) {
             chatInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.sendChat();
-                    const chatInputArea = document.getElementById('chat-input-area');
-                    chatInputArea.classList.remove('expanded');
-                    textInputMode.style.display = 'none';
-                    voiceInputMode.style.display = 'none';
-                    inputButtonsDiv.style.display = 'flex';
                     chatInput.value = '';
+                    chatInput.focus();
                 }
             });
         } else {

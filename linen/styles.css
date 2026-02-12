@@ -261,7 +261,11 @@ header {
 
 .modal.active {
     transform: translate(-50%, -50%) scale(1);
+}
+
+#settings-modal.active {
     display: block;
+    overflow-y: auto;
 }
 
 .close-panel, .close-modal {
@@ -869,6 +873,7 @@ hr {
 /* Voice Lightbox Modal */
 .voice-lightbox {
     max-width: 400px;
+    width: 90%;
     padding: 2rem;
     text-align: center;
     display: flex;
@@ -879,12 +884,15 @@ hr {
 }
 
 .lightbox-voice-display {
-    font-size: 3rem;
+    font-size: 2.5rem;
     padding: 2rem;
+    width: 100%;
+    text-align: center;
     background: rgba(74, 158, 255, 0.1);
     border-radius: 12px;
     border: 2px solid #4a9eff;
     animation: pulse 1.5s ease-in-out infinite;
+    box-sizing: border-box;
 }
 
 /* Ensure voice modal buttons are clickable */
