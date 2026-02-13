@@ -2620,9 +2620,16 @@ class Linen {
         const closeOnboarding = document.getElementById('close-onboarding');
         if (closeOnboarding) {
             closeOnboarding.addEventListener('click', () => {
-                // Hide onboarding overlay and show pitch modal
+                // Just close the onboarding overlay, don't show pitch modal
                 document.getElementById('onboarding-overlay').style.display = 'none';
-                this.showPitchModal();
+            });
+        }
+
+        const closeOnboardingStep3 = document.getElementById('close-onboarding-step3');
+        if (closeOnboardingStep3) {
+            closeOnboardingStep3.addEventListener('click', () => {
+                // Just close the onboarding overlay
+                document.getElementById('onboarding-overlay').style.display = 'none';
             });
         }
 
