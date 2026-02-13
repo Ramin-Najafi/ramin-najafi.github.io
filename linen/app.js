@@ -3111,16 +3111,49 @@ class UtilitiesApp {
         const durationMs = (minutes * 60 + seconds) * 1000;
         const startTime = Date.now();
         const endTime = startTime + durationMs;
+        let timerCompleted = false;
 
         let timerInterval = setInterval(() => {
             const remaining = Math.max(0, endTime - Date.now());
-            if (remaining === 0) {
+            if (remaining === 0 && !timerCompleted) {
+                timerCompleted = true;
                 clearInterval(timerInterval);
                 this.activeTimers.delete(timerId);
-                this.sendNotification(`⏱️ Timer Complete: ${label}`, {
+
+                // LOUD ALERT - Multiple notification methods to ensure user sees it
+                const timerDoneMsg = `⏱️ Timer Complete: ${label}`;
+
+                // 1. Send browser notification
+                this.sendNotification(timerDoneMsg, {
                     body: `Your ${minutes}m ${seconds}s timer is done!`,
-                    requireInteraction: false
+                    requireInteraction: true  // User must interact with notification
                 });
+
+                // 2. Play sound if available
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = 800; // 800 Hz tone
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                } catch (e) {
+                    console.log("Linen: Could not play timer alert sound:", e);
+                }
+
+                // 3. Show in-app alert
+                if (window.linen) {
+                    window.linen.showToast(`⏱️ ${timerDoneMsg}`, 'success');
+                }
+
+                console.log(`Linen: Timer "${label}" completed!`);
             }
         }, 100);
 
@@ -4948,7 +4981,7 @@ class Linen {
                 }
             }
 
-            // Display active timers
+            // Display active timers with live countdown
             if (timersList && this.utilities.activeTimers) {
                 timersList.innerHTML = '';
                 if (this.utilities.activeTimers.size === 0) {
@@ -4957,15 +4990,71 @@ class Linen {
                     this.utilities.activeTimers.forEach((timer) => {
                         const timerEl = document.createElement('div');
                         timerEl.className = 'utility-item';
+                        timerEl.id = `timer-display-${timer.id}`;
+
+                        // Calculate remaining time
+                        const remaining = Math.max(0, timer.endTime - Date.now());
+                        const remainingSeconds = Math.ceil(remaining / 1000);
+                        const mins = Math.floor(remainingSeconds / 60);
+                        const secs = remainingSeconds % 60;
+                        const timeDisplay = `${mins}:${String(secs).padStart(2, '0')}`;
+
                         timerEl.innerHTML = `
                             <div>
                                 <strong>⏱️ ${timer.label}</strong>
-                                <p style="font-size: 0.9rem; color: #999;">Running...</p>
+                                <p style="font-size: 1.2rem; color: #d4a574; font-weight: bold;">${timeDisplay}</p>
                             </div>
-                            <button class="button-small button-danger" onclick="linen.utilities.cancelTimer('${timer.id}'); linen.loadDisplayUtilities();">Stop</button>
+                            <button class="button-small button-danger" data-timer-id="${timer.id}">Stop</button>
                         `;
+
+                        // Add click handler for stop button
+                        const stopBtn = timerEl.querySelector('button');
+                        if (stopBtn) {
+                            stopBtn.addEventListener('click', async (e) => {
+                                e.preventDefault();
+                                const timerId = stopBtn.getAttribute('data-timer-id');
+                                if (this.utilities && this.utilities.cancelTimer(timerId)) {
+                                    this.showToast('Timer stopped', 'info');
+                                    this.loadDisplayUtilities();
+                                } else {
+                                    this.showToast('Failed to stop timer', 'error');
+                                }
+                            });
+                        }
+
                         timersList.appendChild(timerEl);
                     });
+
+                    // Update timer countdown every second
+                    if (!this.timerUpdateInterval) {
+                        this.timerUpdateInterval = setInterval(() => {
+                            if (this.utilities && this.utilities.activeTimers.size > 0) {
+                                this.utilities.activeTimers.forEach((timer) => {
+                                    const timerDisplay = document.getElementById(`timer-display-${timer.id}`);
+                                    if (timerDisplay) {
+                                        const remaining = Math.max(0, timer.endTime - Date.now());
+                                        const remainingSeconds = Math.ceil(remaining / 1000);
+
+                                        if (remainingSeconds <= 0) {
+                                            this.loadDisplayUtilities(); // Refresh to remove completed timer
+                                        } else {
+                                            const mins = Math.floor(remainingSeconds / 60);
+                                            const secs = remainingSeconds % 60;
+                                            const timeDisplay = `${mins}:${String(secs).padStart(2, '0')}`;
+                                            const timeEl = timerDisplay.querySelector('p');
+                                            if (timeEl) {
+                                                timeEl.textContent = timeDisplay;
+                                            }
+                                        }
+                                    }
+                                });
+                            } else {
+                                // Clear interval if no active timers
+                                clearInterval(this.timerUpdateInterval);
+                                this.timerUpdateInterval = null;
+                            }
+                        }, 1000);
+                    }
                 }
             }
 
