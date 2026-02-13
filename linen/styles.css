@@ -331,9 +331,10 @@ button:hover {
     z-index: 9999;
     display: none;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     text-align: center;
     padding: 20px;
+    overflow-y: auto;
 }
 
 #onboarding-wizard {
@@ -372,8 +373,6 @@ button:hover {
     align-items: center;
     position: relative;
     width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
 }
 
 #onboarding-wizard .step.active {
