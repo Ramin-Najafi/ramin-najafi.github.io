@@ -1573,6 +1573,11 @@ class LocalAssistant {
                 "That's outside my wheelhouse, but I'm here to help with what matters to you — how are you really doing?",
                 "I'm built to listen and support you, not to answer factual questions like that. What's really on your mind?",
             ],
+            identity: [
+                "I'm Linen, your personal smart assistant. I'm here to listen, help you work through what's on your mind, and remember the important details about your life. What makes me different is that I prioritize your privacy — all your data stays on your device. Think of me as a friend with a perfect memory. What's going on?",
+                "I'm Linen, a personal assistant designed to be your thoughtful companion. I listen without judgment, remember what matters to you, and help you process your thoughts and feelings. I'm built with privacy first — your conversations stay with you, nowhere else. What can I help with?",
+                "Hey, I'm Linen! I'm your personal AI assistant created to listen, support, and remember. Unlike other AI services, I keep all your data on your device — nothing goes to the cloud or gets used to train models. I'm here to be a genuine friend who gets you. What's on your mind?",
+            ],
             creator: [
                 "I was built by Ramin Najafi. You can find more information about my creator at ramin-najafi.github.io",
             ],
@@ -1655,8 +1660,12 @@ class LocalAssistant {
         const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
         const words = msg.split(/\s+/);
 
+        // Identity question detection (who/what are you, purpose)
+        const identityKeywords = ['who are you', 'what are you', 'what is linen', "what's your purpose", 'whats your purpose', 'what do you do', 'what is your purpose', 'introduce yourself', 'tell me about you'];
+        if (identityKeywords.some(k => msg.includes(k))) return 'identity';
+
         // Creator question detection
-        const creatorKeywords = ['who created you', 'who made you', 'who built you', 'who is your creator', 'who developed you', 'who is ramin', 'ramin najafi', 'your creator', 'who are you', 'what company', 'which company', 'who works for', 'whos your creator', 'made by', 'created by', 'built by', 'developer', 'creator'];
+        const creatorKeywords = ['who created you', 'who made you', 'who built you', 'who is your creator', 'who developed you', 'who is ramin', 'ramin najafi', 'your creator', 'what company', 'which company', 'who works for', 'whos your creator', 'made by', 'created by', 'built by', 'developer', 'creator'];
         if (creatorKeywords.some(k => msg.includes(k))) return 'creator';
 
         // Context awareness — detect references to previous messages
@@ -1751,6 +1760,10 @@ class LocalAssistant {
         // First message — always greet
         if (userMsgCount === 1) {
             response = this.pick('greeting');
+        }
+        // Identity question — always answer with identity info
+        else if (intent === 'identity') {
+            response = this.pick('identity');
         }
         // Creator question — always answer with creator info
         else if (intent === 'creator') {
