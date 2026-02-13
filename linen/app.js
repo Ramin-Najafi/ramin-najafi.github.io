@@ -3377,6 +3377,39 @@ class Linen {
             });
         }
 
+        // Share Linen button
+        const shareBtn = document.getElementById('share-linen-btn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', async () => {
+                const linienUrl = 'https://ramin-najafi.github.io/linen';
+                try {
+                    // Try to use native share API first if available (mobile)
+                    if (navigator.share) {
+                        await navigator.share({
+                            title: 'Linen',
+                            text: 'Check out Linen - your personal AI assistant that respects your privacy!',
+                            url: linienUrl
+                        });
+                    } else {
+                        // Fallback to clipboard API
+                        await navigator.clipboard.writeText(linienUrl);
+                        this.showShareNotification();
+                    }
+                } catch (err) {
+                    // If share fails and clipboard is not available, fallback
+                    if (err.name !== 'AbortError') {
+                        try {
+                            await navigator.clipboard.writeText(linienUrl);
+                            this.showShareNotification();
+                        } catch (clipboardErr) {
+                            console.error('Linen: Share failed:', clipboardErr);
+                            this.showToast('Could not copy link to clipboard', 'error');
+                        }
+                    }
+                }
+            });
+        }
+
         // Close buttons for privacy/terms modals
         ['close-privacy-modal', 'close-privacy-btn', 'close-terms-modal', 'close-terms-btn'].forEach(id => {
             const btn = document.getElementById(id);
@@ -4580,6 +4613,76 @@ class Linen {
         if (settingsVersion) settingsVersion.textContent = `Version-${newVersion}`;
 
         console.log("Linen: Version updated to", newVersion);
+    }
+
+    showShareNotification() {
+        // Create a custom share notification
+        const notification = document.createElement('div');
+        notification.id = 'share-notification';
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s ease-out;
+            font-weight: 600;
+        `;
+
+        notification.innerHTML = `
+            <span>✓ Link copied—paste to share</span>
+            <button style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0; display: flex; align-items: center;">×</button>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Close button handler
+        const closeBtn = notification.querySelector('button');
+        const removeNotification = () => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        };
+
+        closeBtn.addEventListener('click', removeNotification);
+
+        // Auto-dismiss after 4 seconds
+        setTimeout(removeNotification, 4000);
+
+        // Add animations to stylesheet if not present
+        if (!document.getElementById('share-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'share-notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
     }
 
     addSystemMessage(message, type) {
