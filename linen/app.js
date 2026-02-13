@@ -2696,8 +2696,12 @@ class Linen {
 
         // Close onboarding button (×)
         const closeOnboarding = document.getElementById('close-onboarding');
+        console.log("Linen: Close onboarding button found:", !!closeOnboarding);
         if (closeOnboarding) {
-            closeOnboarding.addEventListener('click', () => {
+            closeOnboarding.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Linen: Close onboarding clicked");
                 // Just close the onboarding overlay, don't show pitch modal
                 document.getElementById('onboarding-overlay').style.display = 'none';
             });
@@ -2715,9 +2719,13 @@ class Linen {
 
         // AI Provider selection
         const providerButtons = document.querySelectorAll('.ai-provider-btn');
+        console.log("Linen: Found", providerButtons.length, "provider buttons");
         providerButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const provider = btn.dataset.provider;
+                console.log("Linen: Provider button clicked:", provider);
                 this.setupProviderForm(provider);
                 // Remove active from all, add to clicked
                 providerButtons.forEach(b => b.classList.remove('selected'));
