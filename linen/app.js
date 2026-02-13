@@ -2041,6 +2041,8 @@ class LocalAssistant {
         this.usedResponses = new Set(); // Track used responses to avoid repetition
         this.utilityManager = db ? new UtilityManager(db) : null; // Utility functions manager
         this.eventDetector = db ? new EventDetector(db, utilitiesApp) : null; // Smart event detection
+        this.conversationContext = null; // Track context for follow-up messages
+        this.lastUserMessage = null; // Store last user message for context
 
         this.responses = {
             greeting: [
@@ -2049,6 +2051,9 @@ class LocalAssistant {
                 "Hey! Good to see you. What's on your mind?",
                 "Hello! How's it going today?",
                 "Hey! What's up?",
+                "What's up? How are you doing?",
+                "Hey there! What can I do for you?",
+                "Morning! What's new?",
             ],
             greetingReply: [
                 "Hey! How's it going?",
@@ -2057,6 +2062,8 @@ class LocalAssistant {
                 "Hello! How's your day been?",
                 "Hey! What can I do for you?",
                 "Hi! What's going on?",
+                "What's happening?",
+                "Sup! How's it going?",
             ],
             howAreYou: [
                 "I'm doing well, thanks for asking! How about you — how's your day been?",
@@ -2065,6 +2072,8 @@ class LocalAssistant {
                 "All good on my end! How are things with you?",
                 "Can't complain! How about you though, everything okay?",
                 "Pretty good! Thanks for asking. What about you?",
+                "I'm solid. You holding up okay?",
+                "Can't complain. You good?",
             ],
             referenceBack: [
                 "You're right, my bad. Let me focus — what were you asking about?",
@@ -2072,6 +2081,8 @@ class LocalAssistant {
                 "Fair point, I got sidetracked. Go ahead, I'm listening this time.",
                 "Oops, you're right. I missed that — what did you want to talk about?",
                 "My bad! I didn't mean to skip over that. What was your question?",
+                "You're totally right. What was I missing?",
+                "Got it, I hear you. Let's focus on that.",
             ],
             thanks: [
                 "Of course! Anything else?",
@@ -2079,6 +2090,9 @@ class LocalAssistant {
                 "Happy to help! Anything else going on?",
                 "Sure thing! What's next?",
                 "Anytime!",
+                "You got it!",
+                "All good. What else?",
+                "No sweat. What do you need?",
             ],
             farewell: [
                 "Take care! Come back anytime.",
@@ -2086,6 +2100,9 @@ class LocalAssistant {
                 "Bye for now! Hope the rest of your day goes well.",
                 "Talk soon! Take it easy.",
                 "Later! Don't be a stranger.",
+                "Catch you later!",
+                "Talk to you soon!",
+                "Take care, friend!",
             ],
             positive: [
                 "That's awesome! I'm genuinely happy for you.",
@@ -2095,6 +2112,9 @@ class LocalAssistant {
                 "Honestly, that's beautiful to hear. Keep that momentum going.",
                 "That's the energy right there. I'm here for it.",
                 "That's really special. Thanks for sharing that with me.",
+                "Yesss! That's what I'm talking about!",
+                "That's so cool! How do you feel about it?",
+                "I'm stoked for you! That's dope.",
             ],
             distressed: [
                 "I'm sorry you're going through that. I'm here if you want to talk.",
@@ -2102,18 +2122,25 @@ class LocalAssistant {
                 "I hear you. Your feelings are valid. Want to talk about what's going on?",
                 "That's a lot to carry. I'm listening whenever you're ready.",
                 "I'm sorry. That's not easy. Take your time — I'm here.",
+                "That's rough. I'm sorry you're dealing with that.",
+                "I'm here for you. What do you need right now?",
+                "That sounds painful. Tell me more.",
             ],
             anxious: [
                 "That sounds stressful. What's weighing on you the most?",
                 "I get that. Sometimes just talking it through helps. What's going on?",
                 "Anxiety can be a lot. Take a breath — what's on your mind?",
                 "That's understandable. Want to walk me through what's been happening?",
+                "That sounds like a lot. What's making you most nervous?",
+                "I feel you. What's the main thing stressing you out?",
             ],
             question: [
                 "That's a good question. I'm in local mode so I can't look things up, but I can think through it with you. What are your thoughts?",
                 "Hmm, I wish I could look that up for you. In local mode I'm a bit limited, but tell me more — maybe we can work through it together.",
                 "I don't have the full answer for that, but I'm curious what you think. What's your take?",
                 "I can't really search for things right now, but I'm happy to talk it through. What do you think?",
+                "That's a solid question. What do you think about it?",
+                "Not sure I have the full answer, but let's talk it through.",
             ],
             outOfScope: [
                 "That's not really my area — I'm here to listen and help you navigate your thoughts, feelings, and daily tasks. What's on your mind?",
@@ -2121,6 +2148,7 @@ class LocalAssistant {
                 "I can't help with that, but if something's weighing on you, I'm all ears.",
                 "That's outside my wheelhouse, but I'm here to help with what matters to you — how are you really doing?",
                 "I'm built to listen and support you, not to answer factual questions like that. What's really on your mind?",
+                "Can't help much with that one, but I'm here for you.",
             ],
             identity: [
                 "I'm Linen, your personal smart assistant. I'm here to listen, help you work through what's on your mind, and remember the important details about your life. What makes me different is that I prioritize your privacy — all your data stays on your device. Think of me as a friend with a perfect memory. What's going on?",
@@ -2135,30 +2163,42 @@ class LocalAssistant {
                 "Tell me about it. Is it stressing you out or just on your mind?",
                 "How are things at work? What's happening?",
                 "Ugh, work. What's the situation?",
+                "Work been keeping you busy?",
+                "What's going on with work?",
+                "Tell me about what's happening at your job.",
             ],
             topicRelationships: [
                 "Relationships can be a lot. What's going on?",
                 "Sounds like it's about someone important to you. Tell me more.",
                 "How are things between you two? What's happening?",
                 "That's a big topic. Want to walk me through it?",
+                "Relationships can be complicated. What's up?",
+                "Tell me about that person.",
+                "What's the situation?",
             ],
             topicHealth: [
                 "Your health matters. How are you feeling?",
                 "That doesn't sound fun. What's going on?",
                 "I hope you're taking it easy. Tell me more.",
                 "How are you doing physically? What's been going on?",
+                "That sounds rough. Take care of yourself.",
+                "What's bothering you healthwise?",
             ],
             topicHobbies: [
                 "Oh nice! Tell me more about that.",
                 "That sounds fun! How long have you been into it?",
                 "Cool, what do you enjoy most about it?",
                 "I like hearing about this stuff. What got you into it?",
+                "That's awesome! What is it about it you love?",
+                "Sounds cool! Tell me more.",
             ],
             topicGoals: [
                 "That's exciting! What are you working toward?",
                 "I love that. What's the plan?",
                 "Nice, how's progress going so far?",
                 "That's a solid goal. What's the next step?",
+                "That's awesome. How can I help you get there?",
+                "What's driving that goal?",
             ],
             engaged: [
                 "Tell me more about that.",
@@ -2171,30 +2211,41 @@ class LocalAssistant {
                 "Okay, I'm with you. What else?",
                 "Yeah? Tell me more.",
                 "I'm here for it. Keep going.",
+                "That's interesting. Keep talking.",
+                "Okay, so what happened after that?",
+                "I see. And how did that make you feel?",
+                "That's a lot. Tell me more?",
+                "What else is going on with that?",
             ],
             confused: [
                 "I'm not sure I follow — can you give me a bit more to go on?",
                 "Hmm, what do you mean by that?",
                 "Could you say a bit more? I want to make sure I understand.",
                 "I'm not quite getting it — can you explain?",
+                "Not sure what you mean. Can you explain that differently?",
+                "Say more? I want to make sure I get it.",
             ],
             frustrated: [
                 "You're right, that's on me. What would you like to talk about?",
                 "I hear you. I'm a bit limited in local mode, but I'm trying. What can I do?",
                 "Fair enough. Let me try again — what's on your mind?",
                 "Sorry about that. Tell me what you need and I'll do my best.",
+                "I get it. Let's start fresh. What's up?",
             ],
             timerSet: [
                 "I've set a timer for you. Let me know when you need another one.",
                 "Timer set! I'll help keep you on track.",
                 "Got it — timer is running. Just let me know if you need anything else.",
                 "Timer started. You've got this!",
+                "Alright, timer's going!",
+                "Done! Timer is running.",
             ],
             alarmSet: [
                 "Alarm set for you. I'll remind you when it's time.",
                 "Got it — alarm is ready to go.",
                 "Alarm set! I'll make sure you wake up on time.",
                 "Perfect, your alarm is all set.",
+                "Alarm's set! You're good.",
             ],
             noteAdded: [
                 "Got it — I've written that down for you.",
@@ -2202,6 +2253,18 @@ class LocalAssistant {
                 "Added to your notes. I've got you covered.",
                 "Noted! I'll keep that in mind for you.",
                 "That's saved in your memories now.",
+                "All set! Note's saved.",
+                "Done! I've got that written down.",
+            ],
+            casualChat: [
+                "Yeah, that's real.",
+                "For sure.",
+                "Totally get that.",
+                "Makes sense.",
+                "Right, I feel you.",
+                "Yeah, I feel you on that.",
+                "That's fair.",
+                "No doubt.",
             ],
         };
     }
@@ -2299,8 +2362,15 @@ class LocalAssistant {
         const statusWords = ['good', 'alright', 'okay', 'ok', 'fine', 'well', 'great', 'awesome', 'tired', 'busy', 'yep', 'yep', 'yeah', 'nope', 'nah', 'not really'];
         if (words.length <= 2 && statusWords.some(s => msg.includes(s))) return 'engaged';
 
-        // Very short messages that aren't greetings — probably confused or need more engagement
-        if (words.length <= 2) return 'confused';
+        // Very short messages that aren't greetings but ARE valid statements
+        if (words.length <= 2 && words.length > 0) {
+            // Check if it's a valid short response first
+            const shortValidResponses = ['yes', 'yeah', 'yep', 'no', 'nope', 'nah', 'ok', 'okay', 'sure', 'alright', 'cool', 'nice', 'lol', 'haha', 'true', 'same', 'exactly', 'agreed'];
+            const isValidShort = shortValidResponses.some(s => msg.includes(s));
+            if (isValidShort) return 'casualChat';
+            // Otherwise treat as confused
+            return 'confused';
+        }
 
         // Default: engaged conversation
         return 'engaged';
@@ -2376,6 +2446,28 @@ class LocalAssistant {
             }
         }
 
+        return null;
+    }
+
+    // Get last user message for context awareness
+    getLastUserMessage() {
+        const userMessages = this.sessionMemory.filter(m => m.role === 'user');
+        if (userMessages.length > 1) {
+            return userMessages[userMessages.length - 1]?.content;
+        }
+        return null;
+    }
+
+    // Get conversation topic for context
+    getConversationTopic() {
+        const recentMessages = this.sessionMemory.slice(-6); // Last 6 messages
+        const allText = recentMessages.map(m => m.content).join(' ').toLowerCase();
+
+        if (allText.includes('work') || allText.includes('job') || allText.includes('boss')) return 'work';
+        if (allText.includes('friend') || allText.includes('family') || allText.includes('relationship')) return 'relationship';
+        if (allText.includes('tired') || allText.includes('sick') || allText.includes('health')) return 'health';
+        if (allText.includes('play') || allText.includes('game') || allText.includes('music')) return 'hobby';
+        if (allText.includes('goal') || allText.includes('dream') || allText.includes('plan')) return 'goal';
         return null;
     }
 
