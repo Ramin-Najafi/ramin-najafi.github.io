@@ -2945,6 +2945,16 @@ class Linen {
             console.warn("Linen: Chat input element not found");
         }
 
+        // Send message button in default row
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        if (sendMessageBtn) {
+            sendMessageBtn.addEventListener('click', () => {
+                this.sendChat();
+                chatInput.value = '';
+                chatInput.focus();
+            });
+        }
+
         // Mode switcher from text back to buttons
         if (modeSwitcher) {
             modeSwitcher.addEventListener('click', () => {
@@ -3820,6 +3830,13 @@ class Linen {
         container.scrollTop = container.scrollHeight;
     }
 
+    scrollToBottom() {
+        const container = document.getElementById('chat-messages');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
     async sendChat(initialMessage) {
         const input = document.getElementById('chat-input');
         const msg = initialMessage || input.value.trim();
@@ -3833,7 +3850,7 @@ class Linen {
             userDiv.className = 'user-message';
             userDiv.textContent = msg;
             container.appendChild(userDiv);
-            container.scrollTop = container.scrollHeight;
+            this.scrollToBottom();
         }
 
         const id = 'loading-msg-' + Date.now();
@@ -3849,7 +3866,7 @@ class Linen {
             div.textContent = 'Thinking...';
         }
         container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        this.scrollToBottom();
 
         let reply = '';
         try {
@@ -3902,7 +3919,7 @@ class Linen {
             rdiv.className = 'assistant-message';
             rdiv.textContent = reply;
             container.appendChild(rdiv);
-            container.scrollTop = container.scrollHeight;
+            this.scrollToBottom();
 
             // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
             // Don't save if it's the initial greeting message
