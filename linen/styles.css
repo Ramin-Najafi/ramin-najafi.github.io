@@ -808,7 +808,7 @@ hr {
 }
 
 .accordion-item.active .accordion-content {
-    max-height: 2000px;
+    max-height: 3500px;
     padding: 1rem 1rem 1.5rem 1rem;
 }
 
@@ -845,6 +845,7 @@ hr {
 
 #about-modal.about-accordion {
     padding: 1.5rem;
+    max-height: 90vh;
 }
 
 .about-header {
