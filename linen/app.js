@@ -2369,7 +2369,7 @@ class LocalAssistant {
         if (creatorKeywords.some(k => msg.includes(k))) return 'creator';
 
         // Context awareness — detect references to previous messages
-        const referenceBack = ['i asked', 'i said', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'what i said', 'before i', 'you could', 'instead of', 'acknowledge'];
+        const referenceBack = ['i asked', 'i said', 'i told', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'i just told', 'what i said', 'what i told', 'before i', 'you could', 'instead of', 'acknowledge', 'remember', 'you said', 'you told me', 'perfect memory', 'supposed to remember', 'forget', 'forgot', 'you dont remember'];
         if (referenceBack.some(r => msg.includes(r))) return 'referenceBack';
 
         // CASUAL GREETINGS AND TURNTAKING (check early!)
@@ -2395,8 +2395,8 @@ class LocalAssistant {
         // Farewell detection
         if (words.length <= 4 && ['bye', 'goodbye', 'see you', 'later', 'goodnight', 'good night', 'gotta go', 'gtg', 'cya', 'night'].some(f => msg.includes(f))) return 'farewell';
 
-        // Frustration / repetition detection
-        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying', 'angry', 'making me angry'].some(f => msg.includes(f))) return 'frustrated';
+        // Frustration / repetition detection — includes profanity and anger indicators
+        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying', 'angry', 'making me angry', 'fuck', 'piss', 'asshole', 'bullshit', 'crap', '!!!', 'are you serious', 'you suck', 'this sucks', 'i hate', 'piece of shit', 'useless'].some(f => msg.includes(f))) return 'frustrated';
 
         // Mood detection
         const distressWords = ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'die', 'furious', 'devastated', 'hate', 'miserable', 'crying', 'hurting', 'suffering', 'lonely', 'alone', 'broken'];
@@ -2619,7 +2619,16 @@ class LocalAssistant {
         this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
 
         let response = '';
-        const userMsgCount = this.sessionMemory.filter(m => m.role === 'user').length;
+        const userMessages = this.sessionMemory.filter(m => m.role === 'user');
+        const userMsgCount = userMessages.length;
+
+        // Check if user has been giving only single-word responses — they need better prompting
+        const recentUserMessages = userMessages.slice(-5);
+        const onlyShortResponses = recentUserMessages.length >= 3 && recentUserMessages.every(m => m.content.toLowerCase().trim().split(/\s+/).length <= 1);
+        if (onlyShortResponses && intent === 'engaged') {
+            // Switch to asking more specific questions instead of generic "keep going"
+            return this.pick('question') || this.pick('engaged');
+        }
 
         // First message — always greet (only once)
         if (!this.hasGreeted && userMsgCount === 1) {
