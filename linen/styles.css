@@ -936,6 +936,22 @@ hr {
     color: white;
 }
 
+.button-danger {
+    background: #ff4444;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    margin: 0.5rem auto;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.button-danger:hover {
+    background: #cc0000;
+}
+
 #pitch-modal h2, #trial-limit-modal h2 {
     font-size: 1.8rem;
     margin-bottom: 1rem;
@@ -1000,6 +1016,10 @@ hr {
     animation: pulse 1.5s ease-in-out infinite;
     box-sizing: border-box;
     word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
 }
 
 #lightbox-stop-btn {
@@ -1008,7 +1028,6 @@ hr {
 }
 
 /* Ensure voice modal buttons are clickable */
-#close-voice-modal,
 #lightbox-stop-btn {
     pointer-events: auto !important;
     cursor: pointer !important;
