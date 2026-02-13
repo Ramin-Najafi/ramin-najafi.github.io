@@ -808,8 +808,8 @@ hr {
 }
 
 .accordion-item.active .accordion-content {
-    max-height: 1000px;
-    padding: 1rem;
+    max-height: 2000px;
+    padding: 1rem 1rem 1.5rem 1rem;
 }
 
 .accordion-content p {
