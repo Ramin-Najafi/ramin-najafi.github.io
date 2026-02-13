@@ -59,7 +59,8 @@ header {
 .version-badge {
     position: absolute;
     bottom: -12px;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--accent);
     color: #000;
     padding: 2px 6px;

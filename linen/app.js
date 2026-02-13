@@ -2813,9 +2813,14 @@ class Linen {
         const backdrop = document.getElementById('modal-backdrop');
 
         if (logo && logoMenu) {
+            // Logo click opens About modal
             logo.addEventListener('click', (e) => {
                 e.stopPropagation();
-                logoMenu.classList.toggle('hidden');
+                const aboutModal = document.getElementById('about-modal');
+                if (aboutModal) {
+                    aboutModal.classList.add('active');
+                    backdrop.classList.add('active');
+                }
             });
 
             // Close menu when clicking outside
@@ -2830,7 +2835,13 @@ class Linen {
             const logoMemoriesBtn = document.getElementById('logo-memories');
             const logoNewChatBtn = document.getElementById('logo-new-chat');
             const logoSettingsBtn = document.getElementById('logo-settings');
-            const logoAboutBtn = document.getElementById('logo-about');
+
+            if (logoNewChatBtn) {
+                logoNewChatBtn.addEventListener('click', () => {
+                    logoMenu.classList.add('hidden');
+                    this.startNewChat();
+                });
+            }
 
             if (logoMemoriesBtn) {
                 logoMemoriesBtn.addEventListener('click', () => {
@@ -2841,30 +2852,12 @@ class Linen {
                 });
             }
 
-            if (logoNewChatBtn) {
-                logoNewChatBtn.addEventListener('click', () => {
-                    logoMenu.classList.add('hidden');
-                    this.startNewChat();
-                });
-            }
-
             if (logoSettingsBtn) {
                 logoSettingsBtn.addEventListener('click', () => {
                     // Clear any stuck inline pointer-events from pitch modal
                     settingsModal.style.pointerEvents = '';
                     settingsModal.classList.add('active');
                     backdrop.classList.add('active');
-                    logoMenu.classList.add('hidden');
-                });
-            }
-
-            if (logoAboutBtn) {
-                logoAboutBtn.addEventListener('click', () => {
-                    const aboutModal = document.getElementById('about-modal');
-                    if (aboutModal) {
-                        aboutModal.classList.add('active');
-                        backdrop.classList.add('active');
-                    }
                     logoMenu.classList.add('hidden');
                 });
             }
