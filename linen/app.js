@@ -2371,13 +2371,22 @@ class LocalAssistant {
         const referenceBack = ['i asked', 'i said', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'what i said', 'before i', 'you could', 'instead of', 'acknowledge'];
         if (referenceBack.some(r => msg.includes(r))) return 'referenceBack';
 
-        // "How are you" detection — check BEFORE greetings so "how are you today" isn't caught as greeting
-        const howAreYouPhrases = ['how are you', 'hows it going', 'how you doing', 'how do you feel', 'whats up with you', 'how have you been', 'how ya doing', 'how you been', 'hows everything', 'hows life', 'how are things', 'how goes it', 'hru'];
-        if (howAreYouPhrases.some(p => msg.includes(p))) return 'howAreYou';
+        // CASUAL GREETINGS AND TURNTAKING (check early!)
+        // Short casual exchanges like "whats up", "hey whats up", "sup", "how you doing", "not much you?"
+        if (words.length <= 4) {
+            const casualTurntaking = ['whats up', 'hows it going', 'how you doing', 'how are you doing', 'not much', 'not much you', 'sup', 'sup you', 'nothing much', 'hey whats up', 'hey sup', 'sup whats up'];
+            if (casualTurntaking.some(phrase => msg.includes(phrase))) return 'casualChat';
 
-        // Greeting detection (short messages that are greetings)
-        const greetWords = ['hi', 'hello', 'hey', 'yo', 'sup', 'hiya', 'whats up', 'wassup', 'howdy', 'good morning', 'good afternoon', 'good evening', 'morning', 'evening', 'afternoon'];
-        if (words.length <= 4 && greetWords.some(g => msg.includes(g))) return 'greetingReply';
+            // Single greetings
+            const greetWords = ['hi', 'hello', 'hey', 'yo', 'sup', 'hiya', 'wassup', 'howdy'];
+            if (greetWords.some(g => msg.includes(g) && msg.length < 20)) return 'greetingReply';
+        }
+
+        // "How are you" detection — only for longer, more formal versions
+        // Skip if already caught as casual turntaking
+        const howAreYouPhrases = ['how are you', 'hows it going', 'how you doing', 'how do you feel', 'whats up with you', 'how have you been', 'how ya doing', 'how you been', 'hows everything', 'hows life', 'how are things', 'how goes it', 'hru'];
+        // Only treat as "howAreYou" if longer (not short casual turntaking)
+        if (words.length > 4 && howAreYouPhrases.some(p => msg.includes(p))) return 'howAreYou';
 
         // Thanks detection
         if (['thank', 'thanks', 'thx', 'ty', 'appreciate'].some(t => msg.includes(t))) return 'thanks';
@@ -2413,6 +2422,14 @@ class LocalAssistant {
         // Examples: "whats new with you?", "what do you mean?", "what are you doing?"
         const conversationalPatterns = [
             /^not much/,                           // "not much, whats new"
+            /^whats up$/,                          // standalone "whats up"
+            /^whats up[?!]?$/,                     // "whats up?" or "whats up!"
+            /^sup$/,                               // standalone "sup"
+            /^sup[?!]?$/,                          // "sup?" or "sup!"
+            /^how you doing/,                      // "how you doing"
+            /^how.s it going/,                     // "how's it going" or "hows it going"
+            /^hows it$/,                           // "hows it"
+            /^whats going on$/,                    // standalone "whats going on"
             /whats new (with )?you/,              // "whats new with you"
             /whats up (with )?you/,               // "whats up with you"
             /whats going on (with )?you/,         // "whats going on with you"
@@ -2424,16 +2441,30 @@ class LocalAssistant {
             /anything new (with )?you/,           // "anything new with you?"
             /been up to/,                         // "been up to much?"
             /nothing much/,                       // "nothing much, you?"
+            /^not much$/,                          // standalone "not much"
+            /^not much[?!]?$/,                    // "not much?" or "not much!"
         ];
 
         if (conversationalPatterns.some(pattern => pattern.test(msg))) {
             return 'casualChat';
         }
 
+        // Casual greeting check — short messages that are clearly casual greetings
+        // "hey!", "hey whats up", "sup whats up", etc.
+        if (words.length <= 3) {
+            const casualGreetings = ['hey whats up', 'hey whats going on', 'hey how you doing', 'sup whats up', 'sup how you doing', 'hey sup'];
+            if (casualGreetings.some(g => msg.includes(g))) return 'casualChat';
+        }
+
         // Question detection — only for genuine standalone questions, not conversational phrases
         const isQuestion = originalMessage.endsWith('?');
         const startsWithQuestionWord = ['what ', 'why ', 'how ', 'when ', 'where ', 'who ', 'which '].some(q => msg.startsWith(q));
+        // Exclude common conversational question starters from question detection
+        const conversationalQuestions = ['what do you mean', 'what about', 'what ever', 'how are you', 'how you doing', 'how about', 'why not', 'why would', 'when can', 'where are'];
+        const isConversationalQuestion = conversationalQuestions.some(q => msg.includes(q));
+
         // Only trigger question for actual informational questions, not conversational ones
+        if (isConversationalQuestion) return 'casualChat';
         if (startsWithQuestionWord && words.length > 3) return 'question';
         if (isQuestion && !referenceBack.some(r => msg.includes(r)) && words.length > 4) return 'question';
 
