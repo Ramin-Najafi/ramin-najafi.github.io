@@ -2350,6 +2350,17 @@ class LocalAssistant {
         const words = msg.split(/\s+/);
         const originalMessage = message.toLowerCase().trim();
 
+        // ========== PRIORITY 1: REFERENCE BACK (Context awareness) ==========
+        // This should be checked EARLY because when user says "i just told you",
+        // they're explicitly calling out a previous context that bot should acknowledge
+        const referenceBack = ['i asked', 'i said', 'i told', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'i just told', 'what i said', 'what i told', 'before i', 'you could', 'instead of', 'acknowledge', 'remember', 'you said', 'you told me', 'perfect memory', 'supposed to remember', 'forget', 'forgot', 'you dont remember', 'i just told you', 'dont forget'];
+        if (referenceBack.some(r => msg.includes(r))) return 'referenceBack';
+
+        // ========== PRIORITY 2: FRUSTRATION (Emotional state takes priority) ==========
+        // When user is frustrated, this overrides other intent classifications
+        // Includes profanity, anger indicators, and tone markers
+        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying', 'angry', 'making me angry', 'fuck', 'piss', 'asshole', 'bullshit', 'crap', '!!!', 'are you serious', 'you suck', 'this sucks', 'i hate', 'piece of shit', 'useless'].some(f => msg.includes(f))) return 'frustrated';
+
         // Utility function detection — timers, alarms, notes
         const timerKeywords = ['set timer', 'set a timer', 'timer for', 'remind me in', 'in the', 'in an', 'minutes', 'seconds', 'hours'];
         if ((msg.includes('set timer') || msg.includes('set a timer') || msg.includes('timer for')) && this.extractTime(message)) return 'timerSet';
@@ -2367,10 +2378,6 @@ class LocalAssistant {
         // Creator question detection
         const creatorKeywords = ['who created you', 'who made you', 'who built you', 'who is your creator', 'who developed you', 'who is ramin', 'ramin najafi', 'your creator', 'what company', 'which company', 'who works for', 'whos your creator', 'made by', 'created by', 'built by', 'developer', 'creator'];
         if (creatorKeywords.some(k => msg.includes(k))) return 'creator';
-
-        // Context awareness — detect references to previous messages
-        const referenceBack = ['i asked', 'i said', 'i told', 'my question', 'answer that', 'answer me', 'respond to', 'didnt answer', 'you ignored', 'already told you', 'i just said', 'i just told', 'what i said', 'what i told', 'before i', 'you could', 'instead of', 'acknowledge', 'remember', 'you said', 'you told me', 'perfect memory', 'supposed to remember', 'forget', 'forgot', 'you dont remember'];
-        if (referenceBack.some(r => msg.includes(r))) return 'referenceBack';
 
         // CASUAL GREETINGS AND TURNTAKING (check early!)
         // Short casual exchanges like "whats up", "hey whats up", "sup", "how you doing", "not much you?"
@@ -2394,9 +2401,6 @@ class LocalAssistant {
 
         // Farewell detection
         if (words.length <= 4 && ['bye', 'goodbye', 'see you', 'later', 'goodnight', 'good night', 'gotta go', 'gtg', 'cya', 'night'].some(f => msg.includes(f))) return 'farewell';
-
-        // Frustration / repetition detection — includes profanity and anger indicators
-        if (['rude', 'deaf', 'stupid', 'dumb', 'useless', 'broken', 'not helpful', 'not listening', 'what the', 'wtf', 'are you even', 'cant even', 'so bad', 'terrible', 'worst', 'annoying', 'angry', 'making me angry', 'fuck', 'piss', 'asshole', 'bullshit', 'crap', '!!!', 'are you serious', 'you suck', 'this sucks', 'i hate', 'piece of shit', 'useless'].some(f => msg.includes(f))) return 'frustrated';
 
         // Mood detection
         const distressWords = ['sad', 'depressed', 'hopeless', 'suicidal', 'crisis', 'die', 'furious', 'devastated', 'hate', 'miserable', 'crying', 'hurting', 'suffering', 'lonely', 'alone', 'broken'];
@@ -2575,6 +2579,28 @@ class LocalAssistant {
         return null;
     }
 
+    // Find relevant previous messages for context acknowledgment
+    findRelevantPreviousMessage() {
+        const userMessages = this.sessionMemory.filter(m => m.role === 'user');
+        if (userMessages.length < 2) return null;
+
+        // Get the message before the current one (which is at the end)
+        // We want the one that the user might be referring back to
+        const lastMessage = userMessages[userMessages.length - 1]?.content;
+
+        // Look back 2-4 messages to find the most relevant context
+        for (let i = userMessages.length - 3; i >= Math.max(0, userMessages.length - 5); i--) {
+            if (i >= 0 && userMessages[i]) {
+                const prevMsg = userMessages[i].content;
+                // Return the previous message if it's not too short (not just "ok")
+                if (prevMsg && prevMsg.trim().split(/\s+/).length > 1) {
+                    return prevMsg;
+                }
+            }
+        }
+        return null;
+    }
+
     // Get conversation topic for context using expanded vocabulary
     getConversationTopic() {
         const recentMessages = this.sessionMemory.slice(-6); // Last 6 messages
@@ -2624,7 +2650,23 @@ class LocalAssistant {
 
         // Check if user has been giving only single-word responses — they need better prompting
         const recentUserMessages = userMessages.slice(-5);
+        const shortResponseWords = recentUserMessages.map(m => m.content.toLowerCase().trim());
         const onlyShortResponses = recentUserMessages.length >= 3 && recentUserMessages.every(m => m.content.toLowerCase().trim().split(/\s+/).length <= 1);
+
+        // Special case: if user has said "ok" 3+ times, they're being prompted for longer responses but aren't engaged
+        const okCount = shortResponseWords.filter(w => w === 'ok' || w === 'okay').length;
+        if (okCount >= 3) {
+            // Ask something more specific to get real engagement
+            const specifics = [
+                "I notice you're saying okay a lot — is everything alright? What's really on your mind?",
+                "Seems like maybe I'm not asking the right questions. What would actually help you right now?",
+                "Tell me something real — what's going on with you?",
+                "What's something that's been on your mind lately?",
+                "I get the feeling you might need to talk about something specific. What is it?",
+            ];
+            return specifics[Math.floor(Math.random() * specifics.length)];
+        }
+
         if (onlyShortResponses && intent === 'engaged') {
             // Switch to asking more specific questions instead of generic "keep going"
             return this.pick('question') || this.pick('engaged');
@@ -2682,7 +2724,20 @@ class LocalAssistant {
             response = this.pick('distressed');
         }
         else if (intent === 'referenceBack') {
-            response = this.pick('referenceBack');
+            // Find what the user might be referring to and acknowledge it
+            const relevantMsg = this.findRelevantPreviousMessage();
+            if (relevantMsg) {
+                // Enhance response with specific context acknowledgment
+                const baseResponse = this.pick('referenceBack');
+                // Add a brief reference to what they said
+                if (relevantMsg.length > 50) {
+                    response = baseResponse.replace(/\?$/, ` You said: "${relevantMsg.substring(0, 60)}..."`);
+                } else {
+                    response = baseResponse.replace(/\?$/, ` You were talking about: "${relevantMsg}"`);
+                }
+            } else {
+                response = this.pick('referenceBack');
+            }
         }
         // Positive mood takes priority — acknowledge and celebrate
         else if (mood === 'positive') {
