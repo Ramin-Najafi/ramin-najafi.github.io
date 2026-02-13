@@ -1486,12 +1486,218 @@ END:VCALENDAR`;
     }
 }
 
+class UtilityManager {
+    constructor(db) {
+        this.db = db;
+        this.activeReminders = new Map(); // Track active reminders/alarms
+        this.requestNotificationPermission();
+    }
+
+    // Request notification permission from user
+    requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    // Parse time string and return milliseconds from now
+    parseTimeToMs(timeString) {
+        const msg = timeString.toLowerCase();
+
+        // Parse "X minutes" format
+        const minutesMatch = msg.match(/(\d+)\s*min/);
+        if (minutesMatch) {
+            return parseInt(minutesMatch[1]) * 60 * 1000;
+        }
+
+        // Parse "X seconds" format
+        const secondsMatch = msg.match(/(\d+)\s*sec/);
+        if (secondsMatch) {
+            return parseInt(secondsMatch[1]) * 1000;
+        }
+
+        // Parse "X hours" format
+        const hoursMatch = msg.match(/(\d+)\s*hour/);
+        if (hoursMatch) {
+            return parseInt(hoursMatch[1]) * 60 * 60 * 1000;
+        }
+
+        // Parse time like "8am", "3pm", "14:30", "2:30pm"
+        const timeMatch = msg.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/);
+        if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            let minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+            const meridiem = timeMatch[3];
+
+            // Convert 12-hour to 24-hour format if needed
+            if (meridiem) {
+                if (meridiem === 'pm' && hours !== 12) hours += 12;
+                if (meridiem === 'am' && hours === 12) hours = 0;
+            }
+
+            const now = new Date();
+            const target = new Date();
+            target.setHours(hours, minutes, 0, 0);
+
+            // If time is in the past, assume next day
+            if (target <= now) {
+                target.setDate(target.getDate() + 1);
+            }
+
+            return target.getTime() - now.getTime();
+        }
+
+        return null;
+    }
+
+    // Set a timer/reminder with native notification
+    async setTimer(duration, title = 'Timer') {
+        const reminderId = Date.now();
+        const timeoutId = setTimeout(async () => {
+            this.triggerNotification(title, `Your ${title.toLowerCase()} is done!`);
+            this.activeReminders.delete(reminderId);
+        }, duration);
+
+        this.activeReminders.set(reminderId, timeoutId);
+        await this.db.setSetting(`reminder-${reminderId}`, { type: 'timer', title, duration, created: Date.now() });
+
+        return { id: reminderId, duration, title };
+    }
+
+    // Set an alarm for a specific time
+    async setAlarm(timeString, label = 'Alarm') {
+        const durationMs = this.parseTimeToMs(timeString);
+        if (!durationMs) return null;
+
+        const alarmId = Date.now();
+        const timeoutId = setTimeout(async () => {
+            this.triggerNotification(label, `It's time! ${label}`);
+            this.activeReminders.delete(alarmId);
+            await this.db.setSetting(`reminder-${alarmId}`, JSON.stringify({ completed: true }));
+        }, durationMs);
+
+        this.activeReminders.set(alarmId, timeoutId);
+        await this.db.setSetting(`reminder-${alarmId}`, JSON.stringify({ type: 'alarm', label, timeString, created: Date.now() }));
+
+        return { id: alarmId, timeString, label };
+    }
+
+    // Save a note to device notes app or local storage
+    async saveNote(noteContent) {
+        const noteId = Date.now();
+
+        // Try to use native share API to send to notes app
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Linen Note',
+                    text: noteContent,
+                });
+                return { id: noteId, content: noteContent, shared: true };
+            } catch (err) {
+                // User cancelled share, fall back to local storage
+                console.log("Linen: Share cancelled, saving to local notes");
+            }
+        }
+
+        // Fallback: save to IndexedDB as memory
+        const memory = {
+            id: noteId,
+            text: noteContent,
+            type: 'note',
+            date: Date.now(),
+            tags: ['user-note'],
+            emotion: 'neutral',
+        };
+
+        await this.db.addMemory(memory);
+        return { id: noteId, content: noteContent, stored: 'local' };
+    }
+
+    // Add to device calendar if possible
+    async addToCalendar(eventTitle, eventDate) {
+        // Use the Web Calendar API (limited support) or construct a calendar URL
+        let calendarUrl = '';
+
+        // Try Google Calendar intent
+        if (eventDate) {
+            const date = new Date(eventDate);
+            const dateStr = date.toISOString().split('T')[0];
+            calendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent(eventTitle)}&dates=${dateStr}`;
+
+            // For desktop users, open in new tab
+            if (window.innerWidth > 768) {
+                window.open(calendarUrl, '_blank');
+                return { id: Date.now(), title: eventTitle, date: eventDate, method: 'google-calendar' };
+            }
+        }
+
+        // On mobile, try native calendar intent
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Add to Calendar',
+                    text: eventTitle,
+                });
+                return { id: Date.now(), title: eventTitle, date: eventDate, method: 'native-share' };
+            } catch (err) {
+                console.log("Linen: Calendar share not available");
+            }
+        }
+
+        // Fallback: save as memory with calendar tag
+        const memory = {
+            id: Date.now(),
+            text: eventTitle,
+            type: 'event',
+            date: eventDate || Date.now(),
+            tags: ['calendar', 'event'],
+            emotion: 'neutral',
+        };
+
+        await this.db.addMemory(memory);
+        return { id: memory.id, title: eventTitle, date: eventDate, method: 'local-memory' };
+    }
+
+    // Trigger browser notification
+    triggerNotification(title, body = '') {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, {
+                body: body,
+                icon: './icon-192.png',
+                badge: './icon-192.png',
+                tag: 'linen-notification',
+                requireInteraction: false,
+            });
+        }
+    }
+
+    // Get all active reminders
+    getActiveReminders() {
+        return Array.from(this.activeReminders.keys()).map(id => ({
+            id,
+            active: true,
+        }));
+    }
+
+    // Cancel a reminder by ID
+    cancelReminder(reminderId) {
+        if (this.activeReminders.has(reminderId)) {
+            clearTimeout(this.activeReminders.get(reminderId));
+            this.activeReminders.delete(reminderId);
+            return true;
+        }
+        return false;
+    }
+}
+
 class LocalAssistant {
-    constructor() {
+    constructor(db = null) {
         this.sessionMemory = [];
         this.userProfile = { name: null, mood: 'neutral', topics: [] };
         this.lastCategory = null; // Track last response category to avoid repeats
         this.usedResponses = new Set(); // Track used responses to avoid repetition
+        this.utilityManager = db ? new UtilityManager(db) : null; // Utility functions manager
 
         this.responses = {
             greeting: [
@@ -1792,6 +1998,44 @@ class LocalAssistant {
         return false;
     }
 
+    extractTimeDuration(message) {
+        // Extract time duration in milliseconds from messages
+        const msg = message.toLowerCase();
+
+        // Parse minutes
+        const minMatch = msg.match(/(\d+)\s*min/);
+        if (minMatch) return parseInt(minMatch[1]) * 60 * 1000;
+
+        // Parse seconds
+        const secMatch = msg.match(/(\d+)\s*sec/);
+        if (secMatch) return parseInt(secMatch[1]) * 1000;
+
+        // Parse hours
+        const hourMatch = msg.match(/(\d+)\s*hour/);
+        if (hourMatch) return parseInt(hourMatch[1]) * 60 * 60 * 1000;
+
+        return null;
+    }
+
+    extractNoteContent(message) {
+        // Extract the note content from the message
+        const msg = message.toLowerCase();
+        const noteKeywords = ['write this down', 'take note of', 'note that', 'remember this', 'dont forget', 'note to self', 'save this', 'remember to'];
+
+        for (const keyword of noteKeywords) {
+            const idx = msg.indexOf(keyword);
+            if (idx !== -1) {
+                // Extract content after the keyword
+                let content = message.substring(idx + keyword.length).trim();
+                // Remove leading punctuation
+                content = content.replace(/^[:\s]+/, '').trim();
+                return content || null;
+            }
+        }
+
+        return null;
+    }
+
     async chat(message) {
         const intent = this.detectIntent(message);
         const mood = this.detectMood(message);
@@ -1812,12 +2056,30 @@ class LocalAssistant {
         // Utility functions — timers, alarms, notes
         else if (intent === 'timerSet') {
             response = this.pick('timerSet');
+            // Call native timer via UtilityManager
+            if (this.utilityManager) {
+                const durationMs = this.extractTimeDuration(message);
+                if (durationMs) {
+                    this.utilityManager.setTimer(durationMs, 'Linen Timer');
+                }
+            }
         }
         else if (intent === 'alarmSet') {
             response = this.pick('alarmSet');
+            // Call native alarm via UtilityManager
+            if (this.utilityManager) {
+                this.utilityManager.setAlarm(message, 'Linen Alarm');
+            }
         }
         else if (intent === 'noteAdded') {
             response = this.pick('noteAdded');
+            // Extract note content and save to device
+            if (this.utilityManager) {
+                const noteContent = this.extractNoteContent(message);
+                if (noteContent) {
+                    this.utilityManager.saveNote(noteContent);
+                }
+            }
         }
         // Identity question — always answer with identity info
         else if (intent === 'identity') {
@@ -2172,7 +2434,7 @@ class Linen {
 
                         if (isRecoverableError) {
                             console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
-                            this.assistant = new LocalAssistant();
+                            this.assistant = new LocalAssistant(this.db);
                             this.isLocalMode = true;
                             this.showLocalModeToast(result.error);
                         } else {
@@ -2187,7 +2449,7 @@ class Linen {
             // If still no assistant, use local mode (always available)
             if (!this.assistant) {
                 console.log("Linen: Starting with LocalAssistant (no API configured).");
-                this.assistant = new LocalAssistant();
+                this.assistant = new LocalAssistant(this.db);
                 this.isLocalMode = true;
             }
 
@@ -2210,7 +2472,7 @@ class Linen {
             }
         } catch (e) {
             console.error('Linen: Init error:', e);
-            this.assistant = new LocalAssistant();
+            this.assistant = new LocalAssistant(this.db);
             this.isLocalMode = true;
             this.startApp(null);
             console.error('Linen: Fatal error during init, starting in local-only mode.', e);
@@ -2270,7 +2532,7 @@ class Linen {
         // If no assistant is set, use LocalAssistant
         if (!this.assistant) {
             console.warn("Linen: No assistant set in startApp, using LocalAssistant.");
-            this.assistant = new LocalAssistant();
+            this.assistant = new LocalAssistant(this.db);
             this.isLocalMode = true;
         }
         console.log("Linen: About to hide modals and bind events");
@@ -2501,7 +2763,7 @@ class Linen {
         localStorage.setItem('linen-trial-exchanges', '0');
         
         // Use LocalAssistant for trial mode (no API key needed)
-        this.assistant = new LocalAssistant();
+        this.assistant = new LocalAssistant(this.db);
         this.isLocalMode = true;
         this.startApp(null);
         this.sendChat('[INITIAL_GREETING]');
@@ -4035,7 +4297,7 @@ class Linen {
             } else {
                 await this.db.setSetting('primary-agent-id', null);
                 this.currentAgent = null;
-                this.assistant = new LocalAssistant();
+                this.assistant = new LocalAssistant(this.db);
                 this.isLocalMode = true;
             }
         }
@@ -4318,7 +4580,7 @@ class Linen {
                 } else {
                     // No alternative agents, fall back to LocalAssistant
                     console.log("Linen: No alternative agents available. Falling back to LocalAssistant.");
-                    this.assistant = new LocalAssistant();
+                    this.assistant = new LocalAssistant(this.db);
                     this.isLocalMode = true;
                     // Show typing bubble with delay
                     const typingDiv = document.createElement('div');
