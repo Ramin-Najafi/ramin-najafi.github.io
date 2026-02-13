@@ -2257,7 +2257,95 @@ class Linen {
             }, 2000);
         }
 
+        // Set up auto-refresh based on device power and connection status
+        this.setupAutoRefresh();
+
         console.log("Linen: App started in", this.isLocalMode ? 'local mode' : 'Gemini mode');
+    }
+
+    setupAutoRefresh() {
+        console.log("Linen: Setting up auto-refresh based on power and connection status");
+
+        // Detect current power and connection status
+        const getPowerAndConnectionStatus = () => {
+            const isOnBattery = navigator.getBattery ? navigator.getBattery().charging === false : !navigator.deviceMemory;
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const effectiveType = connection ? connection.effectiveType : '4g'; // Default to 4g if not available
+            const isWifi = connection && (connection.type === 'wifi' || effectiveType === '4g');
+
+            return { isOnBattery, effectiveType, isWifi };
+        };
+
+        // Calculate refresh interval in milliseconds based on power and connection
+        const getRefreshInterval = () => {
+            const { isOnBattery, effectiveType, isWifi } = getPowerAndConnectionStatus();
+
+            // WiFi + Plugged in = 5 seconds
+            if (isWifi && !isOnBattery) {
+                console.log("Linen: Refresh interval = 5 seconds (WiFi + plugged in)");
+                return 5000;
+            }
+            // WiFi + On battery = 15 seconds
+            else if (isWifi && isOnBattery) {
+                console.log("Linen: Refresh interval = 15 seconds (WiFi + on battery)");
+                return 15000;
+            }
+            // Cellular + Plugged in = 1 minute
+            else if (!isWifi && !isOnBattery) {
+                console.log("Linen: Refresh interval = 1 minute (Cellular + plugged in)");
+                return 60000;
+            }
+            // Cellular + On battery = 5 minutes
+            else {
+                console.log("Linen: Refresh interval = 5 minutes (Cellular + on battery)");
+                return 300000;
+            }
+        };
+
+        // Set up initial refresh timer
+        let refreshTimeout;
+        const scheduleRefresh = () => {
+            const interval = getRefreshInterval();
+            console.log(`Linen: Scheduling next auto-refresh in ${interval}ms`);
+
+            refreshTimeout = setTimeout(() => {
+                console.log("Linen: Auto-refresh triggered");
+                // Soft refresh: reload without cache bust parameter
+                window.location.reload();
+            }, interval);
+        };
+
+        // Initial schedule
+        scheduleRefresh();
+
+        // Listen for power and connection changes
+        if (navigator.getBattery) {
+            navigator.getBattery().then((battery) => {
+                battery.addEventListener('chargingchange', () => {
+                    console.log("Linen: Power status changed, reschedule refresh");
+                    clearTimeout(refreshTimeout);
+                    scheduleRefresh();
+                });
+            });
+        }
+
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (connection) {
+            connection.addEventListener('change', () => {
+                console.log("Linen: Connection type changed, reschedule refresh");
+                clearTimeout(refreshTimeout);
+                scheduleRefresh();
+            });
+        }
+
+        // Hard refresh on visibility change (app came back into focus)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                console.log("Linen: App returned to focus, doing hard refresh");
+                // Hard refresh with cache bust
+                window.location.href = window.location.href.split('?')[0] + '?cache-bust=' + Date.now();
+            }
+        });
     }
 
     startTrialMode() {
