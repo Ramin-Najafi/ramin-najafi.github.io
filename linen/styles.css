@@ -862,14 +862,7 @@ hr {
 }
 
 .version-display {
-    background: rgba(212, 165, 116, 0.1);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    letter-spacing: 0.3px;
+    /* Styling moved to inline styles in footer */
 }
 
 .about-content {

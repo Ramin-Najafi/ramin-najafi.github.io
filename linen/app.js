@@ -2377,23 +2377,39 @@ class Linen {
             getApiKeyDirect.dataset.listenerAttached = 'true';
         }
 
-        // Setup About Modal Accordion
+    }
+
+    setupAboutAccordion() {
         const aboutModal = document.getElementById('about-modal');
-        if (aboutModal) {
-            const aboutAccordionHeaders = aboutModal.querySelectorAll('.accordion-header');
-            aboutAccordionHeaders.forEach((header) => {
-                if (!header.dataset.aboutAccordionAttached) {
-                    header.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        const item = header.closest('.accordion-item');
-                        if (item) {
-                            item.classList.toggle('active');
+        if (!aboutModal) return;
+
+        const aboutAccordionHeaders = aboutModal.querySelectorAll('.accordion-header');
+        console.log("Linen: Setting up about accordion with", aboutAccordionHeaders.length, "headers");
+
+        aboutAccordionHeaders.forEach((header) => {
+            // Remove old listener if exists
+            header.onclick = null;
+
+            header.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log("Linen: Accordion header clicked");
+                const item = header.closest('.accordion-item');
+                if (item) {
+                    console.log("Linen: Toggling accordion item");
+                    item.classList.toggle('active');
+                    // Expand the content
+                    const content = item.querySelector('.accordion-content');
+                    if (content) {
+                        if (item.classList.contains('active')) {
+                            content.style.display = 'block';
+                        } else {
+                            content.style.display = 'none';
                         }
-                    });
-                    header.dataset.aboutAccordionAttached = 'true';
+                    }
                 }
             });
-        }
+        });
     }
 
     generateSessionTitle(conversations) {
@@ -2820,6 +2836,8 @@ class Linen {
                 if (aboutModal) {
                     aboutModal.classList.add('active');
                     backdrop.classList.add('active');
+                    // Setup accordion when modal opens
+                    this.setupAboutAccordion();
                 }
             });
 
