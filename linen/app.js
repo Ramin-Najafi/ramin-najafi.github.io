@@ -2056,6 +2056,10 @@ class Linen {
 
     async init() {
         console.log("Linen: Initializing app...");
+
+        // Check for app updates when reopening
+        await this.checkForUpdates();
+
         try {
             this.analytics.trackPageView();
             await this.db.init();
@@ -2152,6 +2156,37 @@ class Linen {
             this.isLocalMode = true;
             this.startApp(null);
             console.error('Linen: Fatal error during init, starting in local-only mode.', e);
+        }
+    }
+
+    async checkForUpdates() {
+        try {
+            // Check if service worker has been updated
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    const currentVersion = await this.db.getSetting('app-version-on-load');
+                    const newVersion = Date.now(); // Use timestamp as version marker
+
+                    if (currentVersion && currentVersion !== newVersion) {
+                        console.log("Linen: App update detected! Clearing old cache and refreshing...");
+                        // Clear all caches to force fresh content
+                        if ('caches' in window) {
+                            const cacheNames = await caches.keys();
+                            await Promise.all(
+                                cacheNames.map(name => caches.delete(name))
+                            );
+                        }
+                        // Hard refresh to load latest version while preserving IndexedDB data
+                        window.location.href = window.location.href.split('?')[0] + '?cache-bust=' + Date.now();
+                    } else {
+                        await this.db.setSetting('app-version-on-load', newVersion);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Linen: Error checking for updates:", err);
+            // Continue app initialization even if update check fails
         }
     }
 
@@ -4586,6 +4621,15 @@ window.addEventListener('DOMContentLoaded', () => {
                 });
             }).catch(err => console.error('SW registration failed:', err));
         }
+
+        // Detect when app comes back into focus and check for updates
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && window.app) {
+                console.log("Linen: App coming back into focus, checking for updates...");
+                window.app.checkForUpdates().catch(err => console.error('Update check error:', err));
+            }
+        });
+
         window.app = new Linen();
         window.app.init();
     } catch (e) {
