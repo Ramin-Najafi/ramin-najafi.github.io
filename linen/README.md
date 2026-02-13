@@ -54,14 +54,16 @@ Unlike traditional note-taking apps or journaling tools, Linen is **interactive*
 - Works offline seamlessly
 - Fast, responsive, beautiful UI
 
-### 🔄 **Intelligent Auto-Refresh**
-- Automatically keeps app up-to-date based on device power and connection
-- 5 seconds on WiFi + plugged in (optimal conditions)
-- 15 seconds on WiFi + battery (balanced approach)
-- 1 minute on cellular + plugged in (minimize data usage)
-- 5 minutes on cellular + battery (preserve battery and data)
-- Hard refresh when app comes back to focus
-- All data preserved through IndexedDB persistence
+### 🔄 **Background Update Checks**
+- Silently checks for app updates in the background without disrupting usage
+- Checks every 5 minutes on WiFi when plugged in (optimal conditions)
+- Checks every 15 minutes on WiFi when on battery (balanced approach)
+- Checks every 1 hour on cellular when plugged in (minimize data usage)
+- Checks every 4 hours on cellular when on battery (preserve battery and data)
+- Non-intrusive notification when new version is available
+- User can dismiss or wait for auto-dismiss (8 seconds)
+- Closing and reopening the app loads the latest version
+- All user data preserved through IndexedDB persistence
 
 ---
 

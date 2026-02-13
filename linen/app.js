@@ -2264,88 +2264,180 @@ class Linen {
     }
 
     setupAutoRefresh() {
-        console.log("Linen: Setting up auto-refresh based on power and connection status");
+        console.log("Linen: Setting up background service worker update checks");
 
-        // Detect current power and connection status
-        const getPowerAndConnectionStatus = () => {
-            const isOnBattery = navigator.getBattery ? navigator.getBattery().charging === false : !navigator.deviceMemory;
+        // Check for updates via service worker in the background without disrupting user
+        const checkForServiceWorkerUpdate = async () => {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        // Check for updates
+                        await registration.update();
+                        console.log("Linen: Checked for service worker updates");
+
+                        // If a new version is waiting, notify user to refresh
+                        if (registration.waiting) {
+                            console.log("Linen: New version available! Notifying user...");
+                            this.showUpdateNotification();
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("Linen: Error checking for updates:", err);
+            }
+        };
+
+        // Calculate check interval based on power and connection
+        const getCheckInterval = () => {
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-            const effectiveType = connection ? connection.effectiveType : '4g'; // Default to 4g if not available
+            const effectiveType = connection ? connection.effectiveType : '4g';
             const isWifi = connection && (connection.type === 'wifi' || effectiveType === '4g');
 
-            return { isOnBattery, effectiveType, isWifi };
-        };
+            let isOnBattery = false;
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then((battery) => {
+                    isOnBattery = !battery.charging;
+                }).catch(() => {});
+            }
 
-        // Calculate refresh interval in milliseconds based on power and connection
-        const getRefreshInterval = () => {
-            const { isOnBattery, effectiveType, isWifi } = getPowerAndConnectionStatus();
-
-            // WiFi + Plugged in = 5 seconds
+            // WiFi + Plugged in = check every 5 minutes (frequent updates okay)
             if (isWifi && !isOnBattery) {
-                console.log("Linen: Refresh interval = 5 seconds (WiFi + plugged in)");
-                return 5000;
+                console.log("Linen: Check interval = 5 minutes (WiFi + plugged in)");
+                return 5 * 60 * 1000;
             }
-            // WiFi + On battery = 15 seconds
+            // WiFi + On battery = check every 15 minutes (balance)
             else if (isWifi && isOnBattery) {
-                console.log("Linen: Refresh interval = 15 seconds (WiFi + on battery)");
-                return 15000;
+                console.log("Linen: Check interval = 15 minutes (WiFi + on battery)");
+                return 15 * 60 * 1000;
             }
-            // Cellular + Plugged in = 1 minute
+            // Cellular + Plugged in = check every 1 hour (minimize data)
             else if (!isWifi && !isOnBattery) {
-                console.log("Linen: Refresh interval = 1 minute (Cellular + plugged in)");
-                return 60000;
+                console.log("Linen: Check interval = 1 hour (Cellular + plugged in)");
+                return 60 * 60 * 1000;
             }
-            // Cellular + On battery = 5 minutes
+            // Cellular + On battery = check every 4 hours (preserve battery/data)
             else {
-                console.log("Linen: Refresh interval = 5 minutes (Cellular + on battery)");
-                return 300000;
+                console.log("Linen: Check interval = 4 hours (Cellular + on battery)");
+                return 4 * 60 * 60 * 1000;
             }
         };
 
-        // Set up initial refresh timer
-        let refreshTimeout;
-        const scheduleRefresh = () => {
-            const interval = getRefreshInterval();
-            console.log(`Linen: Scheduling next auto-refresh in ${interval}ms`);
+        // Initial check after app loads
+        setTimeout(() => {
+            checkForServiceWorkerUpdate();
+        }, 3000);
 
-            refreshTimeout = setTimeout(() => {
-                console.log("Linen: Auto-refresh triggered");
-                // Soft refresh: reload without cache bust parameter
-                window.location.reload();
-            }, interval);
-        };
+        // Set up periodic checks
+        let checkInterval = getCheckInterval();
+        let updateCheckTimeout = setInterval(() => {
+            checkForServiceWorkerUpdate();
+        }, checkInterval);
 
-        // Initial schedule
-        scheduleRefresh();
-
-        // Listen for power and connection changes
-        if (navigator.getBattery) {
-            navigator.getBattery().then((battery) => {
-                battery.addEventListener('chargingchange', () => {
-                    console.log("Linen: Power status changed, reschedule refresh");
-                    clearTimeout(refreshTimeout);
-                    scheduleRefresh();
-                });
-            });
-        }
-
+        // Listen for connection changes and reschedule if needed
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (connection) {
             connection.addEventListener('change', () => {
-                console.log("Linen: Connection type changed, reschedule refresh");
-                clearTimeout(refreshTimeout);
-                scheduleRefresh();
+                console.log("Linen: Connection type changed, recalculating update check interval");
+                clearInterval(updateCheckTimeout);
+                checkInterval = getCheckInterval();
+                updateCheckTimeout = setInterval(() => {
+                    checkForServiceWorkerUpdate();
+                }, checkInterval);
             });
         }
 
-        // Hard refresh on visibility change (app came back into focus)
+        // Check for updates when app comes back into focus
+        let lastFocusTime = Date.now();
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                console.log("Linen: App returned to focus, doing hard refresh");
-                // Hard refresh with cache bust
-                window.location.href = window.location.href.split('?')[0] + '?cache-bust=' + Date.now();
+                const timeSinceLastFocus = Date.now() - lastFocusTime;
+                // If app was hidden for more than 30 seconds, check for updates
+                if (timeSinceLastFocus > 30000) {
+                    console.log("Linen: App returned to focus after delay, checking for updates");
+                    checkForServiceWorkerUpdate();
+                }
+                lastFocusTime = Date.now();
             }
         });
+    }
+
+    showUpdateNotification() {
+        // Show a non-intrusive notification that a new version is available
+        const notification = document.createElement('div');
+        notification.id = 'update-notification';
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #4a9eff;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-size: 0.95rem;
+            z-index: 9998;
+            max-width: 320px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        notification.innerHTML = `
+            <div>
+                <strong>New version available!</strong><br>
+                <small style="opacity: 0.9;">Close and reopen the app to get the latest features.</small>
+            </div>
+            <button style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;">Dismiss</button>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        if (!document.head.querySelector('style[data-update-animation]')) {
+            style.setAttribute('data-update-animation', 'true');
+            document.head.appendChild(style);
+        }
+
+        // Dismiss button
+        const dismissBtn = notification.querySelector('button');
+        dismissBtn.addEventListener('click', () => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        });
+
+        // Auto-dismiss after 8 seconds if user doesn't interact
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 8000);
     }
 
     startTrialMode() {
