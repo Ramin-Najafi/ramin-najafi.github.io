@@ -340,6 +340,10 @@ button:hover {
     width: 100%;
     max-width: 500px;
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .close-onboarding {
@@ -351,9 +355,14 @@ button:hover {
     color: var(--accent);
     font-size: 1.8rem;
     cursor: pointer;
-    padding: 0;
+    padding: 8px 12px;
     transition: all 0.2s;
-    z-index: 100;
+    z-index: 1001;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .close-onboarding:hover {
@@ -366,10 +375,19 @@ button:hover {
     gap: 20px;
     align-items: center;
     position: relative;
+    width: 100%;
+    padding: 20px 0;
 }
 
 #onboarding-wizard .step.active {
     display: flex;
+}
+
+@media (max-width: 480px) {
+    #onboarding-wizard .step {
+        gap: 15px;
+        padding: 15px 0;
+    }
 }
 
 .back-btn {
@@ -410,6 +428,12 @@ button:hover {
     height: 150px;
 }
 
+@media (max-width: 480px) {
+    .onboarding-logo {
+        height: 100px;
+    }
+}
+
 .instructions {
     display: none;
 }
@@ -440,6 +464,15 @@ button:hover {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin: 20px 0;
+    width: 100%;
+}
+
+@media (max-width: 480px) {
+    .ai-provider-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin: 15px 0;
+    }
 }
 
 .ai-provider-card {
@@ -462,6 +495,15 @@ button:hover {
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.9rem;
+    min-height: 120px;
+}
+
+@media (max-width: 480px) {
+    .ai-provider-btn {
+        padding: 15px;
+        min-height: auto;
+        gap: 6px;
+    }
 }
 
 .get-api-key-btn {
@@ -476,6 +518,19 @@ button:hover {
     font-weight: bold;
     transition: all 0.2s ease;
     cursor: pointer;
+    border: none;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 480px) {
+    .get-api-key-btn {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+        min-height: 44px;
+    }
 }
 
 .get-api-key-btn:hover {
@@ -496,7 +551,19 @@ button:hover {
 }
 
 .provider-icon {
-    font-size: 2rem;
+    font-size: 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .provider-icon {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .provider-icon {
+        font-size: 1.5rem;
+    }
 }
 
 .provider-name {
@@ -509,12 +576,25 @@ button:hover {
     color: var(--text-light);
 }
 
+@media (max-width: 480px) {
+    .provider-name {
+        font-size: 0.95rem;
+    }
+
+    .provider-info {
+        font-size: 0.65rem;
+    }
+}
+
 #provider-setup {
     margin-top: 20px;
     padding: 15px;
     background: #222;
     border-radius: 8px;
     display: none;
+    width: 100%;
+    max-height: 50vh;
+    overflow-y: auto;
 }
 
 #provider-setup.active {
@@ -528,6 +608,27 @@ button:hover {
 
 #provider-setup li {
     margin: 8px 0;
+}
+
+@media (max-width: 480px) {
+    #provider-setup {
+        padding: 12px;
+        margin-top: 15px;
+        font-size: 0.95rem;
+    }
+
+    #provider-setup ol {
+        margin-left: 18px;
+    }
+
+    #provider-setup li {
+        margin: 6px 0;
+        font-size: 0.9rem;
+    }
+
+    #provider-setup input {
+        font-size: 16px !important;
+    }
 }
 
 /* Provider Badges in Pitch Modal */
