@@ -303,4 +303,4 @@ Linen is a labor of love, built to explore what's possible with modern web techn
 
 ---
 
-**Version 1.2.0 [beta]** | © 2025-2026 Ramin Najafi
+**Version 1.2.0 [beta]** | © 2026 Ramin Najafi
