@@ -243,7 +243,7 @@ header {
     border-radius: 8px;
     width: 90%;
     max-width: 500px;
-    max-height: 85vh;
+    max-height: 90vh;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -342,6 +342,14 @@ button:hover {
     width: 100%;
     max-width: 500px;
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+    #onboarding-wizard {
+        max-height: 95vh;
+    }
 }
 
 .close-onboarding {
