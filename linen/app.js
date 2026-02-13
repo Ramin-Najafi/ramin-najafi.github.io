@@ -3090,7 +3090,6 @@ class Linen {
 
         // Voice Modal Lightbox
         const voiceModal = document.getElementById('voice-modal');
-        const closeVoiceModal = document.getElementById('close-voice-modal');
         const lightboxStopBtn = document.getElementById('lightbox-stop-btn');
         const modalBackdrop = document.getElementById('modal-backdrop');
 
@@ -3107,20 +3106,10 @@ class Linen {
             }
         };
 
-        // Try to attach direct event listeners
-        if (closeVoiceModal) {
-            console.log('Attaching close-voice-modal listener');
-            closeVoiceModal.addEventListener('click', closeVoiceModal_Handler, true);
-            // Also attach using click event property as backup
-            closeVoiceModal.onclick = closeVoiceModal_Handler;
-        } else {
-            console.warn('close-voice-modal button not found');
-        }
-
+        // Attach listener to Stop Recording button
         if (lightboxStopBtn) {
             console.log('Attaching lightbox-stop-btn listener');
             lightboxStopBtn.addEventListener('click', closeVoiceModal_Handler, true);
-            // Also attach using click event property as backup
             lightboxStopBtn.onclick = closeVoiceModal_Handler;
         } else {
             console.warn('lightbox-stop-btn button not found');
@@ -3129,9 +3118,8 @@ class Linen {
         // Also attach a delegated listener to the modal itself
         if (voiceModal) {
             voiceModal.addEventListener('click', (e) => {
-                if (e.target.id === 'close-voice-modal' || e.target.id === 'lightbox-stop-btn' ||
-                    e.target.closest('#close-voice-modal') || e.target.closest('#lightbox-stop-btn')) {
-                    console.log('Close button clicked via delegation');
+                if (e.target.id === 'lightbox-stop-btn' || e.target.closest('#lightbox-stop-btn')) {
+                    console.log('Stop Recording button clicked via delegation');
                     closeVoiceModal_Handler();
                 }
             }, true);
