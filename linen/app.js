@@ -1490,32 +1490,74 @@ END:VCALENDAR`;
 class UtilityManager {
     constructor(db) {
         this.db = db;
+        this.activeTimers = new Map();
+        this.activeAlarms = new Map();
+        this.notificationPermission = 'default';
+        this.requestNotificationPermission();
     }
 
-    // Open native timer app with countdown - IMMEDIATELY launches native app
-    async setTimer(durationSeconds, label = 'Timer') {
-        const label_encoded = encodeURIComponent(label);
-
-        // Mobile: Use intent protocol to open native timer app
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            if (/Android/i.test(navigator.userAgent)) {
-                // Android: Open Google Clock app with timer
-                window.location.href = `intent://deskclock/timer#Intent;package=com.google.android.deskclock;action=android.intent.action.SET_TIMER;i.android.alarm_extra_minutes=${Math.floor(durationSeconds / 60)};i.android.alarm_extra_seconds=${durationSeconds % 60};S.android.alarm_extra_message=${label_encoded};end`;
-            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                // iOS: Open Clock app (native timer)
-                window.location.href = `shortcuts://run-shortcut/?name=Timer&input=number&number=${durationSeconds}`;
-            }
-        } else {
-            // Desktop: Open online timer website with countdown
-            window.open(`https://www.online-stopwatch.com/?s=${durationSeconds}`, '_blank');
+    // Request browser notification permission from user
+    requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission().then(permission => {
+                this.notificationPermission = permission;
+                console.log("Linen: Notification permission:", permission);
+            });
+        } else if ('Notification' in window) {
+            this.notificationPermission = Notification.permission;
         }
+    }
 
-        // Save to memories as backup record
+    // Send native browser notification
+    sendNotification(title, options = {}) {
+        if ('Notification' in window && this.notificationPermission === 'granted') {
+            const notification = new Notification(title, {
+                icon: './icon-192.png',
+                badge: './icon-192.png',
+                tag: 'linen-notification',
+                requireInteraction: true,
+                ...options
+            });
+            return notification;
+        } else {
+            console.log("Linen: Notifications not available or not permitted");
+        }
+    }
+
+    // Set a local timer that counts down and notifies user within Linen
+    async setTimer(durationSeconds, label = 'Timer') {
+        const timerId = Date.now();
+        const startTime = Date.now();
+        const endTime = startTime + (durationSeconds * 1000);
+
+        console.log(`Linen: Timer "${label}" started for ${durationSeconds} seconds`);
+
+        // Set up the timer
+        const timerInterval = setInterval(() => {
+            const now = Date.now();
+            const remaining = Math.max(0, endTime - now);
+
+            if (remaining === 0) {
+                clearInterval(timerInterval);
+                this.activeTimers.delete(timerId);
+
+                // Send notification
+                this.sendNotification(`Timer Complete: ${label}`, {
+                    body: `Your ${label} of ${durationSeconds} seconds is done!`
+                });
+
+                console.log(`Linen: Timer "${label}" completed`);
+            }
+        }, 100);
+
+        this.activeTimers.set(timerId, { timerInterval, label, durationSeconds, endTime });
+
+        // Save to memories
         const memory = {
-            id: Date.now(),
+            id: timerId,
             text: `Timer set for ${durationSeconds} seconds - ${label}`,
             type: 'timer',
-            date: Date.now(),
+            date: startTime,
             tags: ['timer', 'utility'],
             emotion: 'neutral',
         };
@@ -1525,39 +1567,48 @@ class UtilityManager {
             console.log("Linen: Could not save timer to memories");
         }
 
-        return { success: true, app: 'native-timer', duration: durationSeconds, label };
+        return { success: true, id: timerId, duration: durationSeconds, label, location: 'linen' };
     }
 
-    // Open native alarm app - IMMEDIATELY launches native app
+    // Set a local alarm that triggers at specific time
     async setAlarm(timeString, label = 'Alarm') {
         const time = this.parseTimeString(timeString);
         if (!time) {
             return { success: false, error: 'Could not parse time' };
         }
 
-        const hours = time.hours;
-        const minutes = time.minutes;
-        const label_encoded = encodeURIComponent(label);
+        const alarmId = Date.now();
+        const now = new Date();
+        const alarmTime = new Date();
+        alarmTime.setHours(time.hours, time.minutes, 0, 0);
 
-        // Mobile: Use native alarm intents to open clock app
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            if (/Android/i.test(navigator.userAgent)) {
-                // Android: Open Google Clock app with alarm intent
-                window.location.href = `intent://deskclock/alarm#Intent;package=com.google.android.deskclock;action=android.intent.action.SET_ALARM;i.android.alarm_extra_hour=${hours};i.android.alarm_extra_minutes=${minutes};S.android.alarm_extra_message=${label_encoded};end`;
-            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                // iOS: Shortcuts app to set alarm
-                window.location.href = `shortcuts://run-shortcut/?name=Set%20Alarm&input=text&text=${hours}:${String(minutes).padStart(2, '0')}%20${label}`;
-            }
-        } else {
-            // Desktop: Open web-based alarm setter
-            const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-            window.open(`https://www.online-stopwatch.com/?alarm=${timeStr}`, '_blank');
+        // If alarm time is in the past, set for tomorrow
+        if (alarmTime <= now) {
+            alarmTime.setDate(alarmTime.getDate() + 1);
         }
+
+        const timeUntilAlarm = alarmTime.getTime() - Date.now();
+
+        console.log(`Linen: Alarm "${label}" set for ${alarmTime.toLocaleTimeString()}`);
+
+        // Schedule the alarm
+        const alarmTimeout = setTimeout(() => {
+            this.activeAlarms.delete(alarmId);
+
+            // Send notification
+            this.sendNotification(`Alarm: ${label}`, {
+                body: `It's ${alarmTime.toLocaleTimeString()} - ${label}`
+            });
+
+            console.log(`Linen: Alarm "${label}" triggered`);
+        }, timeUntilAlarm);
+
+        this.activeAlarms.set(alarmId, { timeout: alarmTimeout, label, alarmTime });
 
         // Save to memories
         const memory = {
-            id: Date.now(),
-            text: `Alarm set for ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} - ${label}`,
+            id: alarmId,
+            text: `Alarm set for ${alarmTime.toLocaleTimeString()} - ${label}`,
             type: 'alarm',
             date: Date.now(),
             tags: ['alarm', 'utility'],
@@ -1569,99 +1620,100 @@ class UtilityManager {
             console.log("Linen: Could not save alarm to memories");
         }
 
-        return { success: true, app: 'native-alarm', time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`, label };
+        return { success: true, id: alarmId, time: alarmTime.toLocaleTimeString(), label, location: 'linen' };
     }
 
-    // Open native notes app - IMMEDIATELY launches native app
+    // Save note locally in Linen
     async saveNote(noteContent) {
-        try {
-            // Try navigator.share first (works on most modern mobile devices)
-            if (navigator.share) {
-                await navigator.share({
-                    title: 'Linen Note',
-                    text: noteContent,
-                });
-                return { success: true, app: 'native-share' };
-            }
-        } catch (e) {
-            console.log("Linen: Share cancelled");
-        }
+        const noteId = Date.now();
 
-        // Mobile: Open native notes apps
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            const encodedNote = encodeURIComponent(noteContent);
+        console.log(`Linen: Note saved locally`);
 
-            if (/Android/i.test(navigator.userAgent)) {
-                // Android: Try Google Keep first, then Google Docs
-                window.location.href = `intent://keep.google.com/u/0/#NOTE?text=${encodedNote}#Intent;package=com.google.android.keep;scheme=http;end`;
-            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                // iOS: Native Notes app
-                window.location.href = `notes://new?text=${encodedNote}`;
-            }
-        } else {
-            // Desktop: Open Google Keep or Notes website
-            window.open('https://keep.google.com/u/0/', '_blank');
-        }
-
-        // Save to IndexedDB as backup
+        // Save to IndexedDB as memory
         const memory = {
-            id: Date.now(),
+            id: noteId,
             text: noteContent,
             type: 'note',
             date: Date.now(),
             tags: ['user-note'],
             emotion: 'neutral',
         };
+
         try {
             await this.db.addMemory(memory);
         } catch (e) {
-            console.log("Linen: Could not save note to memories");
+            console.log("Linen: Could not save note to memories", e);
+            return { success: false, error: 'Could not save note' };
         }
 
-        return { success: true, app: 'native-notes', backup: 'local-memory' };
+        return { success: true, id: noteId, location: 'linen-memories' };
     }
 
-    // Open native calendar app - IMMEDIATELY launches native app
+    // Add event to local calendar within Linen
     async addToCalendar(eventTitle, eventDateTime = null) {
-        const title_encoded = encodeURIComponent(eventTitle);
+        const eventId = Date.now();
         const date = eventDateTime ? new Date(eventDateTime) : new Date();
-        const dateStr = date.toISOString().split('T')[0];
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
 
-        // Mobile: Open native calendar apps
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            if (/Android/i.test(navigator.userAgent)) {
-                // Android: Google Calendar intent
-                const startTime = date.getTime();
-                window.location.href = `intent://calendar/event#Intent;package=com.google.android.calendar;action=android.intent.action.INSERT;S.title=${title_encoded};L.dtstart=${startTime};end`;
-            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                // iOS: Calendar app
-                const timeStr = `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}`;
-                window.location.href = `calshow://${dateStr}T${timeStr}00`;
-            }
-        } else {
-            // Desktop: Open Google Calendar in browser
-            const calendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?text=${title_encoded}&dates=${dateStr}`;
-            window.open(calendarUrl, '_blank');
-        }
+        console.log(`Linen: Event "${eventTitle}" added to calendar for ${date.toLocaleDateString()}`);
 
         // Save to memories
         const memory = {
-            id: Date.now(),
-            text: `Calendar event: ${eventTitle} on ${dateStr}`,
+            id: eventId,
+            text: `📅 Event: ${eventTitle}`,
             type: 'event',
             date: date.getTime(),
             tags: ['calendar', 'event'],
             emotion: 'neutral',
         };
+
         try {
             await this.db.addMemory(memory);
         } catch (e) {
-            console.log("Linen: Could not save event to memories");
+            console.log("Linen: Could not save event to memories", e);
+            return { success: false, error: 'Could not save event' };
         }
 
-        return { success: true, app: 'native-calendar', event: eventTitle, date: dateStr };
+        return { success: true, id: eventId, event: eventTitle, date: date.toLocaleDateString(), location: 'linen-calendar' };
+    }
+
+    // Cancel a timer
+    cancelTimer(timerId) {
+        const timer = this.activeTimers.get(timerId);
+        if (timer) {
+            clearInterval(timer.timerInterval);
+            this.activeTimers.delete(timerId);
+            return true;
+        }
+        return false;
+    }
+
+    // Cancel an alarm
+    cancelAlarm(alarmId) {
+        const alarm = this.activeAlarms.get(alarmId);
+        if (alarm) {
+            clearTimeout(alarm.timeout);
+            this.activeAlarms.delete(alarmId);
+            return true;
+        }
+        return false;
+    }
+
+    // Get all active timers and alarms
+    getActiveUtilities() {
+        return {
+            timers: Array.from(this.activeTimers.entries()).map(([id, data]) => ({
+                id,
+                type: 'timer',
+                label: data.label,
+                duration: data.durationSeconds
+            })),
+            alarms: Array.from(this.activeAlarms.entries()).map(([id, data]) => ({
+                id,
+                type: 'alarm',
+                label: data.label,
+                time: data.alarmTime.toLocaleTimeString()
+            }))
+        };
     }
 
     // Helper: Parse time strings like "5 minutes", "in 5 minutes", "8am", "3:30pm"
