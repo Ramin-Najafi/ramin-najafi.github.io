@@ -161,6 +161,87 @@
     </div>
 </div>
 
+<div id="about-modal" class="modal about-accordion">
+    <button type="button" class="close-modal" id="close-about-modal">×</button>
+    <div class="about-header">
+        <h2>About Linen</h2>
+        <div class="version-display" id="about-version">v.1.2.0[beta]</div>
+    </div>
+
+    <div class="about-content">
+        <!-- Section 1: What is Linen -->
+        <div class="accordion-item">
+            <button type="button" class="accordion-header" data-section="what-is-linen">
+                <span class="accordion-title">What is Linen?</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-body">
+                <p class="accordion-preview">Linen is a privacy-first conversational AI assistant that learns from your conversations and remembers what matters to you—everything stays on your device.</p>
+                <div class="accordion-content" style="display: none;">
+                    <p>Linen is a sophisticated web application designed to be your digital companion. It learns from your conversations, remembers what matters to you, and provides thoughtful responses when you need them most.</p>
+                    <p>Unlike traditional note-taking apps or journaling tools, Linen is interactive. It engages in real conversations, understands context, and helps you work through problems while preserving your memories.</p>
+                    <p><strong>Key Features:</strong></p>
+                    <ul>
+                        <li><strong>Conversational AI:</strong> Talk to Linen like you'd talk to a real companion with thoughtful, contextual responses</li>
+                        <li><strong>Intelligent Memory System:</strong> Linen automatically learns important details from conversations, tags them, and lets you search by keyword or emotion</li>
+                        <li><strong>Calendar & Reminders:</strong> Create events and set reminders from natural conversation</li>
+                        <li><strong>Personal Profile:</strong> Customize your experience with your name, pronouns, timezone, and get personalized responses</li>
+                        <li><strong>Progressive Web App:</strong> Install on any device and use offline seamlessly</li>
+                    </ul>
+                    <p><strong>And the best part?</strong> Everything stays on your device. Your memories never leave your computer or phone.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Core Principles -->
+        <div class="accordion-item">
+            <button type="button" class="accordion-header" data-section="core-principles">
+                <span class="accordion-title">Core Principles</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-body">
+                <p class="accordion-preview">Linen is built on privacy-first principles: your data stays on your device, works completely offline, and gives you full control—no tracking, no ads, no data collection.</p>
+                <div class="accordion-content" style="display: none;">
+                    <p><strong>Privacy First:</strong> All data is stored locally using IndexedDB. Your conversations and memories never leave your device unless you explicitly choose to connect an AI provider.</p>
+                    <p><strong>You Control Everything:</strong> Optional API key integration means you choose which AI provider (Gemini, ChatGPT, Claude, or DeepSeek) powers your experience. Switch providers anytime.</p>
+                    <p><strong>Works Offline:</strong> Full functionality without internet connection. Linen has a built-in Local Assistant that works completely offline, and a Service Worker that handles smart caching.</p>
+                    <p><strong>No Tracking, No Ads:</strong> Zero data collection, no surveillance, no hidden tracking. Linen is 100% free with no freemium model or premium features.</p>
+                    <p><strong>Export or Delete Anytime:</strong> Your data is yours. Export everything or delete it all with a single click. You're never locked in.</p>
+                    <p><strong>Built for Real Use Cases:</strong> Whether you're a student remembering concepts, a professional capturing notes, exploring mental wellness, or brainstorming creatively—Linen adapts to your needs.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: The Future -->
+        <div class="accordion-item">
+            <button type="button" class="accordion-header" data-section="future">
+                <span class="accordion-title">The Future of Linen</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div class="accordion-body">
+                <p class="accordion-preview">Linen is continuously evolving with planned features including encrypted cloud sync, advanced collaboration tools, and deeper AI model integration while maintaining its privacy-first philosophy.</p>
+                <div class="accordion-content" style="display: none;">
+                    <p><strong>Planned Enhancements:</strong></p>
+                    <ul>
+                        <li><strong>Cross-Device Sync:</strong> Optional encrypted cloud synchronization so your memories follow you across devices</li>
+                        <li><strong>Advanced Memory Features:</strong> Pattern analysis, mood tracking over time, and intelligent memory surfacing</li>
+                        <li><strong>Collaboration Tools:</strong> Share specific conversations or memories with others while maintaining privacy</li>
+                        <li><strong>Deeper AI Integration:</strong> Custom prompt templates, voice input/output expansion, and multi-language support</li>
+                        <li><strong>Community Features:</strong> Optional anonymous insight sharing to help improve Linen</li>
+                    </ul>
+                    <p><strong>Long-term Vision:</strong> Linen aims to become the most privacy-respecting personal AI assistant available. It's built on the belief that technology should work for you, not against you—handling your data with the care it deserves.</p>
+                    <p><strong>Built with Passion:</strong> Linen is a labor of love, built to explore what's possible with modern web technologies. It's not trying to replace specialized tools, but to be that one app you actually want to use every day.</p>
+                    <p><strong>Stay Updated:</strong> Check back for new features and improvements. Linen is production-ready code that evolves thoughtfully.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-footer">
+        <p>© 2025-2026 Ramin Najafi | <a href="https://github.com/ramin-najafi" target="_blank">GitHub</a> | <a href="https://ramin-najafi.github.io/" target="_blank">Portfolio</a></p>
+    </div>
+</div>
+
 <div id="trial-limit-modal" class="modal">
     <h2>Free Preview Complete</h2>
     <p>You've used your 3 free chats. Get your own API key to continue chatting unlimitedly.</p>
@@ -259,11 +340,15 @@
     <a href="#chat-input" class="skip-link" id="skip-to-chat">Skip to main chat</a>
     <header>
         <div class="header-logo-container">
-            <img src="./logo.png" alt="Linen Logo" id="logo" class="interactive-logo">
+            <div class="logo-wrapper">
+                <img src="./logo.png" alt="Linen Logo" id="logo" class="interactive-logo">
+                <div class="version-badge" id="header-version">v.1.2.0[beta]</div>
+            </div>
             <div id="logo-menu" class="logo-menu hidden">
-                <button id="logo-memories" class="menu-item">📚 Memories</button>
-                <button id="logo-new-chat" class="menu-item">💬 New Chat</button>
-                <button id="logo-settings" class="menu-item">⚙ Settings</button>
+                <button type="button" id="logo-memories" class="menu-item">📚 Memories</button>
+                <button type="button" id="logo-new-chat" class="menu-item">💬 New Chat</button>
+                <button type="button" id="logo-settings" class="menu-item">⚙ Settings</button>
+                <button type="button" id="logo-about" class="menu-item">ℹ️ About</button>
             </div>
         </div>
     </header>

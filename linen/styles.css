@@ -51,6 +51,25 @@ header {
     transform: scale(1.05);
 }
 
+.logo-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.version-badge {
+    position: absolute;
+    bottom: -12px;
+    right: 0;
+    background: var(--accent);
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
 .logo-menu {
     position: fixed;
     bottom: 120px;
@@ -811,6 +830,83 @@ hr {
     padding: 0.4rem 0;
     color: #ccc;
     font-size: 0.9rem;
+}
+
+/* About Modal Styles */
+#about-modal {
+    max-width: 550px;
+    padding: 0;
+    text-align: left;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#about-modal.about-accordion {
+    padding: 1.5rem;
+}
+
+.about-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+}
+
+.about-header h2 {
+    margin: 0;
+    color: var(--accent);
+    font-size: 1.6rem;
+}
+
+.version-display {
+    background: rgba(212, 165, 116, 0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+}
+
+.about-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.about-content .accordion-item {
+    border-bottom: 1px solid #333;
+}
+
+.accordion-preview {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+    font-style: italic;
+}
+
+.about-footer {
+    flex-shrink: 0;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.about-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.about-footer a:hover {
+    opacity: 0.8;
 }
 
 .button-primary {

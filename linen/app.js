@@ -2376,6 +2376,24 @@ class Linen {
             });
             getApiKeyDirect.dataset.listenerAttached = 'true';
         }
+
+        // Setup About Modal Accordion
+        const aboutModal = document.getElementById('about-modal');
+        if (aboutModal) {
+            const aboutAccordionHeaders = aboutModal.querySelectorAll('.accordion-header');
+            aboutAccordionHeaders.forEach((header) => {
+                if (!header.dataset.aboutAccordionAttached) {
+                    header.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const item = header.closest('.accordion-item');
+                        if (item) {
+                            item.classList.toggle('active');
+                        }
+                    });
+                    header.dataset.aboutAccordionAttached = 'true';
+                }
+            });
+        }
     }
 
     generateSessionTitle(conversations) {
@@ -2812,6 +2830,7 @@ class Linen {
             const logoMemoriesBtn = document.getElementById('logo-memories');
             const logoNewChatBtn = document.getElementById('logo-new-chat');
             const logoSettingsBtn = document.getElementById('logo-settings');
+            const logoAboutBtn = document.getElementById('logo-about');
 
             if (logoMemoriesBtn) {
                 logoMemoriesBtn.addEventListener('click', () => {
@@ -2838,6 +2857,17 @@ class Linen {
                     logoMenu.classList.add('hidden');
                 });
             }
+
+            if (logoAboutBtn) {
+                logoAboutBtn.addEventListener('click', () => {
+                    const aboutModal = document.getElementById('about-modal');
+                    if (aboutModal) {
+                        aboutModal.classList.add('active');
+                        backdrop.classList.add('active');
+                    }
+                    logoMenu.classList.add('hidden');
+                });
+            }
         } else {
             console.warn('Linen: Logo menu elements not found');
         }
@@ -2848,11 +2878,13 @@ class Linen {
             document.getElementById('re-enter-key-modal').classList.remove('active');
             document.getElementById('privacy-modal')?.classList.remove('active');
             document.getElementById('terms-modal')?.classList.remove('active');
+            document.getElementById('about-modal')?.classList.remove('active');
             backdrop.classList.remove('active');
         };
 
         document.getElementById('close-memories').addEventListener('click', closeModal);
         document.getElementById('close-settings-modal').addEventListener('click', closeModal);
+        document.getElementById('close-about-modal')?.addEventListener('click', closeModal);
         backdrop.addEventListener('click', (e) => {
             // Don't close re-enter key modal on backdrop click
             if (document.getElementById('re-enter-key-modal').classList.contains('active')) return;
@@ -4489,6 +4521,19 @@ class Linen {
             toast.classList.remove('show');
             this._toastTimer = null;
         }, 4000);
+    }
+
+    updateVersion(newVersion) {
+        // Update all three version displays at once
+        const headerVersion = document.getElementById('header-version');
+        const aboutVersion = document.getElementById('about-version');
+        const settingsVersion = document.getElementById('version-info');
+
+        if (headerVersion) headerVersion.textContent = newVersion;
+        if (aboutVersion) aboutVersion.textContent = newVersion;
+        if (settingsVersion) settingsVersion.textContent = `Version-${newVersion}`;
+
+        console.log("Linen: Version updated to", newVersion);
     }
 
     addSystemMessage(message, type) {
