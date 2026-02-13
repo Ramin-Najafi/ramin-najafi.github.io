@@ -2265,6 +2265,20 @@ class LocalAssistant {
                 "Yeah, I feel you on that.",
                 "That's fair.",
                 "No doubt.",
+                "Not much with me either, just keeping it chill.",
+                "Same here, nothing too wild.",
+                "Nah, just the usual honestly.",
+                "Not gonna complain! Just vibing.",
+                "Same vibes, just taking it easy.",
+                "Just living the dream, you know?",
+                "Ah, keeping it real. That's what's up.",
+                "Yo, same energy!",
+                "Can't complain really.",
+                "Just keeping it simple, you feel me?",
+                "Yeah man, that's how it goes.",
+                "Word, I hear you.",
+                "Totally feel that.",
+                "100%, that's facts.",
             ],
         };
     }
@@ -2290,6 +2304,7 @@ class LocalAssistant {
     detectIntent(message) {
         const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
         const words = msg.split(/\s+/);
+        const originalMessage = message.toLowerCase().trim();
 
         // Utility function detection — timers, alarms, notes
         const timerKeywords = ['set timer', 'set a timer', 'timer for', 'remind me in', 'in the', 'in an', 'minutes', 'seconds', 'hours'];
@@ -2351,8 +2366,29 @@ class LocalAssistant {
         const factualKeywords = ['price', 'cost', 'weather', 'temperature', 'stock', 'score', 'result', 'who won', 'when is', 'what is the', 'how much', 'how many', 'capital of', 'population of', 'definition of'];
         if (factualKeywords.some(k => msg.includes(k))) return 'outOfScope';
 
+        // Conversational question patterns — these are NOT information-seeking questions
+        // Examples: "whats new with you?", "what do you mean?", "what are you doing?"
+        const conversationalPatterns = [
+            /^not much/,                           // "not much, whats new"
+            /whats new (with )?you/,              // "whats new with you"
+            /whats up (with )?you/,               // "whats up with you"
+            /whats going on (with )?you/,         // "whats going on with you"
+            /how about you/,                       // "how about you"
+            /what about you/,                      // "what about you"
+            /you (been|been doing|doing)/,        // "you been doing anything fun?"
+            /you up to/,                          // "you up to anything?"
+            /whats your (day|week|deal)/,         // "whats your day like?"
+            /anything new (with )?you/,           // "anything new with you?"
+            /been up to/,                         // "been up to much?"
+            /nothing much/,                       // "nothing much, you?"
+        ];
+
+        if (conversationalPatterns.some(pattern => pattern.test(msg))) {
+            return 'casualChat';
+        }
+
         // Question detection — only for genuine standalone questions, not conversational phrases
-        const isQuestion = message.trim().endsWith('?');
+        const isQuestion = originalMessage.endsWith('?');
         const startsWithQuestionWord = ['what ', 'why ', 'how ', 'when ', 'where ', 'who ', 'which '].some(q => msg.startsWith(q));
         // Only trigger question for actual informational questions, not conversational ones
         if (startsWithQuestionWord && words.length > 3) return 'question';
