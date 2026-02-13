@@ -2161,27 +2161,23 @@ class Linen {
 
     async checkForUpdates() {
         try {
-            // Check if service worker has been updated
+            // Only run this check on initial app load (first time)
+            // Do NOT run this on every visibility change to avoid disrupting users
+            const hasRunBefore = await this.db.getSetting('app-started-before');
+            if (hasRunBefore) {
+                console.log("Linen: App already started, skipping update check to avoid disruption");
+                return;
+            }
+
+            // Mark that app has started
+            await this.db.setSetting('app-started-before', true);
+
+            console.log("Linen: Running initial update check on first load");
             if ('serviceWorker' in navigator) {
                 const registration = await navigator.serviceWorker.getRegistration();
                 if (registration) {
-                    const currentVersion = await this.db.getSetting('app-version-on-load');
-                    const newVersion = Date.now(); // Use timestamp as version marker
-
-                    if (currentVersion && currentVersion !== newVersion) {
-                        console.log("Linen: App update detected! Clearing old cache and refreshing...");
-                        // Clear all caches to force fresh content
-                        if ('caches' in window) {
-                            const cacheNames = await caches.keys();
-                            await Promise.all(
-                                cacheNames.map(name => caches.delete(name))
-                            );
-                        }
-                        // Hard refresh to load latest version while preserving IndexedDB data
-                        window.location.href = window.location.href.split('?')[0] + '?cache-bust=' + Date.now();
-                    } else {
-                        await this.db.setSetting('app-version-on-load', newVersion);
-                    }
+                    // Just check and update service worker, don't force reload
+                    await registration.update();
                 }
             }
         } catch (err) {
@@ -4892,14 +4888,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 });
             }).catch(err => console.error('SW registration failed:', err));
         }
-
-        // Detect when app comes back into focus and check for updates
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && window.app) {
-                console.log("Linen: App coming back into focus, checking for updates...");
-                window.app.checkForUpdates().catch(err => console.error('Update check error:', err));
-            }
-        });
 
         window.app = new Linen();
         window.app.init();
