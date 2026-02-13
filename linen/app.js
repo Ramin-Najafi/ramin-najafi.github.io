@@ -1757,13 +1757,290 @@ class UtilityManager {
     }
 }
 
+// Smart AI Event Detector - Intelligently detects calendar events and reminders from conversations
+class EventDetector {
+    constructor(db = null, utilitiesApp = null) {
+        this.db = db;
+        this.utilitiesApp = utilitiesApp;
+
+        // Event detection patterns with confidence scoring
+        this.patterns = {
+            meeting: {
+                keywords: ['meeting', 'call', 'standup', 'sync', 'presentation', 'demo', 'discussion', 'conference', 'webinar', 'workshop'],
+                confidence: 0.85
+            },
+            appointment: {
+                keywords: ['appointment', 'appointment with', 'see', 'visit', 'doctor', 'dentist', 'check-up', 'consultation', 'interview'],
+                confidence: 0.90
+            },
+            birthday: {
+                keywords: ['birthday', 'born', "birthday's", "birth day", 'turning', 'age'],
+                confidence: 0.95
+            },
+            deadline: {
+                keywords: ['deadline', 'due', 'due date', 'submit by', 'finish by', 'complete by', 'project due', 'assignment due'],
+                confidence: 0.88
+            },
+            travel: {
+                keywords: ['flight', 'trip', 'vacation', 'travel', 'visiting', 'drive to', 'departing', 'arriving', 'boarding', 'departure'],
+                confidence: 0.80
+            },
+            reminder: {
+                keywords: ['remember to', 'remind me', 'dont forget', 'dont forget to', 'make sure to', 'need to', 'have to', 'must'],
+                confidence: 0.75
+            },
+            project: {
+                keywords: ['project', 'working on', 'launching', 'release', 'sprint', 'milestone', 'deliverable'],
+                confidence: 0.70
+            },
+            celebration: {
+                keywords: ['party', 'celebration', 'wedding', 'graduation', 'promotion', 'anniversary'],
+                confidence: 0.85
+            }
+        };
+    }
+
+    // Detect events from a user message and assistant response
+    async detectEventsFromMessage(userMessage, assistantResponse) {
+        try {
+            const combinedText = `${userMessage} ${assistantResponse}`;
+            const detectedEvents = [];
+
+            // Iterate through all event patterns
+            for (const [eventType, pattern] of Object.entries(this.patterns)) {
+                const detected = this.matchPattern(combinedText, pattern);
+                if (detected && detected.confidence >= 0.65) {
+                    const eventDetails = this.extractEventDetails(userMessage, eventType, detected);
+                    if (eventDetails) {
+                        detectedEvents.push({
+                            type: eventType,
+                            ...eventDetails,
+                            confidence: detected.confidence
+                        });
+                    }
+                }
+            }
+
+            // Auto-add high-confidence events
+            for (const event of detectedEvents) {
+                if (event.confidence >= 0.75) {
+                    await this.autoAddEvent(event);
+                }
+            }
+
+            return detectedEvents;
+        } catch (e) {
+            console.log("EventDetector: Error detecting events:", e);
+            return [];
+        }
+    }
+
+    // Match pattern keywords in text
+    matchPattern(text, pattern) {
+        const lowerText = text.toLowerCase();
+        let bestMatch = null;
+        let maxConfidence = 0;
+
+        for (const keyword of pattern.keywords) {
+            if (lowerText.includes(keyword)) {
+                if (pattern.confidence > maxConfidence) {
+                    maxConfidence = pattern.confidence;
+                    bestMatch = {
+                        keyword,
+                        confidence: pattern.confidence
+                    };
+                }
+            }
+        }
+
+        return bestMatch;
+    }
+
+    // Extract event details from message
+    extractEventDetails(message, eventType, match) {
+        const dateInfo = this.parseDateTime(message);
+        if (!dateInfo.date && !dateInfo.relativeTime) {
+            return null; // Skip if no date detected
+        }
+
+        const title = this.extractEventTitle(message, eventType, match.keyword);
+        if (!title) return null;
+
+        return {
+            title,
+            date: dateInfo.date,
+            relativeTime: dateInfo.relativeTime,
+            description: this.generateDescription(eventType, title),
+            datetime: dateInfo.datetime
+        };
+    }
+
+    // Smart date/time parsing from natural language
+    parseDateTime(text) {
+        const now = new Date();
+        let date = null;
+        let relativeTime = '';
+        let datetime = null;
+
+        // Relative dates
+        if (text.toLowerCase().includes('today')) {
+            date = new Date(now);
+            relativeTime = 'today';
+        } else if (text.toLowerCase().includes('tomorrow')) {
+            date = new Date(now);
+            date.setDate(date.getDate() + 1);
+            relativeTime = 'tomorrow';
+        } else if (text.toLowerCase().includes('next week')) {
+            date = new Date(now);
+            date.setDate(date.getDate() + 7);
+            relativeTime = 'next week';
+        } else if (text.toLowerCase().includes('next month')) {
+            date = new Date(now);
+            date.setMonth(date.getMonth() + 1);
+            relativeTime = 'next month';
+        } else if (text.toLowerCase().includes('this weekend') || text.toLowerCase().includes('next weekend')) {
+            date = new Date(now);
+            const dayOfWeek = date.getDay();
+            const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
+            date.setDate(date.getDate() + (daysUntilSaturday || 7));
+            relativeTime = 'this weekend';
+        } else if (text.toLowerCase().includes('in ')) {
+            // "in 2 weeks", "in 3 days", etc.
+            const inMatch = text.match(/in\s+(\d+)\s+(day|week|month)s?/i);
+            if (inMatch) {
+                date = new Date(now);
+                const amount = parseInt(inMatch[1]);
+                const unit = inMatch[2].toLowerCase();
+                if (unit === 'day') date.setDate(date.getDate() + amount);
+                else if (unit === 'week') date.setDate(date.getDate() + (amount * 7));
+                else if (unit === 'month') date.setMonth(date.getMonth() + amount);
+                relativeTime = `in ${amount} ${unit}${amount > 1 ? 's' : ''}`;
+            }
+        }
+
+        // Specific times (HH:MM AM/PM format)
+        const timeMatch = text.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+        if (timeMatch && date) {
+            let hours = parseInt(timeMatch[1]);
+            const minutes = parseInt(timeMatch[2]);
+            const meridiem = timeMatch[3]?.toLowerCase();
+
+            if (meridiem === 'pm' && hours !== 12) hours += 12;
+            if (meridiem === 'am' && hours === 12) hours = 0;
+
+            date.setHours(hours, minutes, 0, 0);
+            datetime = date;
+        }
+
+        return {
+            date,
+            relativeTime,
+            datetime: datetime || date
+        };
+    }
+
+    // Extract event title from message
+    extractEventTitle(message, eventType, keyword) {
+        const lowerMsg = message.toLowerCase();
+        const keywordIndex = lowerMsg.indexOf(keyword);
+        if (keywordIndex === -1) return null;
+
+        // Get text around the keyword
+        const startIdx = Math.max(0, keywordIndex - 50);
+        const endIdx = Math.min(message.length, keywordIndex + keyword.length + 100);
+        const context = message.substring(startIdx, endIdx);
+
+        // Extract meaningful title based on event type
+        let title = '';
+
+        switch (eventType) {
+            case 'birthday':
+                // Extract person's name
+                const nameMatch = context.match(/(\w+)'s\s+birthday|birthday\s+of\s+(\w+)|for\s+(\w+)/i);
+                title = nameMatch ? (nameMatch[1] || nameMatch[2] || nameMatch[3]) + "'s Birthday" : "Birthday";
+                break;
+
+            case 'meeting':
+            case 'appointment':
+                // Try to extract with person/topic
+                const withMatch = context.match(/with\s+(\w+(?:\s+\w+)?)/i);
+                title = withMatch ? `${eventType.charAt(0).toUpperCase() + eventType.slice(1)} with ${withMatch[1]}` : eventType.charAt(0).toUpperCase() + eventType.slice(1);
+                break;
+
+            case 'deadline':
+                // Extract project/task name
+                const projectMatch = context.match(/(?:for|to\s+)(.+?)(?:due|by|deadline)/i);
+                title = projectMatch ? `Deadline: ${projectMatch[1].trim()}` : "Deadline";
+                break;
+
+            case 'travel':
+                // Extract destination
+                const destMatch = context.match(/(?:to|trip\s+to|traveling\s+to|visiting)\s+(\w+(?:\s+\w+)?)/i);
+                title = destMatch ? `Trip to ${destMatch[1]}` : "Travel";
+                break;
+
+            default:
+                title = eventType.charAt(0).toUpperCase() + eventType.slice(1);
+        }
+
+        return title || null;
+    }
+
+    // Generate description based on event type
+    generateDescription(eventType, title) {
+        const descriptions = {
+            meeting: `Meeting scheduled for ${title}. Come prepared and ready to discuss.`,
+            appointment: `Appointment scheduled. Mark it on your calendar.`,
+            birthday: `Don't forget to reach out and celebrate!`,
+            deadline: `Important deadline coming up. Start planning to meet it.`,
+            travel: `Travel plans confirmed. Check weather and pack accordingly.`,
+            reminder: `Important reminder: ${title}`,
+            project: `Project milestone: ${title}. Track progress closely.`,
+            celebration: `Celebration planned for ${title}. Get excited!`
+        };
+        return descriptions[eventType] || `Event: ${title}`;
+    }
+
+    // Auto-add high-confidence event to calendar or reminders
+    async autoAddEvent(event) {
+        try {
+            if (!this.utilitiesApp) return;
+
+            // Determine if it should go to calendar or reminders
+            const shouldGoToCalendar = ['meeting', 'appointment', 'birthday', 'deadline', 'travel', 'celebration', 'project'].includes(event.type);
+            const shouldBeReminder = ['reminder', 'deadline'].includes(event.type);
+
+            if (shouldGoToCalendar && this.utilitiesApp.addEvent) {
+                await this.utilitiesApp.addEvent(
+                    event.title,
+                    event.datetime || new Date(),
+                    event.description
+                );
+                console.log(`EventDetector: Auto-added event to calendar: ${event.title}`);
+            }
+
+            if (shouldBeReminder && this.utilitiesApp.createReminder) {
+                await this.utilitiesApp.createReminder(
+                    event.title,
+                    event.datetime || new Date(),
+                    'push'
+                );
+                console.log(`EventDetector: Auto-added reminder: ${event.title}`);
+            }
+        } catch (e) {
+            console.log("EventDetector: Error auto-adding event:", e);
+        }
+    }
+}
+
 class LocalAssistant {
-    constructor(db = null) {
+    constructor(db = null, utilitiesApp = null) {
         this.sessionMemory = [];
         this.userProfile = { name: null, mood: 'neutral', topics: [] };
         this.lastCategory = null; // Track last response category to avoid repeats
         this.usedResponses = new Set(); // Track used responses to avoid repetition
         this.utilityManager = db ? new UtilityManager(db) : null; // Utility functions manager
+        this.eventDetector = db ? new EventDetector(db, utilitiesApp) : null; // Smart event detection
 
         this.responses = {
             greeting: [
@@ -2183,6 +2460,16 @@ class LocalAssistant {
         }
 
         this.sessionMemory.push({ role: 'assistant', content: response, timestamp: Date.now() });
+
+        // Smart event detection — auto-detect and add events from conversation
+        if (this.eventDetector) {
+            try {
+                this.eventDetector.detectEventsFromMessage(message, response);
+            } catch (e) {
+                console.log("LocalAssistant: Event detection error:", e);
+            }
+        }
+
         return response;
     }
 
@@ -2773,7 +3060,11 @@ class Linen {
 
                         if (isRecoverableError) {
                             console.warn(`Linen: Gemini API key validation failed with recoverable error: ${result.error}. Starting in local-only mode.`);
-                            this.assistant = new LocalAssistant(this.db);
+                            // Initialize utilities if not done yet
+                            if (!this.utilities) {
+                                this.utilities = new UtilitiesApp(this.db);
+                            }
+                            this.assistant = new LocalAssistant(this.db, this.utilities);
                             this.isLocalMode = true;
                             this.showLocalModeToast(result.error);
                         } else {
@@ -2788,7 +3079,11 @@ class Linen {
             // If still no assistant, use local mode (always available)
             if (!this.assistant) {
                 console.log("Linen: Starting with LocalAssistant (no API configured).");
-                this.assistant = new LocalAssistant(this.db);
+                // Initialize utilities if not done yet
+                if (!this.utilities) {
+                    this.utilities = new UtilitiesApp(this.db);
+                }
+                this.assistant = new LocalAssistant(this.db, this.utilities);
                 this.isLocalMode = true;
             }
 
@@ -2811,7 +3106,11 @@ class Linen {
             }
         } catch (e) {
             console.error('Linen: Init error:', e);
-            this.assistant = new LocalAssistant(this.db);
+            // Initialize utilities if not done yet
+            if (!this.utilities) {
+                this.utilities = new UtilitiesApp(this.db);
+            }
+            this.assistant = new LocalAssistant(this.db, this.utilities);
             this.isLocalMode = true;
             this.startApp(null);
             console.error('Linen: Fatal error during init, starting in local-only mode.', e);
@@ -2868,11 +3167,21 @@ class Linen {
         console.log("Linen: Starting app with apiKey:", !!apiKey);
         // Store API key for lazy validation and potential future use
         this.savedApiKey = apiKey;
+
+        // Initialize UtilitiesApp for calendar, reminders, alarms, timer, notes
+        if (!this.utilities) {
+            this.utilities = new UtilitiesApp(this.db);
+            console.log("Linen: UtilitiesApp initialized");
+        }
+
         // If no assistant is set, use LocalAssistant
         if (!this.assistant) {
             console.warn("Linen: No assistant set in startApp, using LocalAssistant.");
-            this.assistant = new LocalAssistant(this.db);
+            this.assistant = new LocalAssistant(this.db, this.utilities);
             this.isLocalMode = true;
+        } else if (this.assistant instanceof LocalAssistant && !this.assistant.eventDetector) {
+            // Update existing LocalAssistant with utilities if needed
+            this.assistant.eventDetector = new EventDetector(this.db, this.utilities);
         }
         console.log("Linen: About to hide modals and bind events");
         document.getElementById('onboarding-overlay').style.display = 'none';
@@ -3992,11 +4301,361 @@ class Linen {
         // Load agents list
         this.loadAgentsList();
 
+        // Utilities modal and events
+        this.bindUtilitiesEvents();
+
         // Profile form events
         this.bindProfileEvents();
 
         // Privacy & Terms modals
         this.bindPrivacyEvents();
+    }
+
+    bindUtilitiesEvents() {
+        const utilitiesModal = document.getElementById('utilities-modal');
+        const closeUtilitiesBtn = document.getElementById('close-utilities-modal');
+        const backdrop = document.getElementById('modal-backdrop');
+        const logoutilitiesBtn = document.getElementById('logo-utilities');
+
+        // Open utilities modal
+        if (logoutilitiesBtn) {
+            logoutilitiesBtn.addEventListener('click', () => {
+                if (utilitiesModal) {
+                    utilitiesModal.classList.add('active');
+                    backdrop.classList.add('active');
+                    // Load and display utilities from IndexedDB
+                    this.loadDisplayUtilities();
+                }
+                document.getElementById('logo-menu').classList.add('hidden');
+            });
+        }
+
+        // Close utilities modal
+        if (closeUtilitiesBtn) {
+            closeUtilitiesBtn.addEventListener('click', () => {
+                if (utilitiesModal) {
+                    utilitiesModal.classList.remove('active');
+                    backdrop.classList.remove('active');
+                }
+            });
+        }
+
+        // Tab switching in utilities modal
+        const utilitiesTabs = document.querySelectorAll('.utilities-tab');
+        utilitiesTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                // Remove active class from all tabs and contents
+                utilitiesTabs.forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.utilities-tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabContent = document.getElementById(`${tabName}-tab`);
+                if (tabContent) {
+                    tabContent.classList.add('active');
+                }
+            });
+        });
+
+        // ALARM & TIMER TAB
+        const setAlarmBtn = document.getElementById('set-alarm-btn');
+        const alarmTimeInput = document.getElementById('alarm-time');
+        const alarmLabelInput = document.getElementById('alarm-label');
+
+        if (setAlarmBtn) {
+            setAlarmBtn.addEventListener('click', async () => {
+                const time = alarmTimeInput?.value;
+                const label = alarmLabelInput?.value || 'Alarm';
+
+                if (!time) {
+                    this.showToast('Please enter an alarm time', 'error');
+                    return;
+                }
+
+                if (this.utilities) {
+                    const result = await this.utilities.setAlarm(time, label);
+                    if (result.success) {
+                        this.showToast(`Alarm set for ${result.time}`, 'success');
+                        if (alarmTimeInput) alarmTimeInput.value = '';
+                        if (alarmLabelInput) alarmLabelInput.value = '';
+                        this.loadDisplayUtilities();
+                    } else {
+                        this.showToast(result.error || 'Failed to set alarm', 'error');
+                    }
+                }
+            });
+        }
+
+        const startTimerBtn = document.getElementById('start-timer-btn');
+        const timerMinutesInput = document.getElementById('timer-minutes');
+        const timerSecondsInput = document.getElementById('timer-seconds');
+
+        if (startTimerBtn) {
+            startTimerBtn.addEventListener('click', async () => {
+                const minutes = parseInt(timerMinutesInput?.value) || 0;
+                const seconds = parseInt(timerSecondsInput?.value) || 0;
+                const totalSeconds = minutes * 60 + seconds;
+
+                if (totalSeconds <= 0) {
+                    this.showToast('Please enter a valid timer duration', 'error');
+                    return;
+                }
+
+                if (this.utilities) {
+                    const result = await this.utilities.startTimer(minutes, seconds, 'Timer');
+                    if (result.success) {
+                        this.showToast(`Timer started for ${minutes}m ${seconds}s`, 'success');
+                        if (timerMinutesInput) timerMinutesInput.value = '';
+                        if (timerSecondsInput) timerSecondsInput.value = '';
+                        this.loadDisplayUtilities();
+                    } else {
+                        this.showToast(result.error || 'Failed to start timer', 'error');
+                    }
+                }
+            });
+        }
+
+        // NOTES TAB
+        const saveNoteBtn = document.getElementById('save-note-btn');
+        const shareNoteBtn = document.getElementById('share-note-btn');
+        const noteTextarea = document.getElementById('note-input');
+
+        if (saveNoteBtn) {
+            saveNoteBtn.addEventListener('click', async () => {
+                const content = noteTextarea?.value;
+
+                if (!content?.trim()) {
+                    this.showToast('Please enter note content', 'error');
+                    return;
+                }
+
+                if (this.utilities) {
+                    try {
+                        const result = await this.utilities.saveNote(content);
+                        this.showToast('Note saved!', 'success');
+                        if (noteTextarea) noteTextarea.value = '';
+                        this.loadDisplayUtilities();
+                    } catch (e) {
+                        this.showToast('Failed to save note', 'error');
+                    }
+                }
+            });
+        }
+
+        if (shareNoteBtn) {
+            shareNoteBtn.addEventListener('click', async () => {
+                const content = noteTextarea?.value;
+
+                if (!content?.trim()) {
+                    this.showToast('Please enter note content', 'error');
+                    return;
+                }
+
+                if (this.utilities) {
+                    const shared = await this.utilities.shareNote(content);
+                    if (shared) {
+                        this.showToast('Note shared!', 'success');
+                    } else {
+                        this.showToast('Share failed, but note was copied', 'info');
+                    }
+                }
+            });
+        }
+
+        // CALENDAR TAB
+        const addEventBtn = document.getElementById('add-event-btn');
+        const eventTitleInput = document.getElementById('event-title');
+        const eventDatetimeInput = document.getElementById('event-datetime');
+        const eventDescriptionInput = document.getElementById('event-description');
+
+        if (addEventBtn) {
+            addEventBtn.addEventListener('click', async () => {
+                const title = eventTitleInput?.value;
+                const datetime = eventDatetimeInput?.value;
+                const description = eventDescriptionInput?.value || '';
+
+                if (!title || !datetime) {
+                    this.showToast('Please enter event title and date/time', 'error');
+                    return;
+                }
+
+                if (this.utilities) {
+                    try {
+                        const result = await this.utilities.addEvent(title, new Date(datetime), description);
+                        this.showToast('Event added to calendar!', 'success');
+                        if (eventTitleInput) eventTitleInput.value = '';
+                        if (eventDatetimeInput) eventDatetimeInput.value = '';
+                        if (eventDescriptionInput) eventDescriptionInput.value = '';
+                        this.loadDisplayUtilities();
+                    } catch (e) {
+                        this.showToast('Failed to add event', 'error');
+                    }
+                }
+            });
+        }
+
+        // REMINDERS TAB
+        const createReminderBtn = document.getElementById('create-reminder-btn');
+        const reminderTextInput = document.getElementById('reminder-text');
+        const reminderDatetimeInput = document.getElementById('reminder-time');
+        const reminderMethodSelect = document.getElementById('reminder-method');
+
+        if (createReminderBtn) {
+            createReminderBtn.addEventListener('click', async () => {
+                const text = reminderTextInput?.value;
+                const datetime = reminderDatetimeInput?.value;
+                const method = reminderMethodSelect?.value || 'push';
+
+                if (!text || !datetime) {
+                    this.showToast('Please enter reminder text and date/time', 'error');
+                    return;
+                }
+
+                if (this.utilities) {
+                    try {
+                        const result = await this.utilities.createReminder(text, new Date(datetime), method);
+                        this.showToast('Reminder created!', 'success');
+                        if (reminderTextInput) reminderTextInput.value = '';
+                        if (reminderDatetimeInput) reminderDatetimeInput.value = '';
+                        this.loadDisplayUtilities();
+                    } catch (e) {
+                        this.showToast('Failed to create reminder', 'error');
+                    }
+                }
+            });
+        }
+    }
+
+    // Load and display utilities from IndexedDB
+    async loadDisplayUtilities() {
+        try {
+            // Load active alarms and timers
+            const alarmsList = document.getElementById('active-alarms-list');
+            const timersList = document.getElementById('active-timers-list');
+            const notesList = document.getElementById('notes-container');
+            const eventsList = document.getElementById('events-container');
+            const remindersList = document.getElementById('reminders-container');
+
+            if (!this.utilities) return;
+
+            // Display active alarms
+            if (alarmsList && this.utilities.activeAlarms) {
+                alarmsList.innerHTML = '';
+                if (this.utilities.activeAlarms.size === 0) {
+                    alarmsList.innerHTML = '<p style="color: #999; padding: 1rem;">No active alarms</p>';
+                } else {
+                    this.utilities.activeAlarms.forEach((alarm) => {
+                        const alarmEl = document.createElement('div');
+                        alarmEl.className = 'utility-item';
+                        alarmEl.innerHTML = `
+                            <div>
+                                <strong>⏰ ${alarm.label}</strong>
+                                <p style="font-size: 0.9rem; color: #999;">${alarm.time}</p>
+                            </div>
+                            <button class="button-small button-danger" onclick="linen.utilities.cancelAlarm('${alarm.id}'); linen.loadDisplayUtilities();">Cancel</button>
+                        `;
+                        alarmsList.appendChild(alarmEl);
+                    });
+                }
+            }
+
+            // Display active timers
+            if (timersList && this.utilities.activeTimers) {
+                timersList.innerHTML = '';
+                if (this.utilities.activeTimers.size === 0) {
+                    timersList.innerHTML = '<p style="color: #999; padding: 1rem;">No active timers</p>';
+                } else {
+                    this.utilities.activeTimers.forEach((timer) => {
+                        const timerEl = document.createElement('div');
+                        timerEl.className = 'utility-item';
+                        timerEl.innerHTML = `
+                            <div>
+                                <strong>⏱️ ${timer.label}</strong>
+                                <p style="font-size: 0.9rem; color: #999;">Running...</p>
+                            </div>
+                            <button class="button-small button-danger" onclick="linen.utilities.cancelTimer('${timer.id}'); linen.loadDisplayUtilities();">Stop</button>
+                        `;
+                        timersList.appendChild(timerEl);
+                    });
+                }
+            }
+
+            // Load saved notes, events, and reminders from memories
+            const memories = await this.db.getAllMemories();
+
+            // Display notes
+            if (notesList) {
+                const notes = memories.filter(m => m.type === 'note');
+                notesList.innerHTML = '';
+                if (notes.length === 0) {
+                    notesList.innerHTML = '<p style="color: #999; padding: 1rem;">No saved notes</p>';
+                } else {
+                    notes.forEach((note) => {
+                        const noteEl = document.createElement('div');
+                        noteEl.className = 'utility-item note-item';
+                        const noteDate = new Date(note.date).toLocaleDateString();
+                        noteEl.innerHTML = `
+                            <div>
+                                <p>${note.text}</p>
+                                <small style="color: #999;">${noteDate}</small>
+                            </div>
+                            <button class="button-small button-danger" onclick="linen.db.deleteMemory(${note.id}); linen.loadDisplayUtilities();">Delete</button>
+                        `;
+                        notesList.appendChild(noteEl);
+                    });
+                }
+            }
+
+            // Display calendar events
+            if (eventsList) {
+                const events = memories.filter(m => m.type === 'event');
+                eventsList.innerHTML = '';
+                if (events.length === 0) {
+                    eventsList.innerHTML = '<p style="color: #999; padding: 1rem;">No scheduled events</p>';
+                } else {
+                    events.forEach((event) => {
+                        const eventEl = document.createElement('div');
+                        eventEl.className = 'utility-item';
+                        const eventDate = new Date(event.date).toLocaleDateString();
+                        eventEl.innerHTML = `
+                            <div>
+                                <strong>📅 ${event.text.split(' at ')[0] || 'Event'}</strong>
+                                <p style="font-size: 0.9rem; color: #999;">${eventDate}</p>
+                            </div>
+                            <button class="button-small button-danger" onclick="linen.db.deleteMemory(${event.id}); linen.loadDisplayUtilities();">Delete</button>
+                        `;
+                        eventsList.appendChild(eventEl);
+                    });
+                }
+            }
+
+            // Display reminders
+            if (remindersList) {
+                const reminders = memories.filter(m => m.type === 'reminder');
+                remindersList.innerHTML = '';
+                if (reminders.length === 0) {
+                    remindersList.innerHTML = '<p style="color: #999; padding: 1rem;">No reminders set</p>';
+                } else {
+                    reminders.forEach((reminder) => {
+                        const reminderEl = document.createElement('div');
+                        reminderEl.className = 'utility-item';
+                        const reminderDate = new Date(reminder.date).toLocaleString();
+                        reminderEl.innerHTML = `
+                            <div>
+                                <strong>🔔 ${reminder.text}</strong>
+                                <p style="font-size: 0.9rem; color: #999;">${reminderDate}</p>
+                            </div>
+                            <button class="button-small button-danger" onclick="linen.db.deleteMemory(${reminder.id}); linen.loadDisplayUtilities();">Delete</button>
+                        `;
+                        remindersList.appendChild(reminderEl);
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Linen: Error loading utilities:", e);
+        }
     }
 
     bindProfileEvents() {
@@ -4636,7 +5295,11 @@ class Linen {
             } else {
                 await this.db.setSetting('primary-agent-id', null);
                 this.currentAgent = null;
-                this.assistant = new LocalAssistant(this.db);
+                // Initialize utilities if not done yet
+                if (!this.utilities) {
+                    this.utilities = new UtilitiesApp(this.db);
+                }
+                this.assistant = new LocalAssistant(this.db, this.utilities);
                 this.isLocalMode = true;
             }
         }
@@ -4919,7 +5582,11 @@ class Linen {
                 } else {
                     // No alternative agents, fall back to LocalAssistant
                     console.log("Linen: No alternative agents available. Falling back to LocalAssistant.");
-                    this.assistant = new LocalAssistant(this.db);
+                    // Initialize utilities if not done yet
+                    if (!this.utilities) {
+                        this.utilities = new UtilitiesApp(this.db);
+                    }
+                    this.assistant = new LocalAssistant(this.db, this.utilities);
                     this.isLocalMode = true;
                     // Show typing bubble with delay
                     const typingDiv = document.createElement('div');
