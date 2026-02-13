@@ -2043,6 +2043,7 @@ class LocalAssistant {
         this.eventDetector = db ? new EventDetector(db, utilitiesApp) : null; // Smart event detection
         this.conversationContext = null; // Track context for follow-up messages
         this.lastUserMessage = null; // Store last user message for context
+        this.hasGreeted = false; // Prevent multiple initial greetings
 
         // ========== 5000+ WORD VOCABULARY FOR NATURAL CONVERSATIONS ==========
         // Organized by semantic categories for efficient intent detection and topic understanding
@@ -2468,9 +2469,9 @@ class LocalAssistant {
         if (startsWithQuestionWord && words.length > 3) return 'question';
         if (isQuestion && !referenceBack.some(r => msg.includes(r)) && words.length > 4) return 'question';
 
-        // Simple status responses (very short but valid) — treat as engaged, not confused
-        const statusWords = ['good', 'alright', 'okay', 'ok', 'fine', 'well', 'great', 'awesome', 'tired', 'busy', 'yep', 'yep', 'yeah', 'nope', 'nah', 'not really'];
-        if (words.length <= 2 && statusWords.some(s => msg.includes(s))) return 'engaged';
+        // Simple status responses (very short but valid) — treat as casual chat, not confused
+        const statusWords = ['good', 'alright', 'okay', 'ok', 'fine', 'well', 'great', 'awesome', 'tired', 'busy', 'yep', 'yep', 'yeah', 'nope', 'nah', 'not really', 'nothing', 'nothing much', 'meh'];
+        if (words.length <= 3 && statusWords.some(s => msg.includes(s))) return 'engaged';
 
         // Very short messages that aren't greetings but ARE valid statements
         if (words.length <= 2 && words.length > 0) {
@@ -2620,9 +2621,10 @@ class LocalAssistant {
         let response = '';
         const userMsgCount = this.sessionMemory.filter(m => m.role === 'user').length;
 
-        // First message — always greet
-        if (userMsgCount === 1) {
+        // First message — always greet (only once)
+        if (!this.hasGreeted && userMsgCount === 1) {
             response = this.pick('greeting');
+            this.hasGreeted = true;
         }
         // Utility functions — timers, alarms, notes
         else if (intent === 'timerSet') {
