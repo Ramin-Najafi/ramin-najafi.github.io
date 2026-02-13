@@ -1007,8 +1007,8 @@ hr {
 .lightbox-voice-display {
     font-size: 2rem;
     padding: 1.5rem 1rem;
-    margin: 1rem auto;
-    width: calc(100% - 2rem);
+    margin: 1rem 0;
+    width: 100%;
     text-align: center;
     background: rgba(74, 158, 255, 0.1);
     border-radius: 12px;
@@ -1020,6 +1020,8 @@ hr {
     align-items: center;
     justify-content: center;
     min-height: 80px;
+    white-space: nowrap;
+    overflow: visible;
 }
 
 #lightbox-stop-btn {
