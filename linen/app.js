@@ -2327,6 +2327,278 @@ class ProfileManager {
     }
 }
 
+// Comprehensive Utilities App - Alarm, Timer, Notes, Calendar, Reminders
+class UtilitiesApp {
+    constructor(db) {
+        this.db = db;
+        this.activeAlarms = new Map();
+        this.activeTimers = new Map();
+        this.notificationPermission = 'default';
+        this.requestNotificationPermission();
+        this.initializeUtilities();
+    }
+
+    async initializeUtilities() {
+        // Load saved utilities from database
+        try {
+            const savedAlarms = await this.db.getSetting('saved-alarms') || [];
+            const savedReminders = await this.db.getSetting('saved-reminders') || [];
+            console.log("Linen Utilities: Initialized with saved alarms and reminders");
+        } catch (e) {
+            console.log("Linen Utilities: Could not load saved utilities");
+        }
+    }
+
+    requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission().then(permission => {
+                this.notificationPermission = permission;
+                console.log("Linen: Notification permission:", permission);
+            });
+        } else if ('Notification' in window) {
+            this.notificationPermission = Notification.permission;
+        }
+    }
+
+    sendNotification(title, options = {}) {
+        if ('Notification' in window && this.notificationPermission === 'granted') {
+            const notification = new Notification(title, {
+                icon: './icon-192.png',
+                badge: './icon-192.png',
+                ...options
+            });
+            return notification;
+        }
+    }
+
+    // ===== ALARM CLOCK =====
+    async setAlarm(timeString, label = 'Alarm') {
+        const timeMatch = timeString.match(/(\d{1,2}):(\d{2})/);
+        if (!timeMatch) return { success: false, error: 'Invalid time format' };
+
+        const hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+
+        const alarmId = Date.now();
+        const now = new Date();
+        const alarmTime = new Date();
+        alarmTime.setHours(hours, minutes, 0, 0);
+
+        // If alarm time is in the past, set for tomorrow
+        if (alarmTime <= now) {
+            alarmTime.setDate(alarmTime.getDate() + 1);
+        }
+
+        const timeUntilAlarm = alarmTime.getTime() - Date.now();
+
+        // Set up the alarm
+        const alarmTimeout = setTimeout(() => {
+            this.activeAlarms.delete(alarmId);
+            this.sendNotification(`⏰ Alarm: ${label}`, {
+                body: `It's ${alarmTime.toLocaleTimeString()}`,
+                requireInteraction: true
+            });
+        }, timeUntilAlarm);
+
+        this.activeAlarms.set(alarmId, {
+            id: alarmId,
+            label,
+            time: alarmTime.toLocaleTimeString(),
+            timeout: alarmTimeout
+        });
+
+        // Save alarm
+        const memory = {
+            id: alarmId,
+            text: `⏰ Alarm set: ${label} at ${alarmTime.toLocaleTimeString()}`,
+            type: 'alarm',
+            date: Date.now(),
+            tags: ['alarm'],
+            emotion: 'neutral',
+        };
+        await this.db.addMemory(memory);
+
+        return { success: true, id: alarmId, label, time: alarmTime.toLocaleTimeString() };
+    }
+
+    cancelAlarm(alarmId) {
+        const alarm = this.activeAlarms.get(alarmId);
+        if (alarm) {
+            clearTimeout(alarm.timeout);
+            this.activeAlarms.delete(alarmId);
+            return true;
+        }
+        return false;
+    }
+
+    // ===== TIMER =====
+    async startTimer(minutes, seconds, label = 'Timer') {
+        const timerId = Date.now();
+        const durationMs = (minutes * 60 + seconds) * 1000;
+        const startTime = Date.now();
+        const endTime = startTime + durationMs;
+
+        let timerInterval = setInterval(() => {
+            const remaining = Math.max(0, endTime - Date.now());
+            if (remaining === 0) {
+                clearInterval(timerInterval);
+                this.activeTimers.delete(timerId);
+                this.sendNotification(`⏱️ Timer Complete: ${label}`, {
+                    body: `Your ${minutes}m ${seconds}s timer is done!`,
+                    requireInteraction: false
+                });
+            }
+        }, 100);
+
+        this.activeTimers.set(timerId, {
+            id: timerId,
+            label,
+            duration: `${minutes}m ${seconds}s`,
+            interval: timerInterval,
+            endTime
+        });
+
+        // Save timer
+        const memory = {
+            id: timerId,
+            text: `⏱️ Timer: ${label} (${minutes}m ${seconds}s)`,
+            type: 'timer',
+            date: startTime,
+            tags: ['timer'],
+            emotion: 'neutral',
+        };
+        await this.db.addMemory(memory);
+
+        return { success: true, id: timerId, label, duration: `${minutes}m ${seconds}s` };
+    }
+
+    cancelTimer(timerId) {
+        const timer = this.activeTimers.get(timerId);
+        if (timer) {
+            clearInterval(timer.interval);
+            this.activeTimers.delete(timerId);
+            return true;
+        }
+        return false;
+    }
+
+    // ===== NOTES =====
+    async saveNote(content) {
+        const noteId = Date.now();
+        const memory = {
+            id: noteId,
+            text: content,
+            type: 'note',
+            date: Date.now(),
+            tags: ['user-note'],
+            emotion: 'neutral',
+        };
+
+        try {
+            await this.db.addMemory(memory);
+            return { success: true, id: noteId, content };
+        } catch (e) {
+            console.log("Linen: Could not save note", e);
+            return { success: false, error: 'Could not save note' };
+        }
+    }
+
+    async shareNote(content) {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Linen Note',
+                    text: content
+                });
+                return { success: true, method: 'native-share' };
+            } catch (e) {
+                console.log("Linen: Share cancelled");
+            }
+        }
+
+        // Fallback: copy to clipboard
+        try {
+            await navigator.clipboard.writeText(content);
+            return { success: true, method: 'clipboard' };
+        } catch (e) {
+            return { success: false, error: 'Could not share note' };
+        }
+    }
+
+    // ===== CALENDAR =====
+    async addEvent(title, datetime, description = '') {
+        const eventId = Date.now();
+        const eventDate = new Date(datetime);
+
+        const memory = {
+            id: eventId,
+            text: `📅 ${title}${description ? '\n' + description : ''}`,
+            type: 'event',
+            date: eventDate.getTime(),
+            tags: ['calendar', 'event'],
+            emotion: 'neutral',
+        };
+
+        try {
+            await this.db.addMemory(memory);
+            return { success: true, id: eventId, title, date: eventDate.toLocaleString() };
+        } catch (e) {
+            console.log("Linen: Could not add event", e);
+            return { success: false, error: 'Could not add event' };
+        }
+    }
+
+    // ===== REMINDERS =====
+    async createReminder(text, datetime, method = 'push') {
+        const reminderId = Date.now();
+        const reminderTime = new Date(datetime);
+        const timeUntilReminder = reminderTime.getTime() - Date.now();
+
+        if (timeUntilReminder <= 0) {
+            return { success: false, error: 'Reminder time must be in the future' };
+        }
+
+        // Set up reminder notification
+        const reminderTimeout = setTimeout(() => {
+            this.sendNotification(`🔔 Reminder`, {
+                body: text,
+                requireInteraction: true
+            });
+
+            // If email method, would send email here (requires backend)
+            if (method === 'email') {
+                console.log(`Linen: Email reminder would be sent: ${text}`);
+            }
+        }, timeUntilReminder);
+
+        // Save reminder
+        const memory = {
+            id: reminderId,
+            text: `🔔 Reminder: ${text}`,
+            type: 'reminder',
+            date: Date.now(),
+            tags: ['reminder', method],
+            emotion: 'neutral',
+        };
+
+        try {
+            await this.db.addMemory(memory);
+            return { success: true, id: reminderId, text, time: reminderTime.toLocaleString(), method };
+        } catch (e) {
+            clearTimeout(reminderTimeout);
+            return { success: false, error: 'Could not create reminder' };
+        }
+    }
+
+    // Get all active utilities
+    getActiveUtilities() {
+        return {
+            alarms: Array.from(this.activeAlarms.values()),
+            timers: Array.from(this.activeTimers.values())
+        };
+    }
+}
+
 class Linen {
     constructor() {
         this.db = new LinenDB();
@@ -2335,6 +2607,7 @@ class Linen {
         this.eventManager = new EventManager();
         this.agentManager = new AgentManager(this.db);
         this.modelVersionManager = new ModelVersionManager();
+        this.utilities = null; // Will be initialized after db.init()
         this.profileManager = null; // Initialized after db.init()
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
         this.currentAgent = null; // Track current agent

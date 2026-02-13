@@ -383,6 +383,7 @@
                 <div class="version-badge" id="header-version">v.1.3.0[beta]</div>
             </div>
             <div id="logo-menu" class="logo-menu hidden">
+                <button type="button" id="logo-utilities" class="menu-item">⚡ Utilities</button>
                 <button type="button" id="logo-new-chat" class="menu-item">💬 New Chat</button>
                 <button type="button" id="logo-memories" class="menu-item">📚 Memories</button>
                 <button type="button" id="logo-settings" class="menu-item">⚙ Settings</button>
@@ -433,6 +434,104 @@
         <input id="memory-search" placeholder="Search memories...">
         <div id="memories-list"></div>
     </aside>
+
+    <!-- Utilities Modal -->
+    <div class="modal" id="utilities-modal" aria-label="Utilities panel">
+        <button class="close-modal" id="close-utilities-modal">×</button>
+        <div class="utilities-header">
+            <h2>⚡ Utilities</h2>
+            <div class="utilities-tabs">
+                <button type="button" class="utilities-tab active" data-tab="alarm-timer">⏰ Alarm & Timer</button>
+                <button type="button" class="utilities-tab" data-tab="notes">📝 Notes</button>
+                <button type="button" class="utilities-tab" data-tab="calendar">📅 Calendar</button>
+                <button type="button" class="utilities-tab" data-tab="reminders">🔔 Reminders</button>
+            </div>
+        </div>
+
+        <!-- Alarm & Timer Tab -->
+        <div id="alarm-timer-tab" class="utilities-tab-content active">
+            <!-- Alarm Clock -->
+            <div class="utility-section">
+                <h3>⏰ Alarm Clock</h3>
+                <div class="alarm-setup">
+                    <input type="time" id="alarm-time" />
+                    <input type="text" id="alarm-label" placeholder="Label (e.g., Wake up)" />
+                    <button type="button" id="set-alarm-btn" class="button-primary">Set Alarm</button>
+                </div>
+                <div id="active-alarms-list" class="active-utilities-list">
+                    <h4>Active Alarms</h4>
+                    <div id="alarms-container"></div>
+                </div>
+            </div>
+
+            <!-- Timer -->
+            <div class="utility-section">
+                <h3>⏱️ Timer</h3>
+                <div class="timer-setup">
+                    <input type="number" id="timer-minutes" placeholder="Minutes" min="0" max="59" />
+                    <input type="number" id="timer-seconds" placeholder="Seconds" min="0" max="59" />
+                    <button type="button" id="start-timer-btn" class="button-primary">Start Timer</button>
+                </div>
+                <div id="active-timers-list" class="active-utilities-list">
+                    <h4>Active Timers</h4>
+                    <div id="timers-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Tab -->
+        <div id="notes-tab" class="utilities-tab-content">
+            <div class="utility-section">
+                <h3>📝 Notes</h3>
+                <textarea id="note-input" placeholder="Write your note here..." rows="6"></textarea>
+                <div class="notes-actions">
+                    <button type="button" id="save-note-btn" class="button-primary">Save Note</button>
+                    <button type="button" id="share-note-btn" class="button-secondary">Share Note</button>
+                </div>
+                <div id="notes-list" class="notes-list">
+                    <h4>My Notes</h4>
+                    <div id="notes-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Tab -->
+        <div id="calendar-tab" class="utilities-tab-content">
+            <div class="utility-section">
+                <h3>📅 Calendar</h3>
+                <div class="event-setup">
+                    <input type="text" id="event-title" placeholder="Event name" />
+                    <input type="datetime-local" id="event-datetime" />
+                    <textarea id="event-description" placeholder="Event description" rows="3"></textarea>
+                    <button type="button" id="add-event-btn" class="button-primary">Add Event</button>
+                </div>
+                <div id="events-list" class="events-list">
+                    <h4>Upcoming Events</h4>
+                    <div id="events-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminders Tab -->
+        <div id="reminders-tab" class="utilities-tab-content">
+            <div class="utility-section">
+                <h3>🔔 Reminders</h3>
+                <div class="reminder-setup">
+                    <input type="text" id="reminder-text" placeholder="What do you want to remember?" />
+                    <input type="datetime-local" id="reminder-time" />
+                    <select id="reminder-method">
+                        <option value="push">Push Notification</option>
+                        <option value="email">Email Notification</option>
+                    </select>
+                    <button type="button" id="create-reminder-btn" class="button-primary">Create Reminder</button>
+                </div>
+                <div id="reminders-list" class="reminders-list">
+                    <h4>Active Reminders</h4>
+                    <div id="reminders-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal" id="settings-modal" aria-label="Settings panel">
         <button class="close-modal" id="close-settings-modal">×</button>
