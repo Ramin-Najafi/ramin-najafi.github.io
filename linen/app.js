@@ -1691,6 +1691,225 @@ class UtilityManager {
     }
 }
 
+// FIXED VERSION - Native device integration
+class UtilityManager {
+    constructor(db) {
+        this.db = db;
+    }
+
+    // Open native timer app with countdown - IMMEDIATELY launches native app
+    async setTimer(durationSeconds, label = 'Timer') {
+        const label_encoded = encodeURIComponent(label);
+
+        // Mobile: Use intent protocol to open native timer app
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            if (/Android/i.test(navigator.userAgent)) {
+                // Android: Open Google Clock app with timer
+                window.location.href = `intent://deskclock/timer#Intent;package=com.google.android.deskclock;action=android.intent.action.SET_TIMER;i.android.alarm_extra_minutes=${Math.floor(durationSeconds / 60)};i.android.alarm_extra_seconds=${durationSeconds % 60};S.android.alarm_extra_message=${label_encoded};end`;
+            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // iOS: Open Clock app (native timer)
+                window.location.href = `shortcuts://run-shortcut/?name=Timer&input=number&number=${durationSeconds}`;
+            }
+        } else {
+            // Desktop: Open online timer website with countdown
+            window.open(`https://www.online-stopwatch.com/?s=${durationSeconds}`, '_blank');
+        }
+
+        // Save to memories as backup record
+        const memory = {
+            id: Date.now(),
+            text: `Timer set for ${durationSeconds} seconds - ${label}`,
+            type: 'timer',
+            date: Date.now(),
+            tags: ['timer', 'utility'],
+            emotion: 'neutral',
+        };
+        try {
+            await this.db.addMemory(memory);
+        } catch (e) {
+            console.log("Linen: Could not save timer to memories");
+        }
+
+        return { success: true, app: 'native-timer', duration: durationSeconds, label };
+    }
+
+    // Open native alarm app - IMMEDIATELY launches native app
+    async setAlarm(timeString, label = 'Alarm') {
+        const time = this.parseTimeString(timeString);
+        if (!time) {
+            return { success: false, error: 'Could not parse time' };
+        }
+
+        const hours = time.hours;
+        const minutes = time.minutes;
+        const label_encoded = encodeURIComponent(label);
+
+        // Mobile: Use native alarm intents to open clock app
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            if (/Android/i.test(navigator.userAgent)) {
+                // Android: Open Google Clock app with alarm intent
+                window.location.href = `intent://deskclock/alarm#Intent;package=com.google.android.deskclock;action=android.intent.action.SET_ALARM;i.android.alarm_extra_hour=${hours};i.android.alarm_extra_minutes=${minutes};S.android.alarm_extra_message=${label_encoded};end`;
+            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // iOS: Shortcuts app to set alarm
+                window.location.href = `shortcuts://run-shortcut/?name=Set%20Alarm&input=text&text=${hours}:${String(minutes).padStart(2, '0')}%20${label}`;
+            }
+        } else {
+            // Desktop: Open web-based alarm setter
+            const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            window.open(`https://www.online-stopwatch.com/?alarm=${timeStr}`, '_blank');
+        }
+
+        // Save to memories
+        const memory = {
+            id: Date.now(),
+            text: `Alarm set for ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} - ${label}`,
+            type: 'alarm',
+            date: Date.now(),
+            tags: ['alarm', 'utility'],
+            emotion: 'neutral',
+        };
+        try {
+            await this.db.addMemory(memory);
+        } catch (e) {
+            console.log("Linen: Could not save alarm to memories");
+        }
+
+        return { success: true, app: 'native-alarm', time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`, label };
+    }
+
+    // Open native notes app - IMMEDIATELY launches native app
+    async saveNote(noteContent) {
+        try {
+            // Try navigator.share first (works on most modern mobile devices)
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'Linen Note',
+                    text: noteContent,
+                });
+                return { success: true, app: 'native-share' };
+            }
+        } catch (e) {
+            console.log("Linen: Share cancelled");
+        }
+
+        // Mobile: Open native notes apps
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            const encodedNote = encodeURIComponent(noteContent);
+
+            if (/Android/i.test(navigator.userAgent)) {
+                // Android: Try Google Keep first, then Google Docs
+                window.location.href = `intent://keep.google.com/u/0/#NOTE?text=${encodedNote}#Intent;package=com.google.android.keep;scheme=http;end`;
+            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // iOS: Native Notes app
+                window.location.href = `notes://new?text=${encodedNote}`;
+            }
+        } else {
+            // Desktop: Open Google Keep or Notes website
+            window.open('https://keep.google.com/u/0/', '_blank');
+        }
+
+        // Save to IndexedDB as backup
+        const memory = {
+            id: Date.now(),
+            text: noteContent,
+            type: 'note',
+            date: Date.now(),
+            tags: ['user-note'],
+            emotion: 'neutral',
+        };
+        try {
+            await this.db.addMemory(memory);
+        } catch (e) {
+            console.log("Linen: Could not save note to memories");
+        }
+
+        return { success: true, app: 'native-notes', backup: 'local-memory' };
+    }
+
+    // Open native calendar app - IMMEDIATELY launches native app
+    async addToCalendar(eventTitle, eventDateTime = null) {
+        const title_encoded = encodeURIComponent(eventTitle);
+        const date = eventDateTime ? new Date(eventDateTime) : new Date();
+        const dateStr = date.toISOString().split('T')[0];
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+
+        // Mobile: Open native calendar apps
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            if (/Android/i.test(navigator.userAgent)) {
+                // Android: Google Calendar intent
+                const startTime = date.getTime();
+                window.location.href = `intent://calendar/event#Intent;package=com.google.android.calendar;action=android.intent.action.INSERT;S.title=${title_encoded};L.dtstart=${startTime};end`;
+            } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                // iOS: Calendar app
+                const timeStr = `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}`;
+                window.location.href = `calshow://${dateStr}T${timeStr}00`;
+            }
+        } else {
+            // Desktop: Open Google Calendar in browser
+            const calendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?text=${title_encoded}&dates=${dateStr}`;
+            window.open(calendarUrl, '_blank');
+        }
+
+        // Save to memories
+        const memory = {
+            id: Date.now(),
+            text: `Calendar event: ${eventTitle} on ${dateStr}`,
+            type: 'event',
+            date: date.getTime(),
+            tags: ['calendar', 'event'],
+            emotion: 'neutral',
+        };
+        try {
+            await this.db.addMemory(memory);
+        } catch (e) {
+            console.log("Linen: Could not save event to memories");
+        }
+
+        return { success: true, app: 'native-calendar', event: eventTitle, date: dateStr };
+    }
+
+    // Helper: Parse time strings like "5 minutes", "in 5 minutes", "8am", "3:30pm"
+    parseTimeString(timeString) {
+        const msg = timeString.toLowerCase();
+
+        // Extract just numbers and time units for timer parsing
+        const relativeMatch = msg.match(/(\d+)\s*(minute|min|second|sec|hour|hr)s?/);
+        if (relativeMatch) {
+            const now = new Date();
+            const amount = parseInt(relativeMatch[1]);
+            const unit = relativeMatch[2];
+
+            if (unit === 'minute' || unit === 'min') {
+                now.setMinutes(now.getMinutes() + amount);
+            } else if (unit === 'second' || unit === 'sec') {
+                now.setSeconds(now.getSeconds() + amount);
+            } else if (unit === 'hour' || unit === 'hr') {
+                now.setHours(now.getHours() + amount);
+            }
+
+            return { hours: now.getHours(), minutes: now.getMinutes() };
+        }
+
+        // Parse absolute time like "8am", "3:30pm", "14:30"
+        const timeMatch = msg.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/);
+        if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            let minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+            const meridiem = timeMatch[3];
+
+            if (meridiem) {
+                if (meridiem === 'pm' && hours !== 12) hours += 12;
+                if (meridiem === 'am' && hours === 12) hours = 0;
+            }
+
+            return { hours, minutes };
+        }
+
+        return null;
+    }
+}
+
 class LocalAssistant {
     constructor(db = null) {
         this.sessionMemory = [];
@@ -1999,20 +2218,20 @@ class LocalAssistant {
     }
 
     extractTimeDuration(message) {
-        // Extract time duration in milliseconds from messages
+        // Extract time duration in SECONDS from messages (for native timer apps)
         const msg = message.toLowerCase();
 
         // Parse minutes
         const minMatch = msg.match(/(\d+)\s*min/);
-        if (minMatch) return parseInt(minMatch[1]) * 60 * 1000;
+        if (minMatch) return parseInt(minMatch[1]) * 60;
 
         // Parse seconds
         const secMatch = msg.match(/(\d+)\s*sec/);
-        if (secMatch) return parseInt(secMatch[1]) * 1000;
+        if (secMatch) return parseInt(secMatch[1]);
 
         // Parse hours
         const hourMatch = msg.match(/(\d+)\s*hour/);
-        if (hourMatch) return parseInt(hourMatch[1]) * 60 * 60 * 1000;
+        if (hourMatch) return parseInt(hourMatch[1]) * 60 * 60;
 
         return null;
     }
