@@ -331,11 +331,21 @@ button:hover {
     z-index: 9999;
     display: none;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     text-align: center;
     padding: 20px 20px 40px 20px;
     overflow-y: auto;
     min-height: 100vh;
+}
+
+#onboarding-wizard #step-1.active {
+    justify-content: center;
+    min-height: 100vh;
+}
+
+#onboarding-wizard .step:not(#step-1).active {
+    align-items: flex-start;
+    padding-top: 40px;
 }
 
 #onboarding-wizard {
