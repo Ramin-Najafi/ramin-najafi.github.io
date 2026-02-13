@@ -2603,6 +2603,11 @@ class LocalAssistant {
     }
 
     async chat(message) {
+        // Handle initial greeting marker — don't process as normal message
+        if (message === '[INITIAL_GREETING]') {
+            return this.pick('greeting');
+        }
+
         const intent = this.detectIntent(message);
         const mood = this.detectMood(message);
         const name = this.extractName(message);
