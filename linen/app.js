@@ -1635,6 +1635,25 @@ class LocalAssistant {
                 "Fair enough. Let me try again — what's on your mind?",
                 "Sorry about that. Tell me what you need and I'll do my best.",
             ],
+            timerSet: [
+                "I've set a timer for you. Let me know when you need another one.",
+                "Timer set! I'll help keep you on track.",
+                "Got it — timer is running. Just let me know if you need anything else.",
+                "Timer started. You've got this!",
+            ],
+            alarmSet: [
+                "Alarm set for you. I'll remind you when it's time.",
+                "Got it — alarm is ready to go.",
+                "Alarm set! I'll make sure you wake up on time.",
+                "Perfect, your alarm is all set.",
+            ],
+            noteAdded: [
+                "Got it — I've written that down for you.",
+                "Note saved! That's something important to remember.",
+                "Added to your notes. I've got you covered.",
+                "Noted! I'll keep that in mind for you.",
+                "That's saved in your memories now.",
+            ],
         };
     }
 
@@ -1659,6 +1678,16 @@ class LocalAssistant {
     detectIntent(message) {
         const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
         const words = msg.split(/\s+/);
+
+        // Utility function detection — timers, alarms, notes
+        const timerKeywords = ['set timer', 'set a timer', 'timer for', 'remind me in', 'in the', 'in an', 'minutes', 'seconds', 'hours'];
+        if ((msg.includes('set timer') || msg.includes('set a timer') || msg.includes('timer for')) && this.extractTime(message)) return 'timerSet';
+
+        const alarmKeywords = ['set alarm', 'set a alarm', 'wake me up', 'alarm for', 'alarm at'];
+        if ((msg.includes('set alarm') || msg.includes('set a alarm') || msg.includes('wake me up') || msg.includes('alarm for') || msg.includes('alarm at')) && this.extractTime(message)) return 'alarmSet';
+
+        const noteKeywords = ['write this down', 'take note', 'note that', 'remember this', 'dont forget', 'note to self', 'save this', 'remember to', 'note:'];
+        if (noteKeywords.some(k => msg.includes(k))) return 'noteAdded';
 
         // Identity question detection (who/what are you, purpose)
         const identityKeywords = ['who are you', 'what are you', 'what is linen', "what's your purpose", 'whats your purpose', 'what do you do', 'what is your purpose', 'introduce yourself', 'tell me about you'];
@@ -1744,6 +1773,25 @@ class LocalAssistant {
         return null;
     }
 
+    extractTime(message) {
+        // Extract time from messages like "set timer for 5 minutes" or "wake me up at 8am"
+        const msg = message.toLowerCase();
+
+        // Look for time patterns like "5 minutes", "30 seconds", "2 hours", "8am", "3:30pm"
+        const timePatterns = [
+            /(\d+)\s*(minutes?|mins?|min)/i,
+            /(\d+)\s*(seconds?|secs?|sec)/i,
+            /(\d+)\s*(hours?|hrs?|hr)/i,
+            /(\d{1,2}):(\d{2})\s*(am|pm)?/i,
+            /(\d{1,2})\s*(am|pm)/i
+        ];
+
+        for (const pattern of timePatterns) {
+            if (pattern.test(msg)) return true;
+        }
+        return false;
+    }
+
     async chat(message) {
         const intent = this.detectIntent(message);
         const mood = this.detectMood(message);
@@ -1760,6 +1808,16 @@ class LocalAssistant {
         // First message — always greet
         if (userMsgCount === 1) {
             response = this.pick('greeting');
+        }
+        // Utility functions — timers, alarms, notes
+        else if (intent === 'timerSet') {
+            response = this.pick('timerSet');
+        }
+        else if (intent === 'alarmSet') {
+            response = this.pick('alarmSet');
+        }
+        else if (intent === 'noteAdded') {
+            response = this.pick('noteAdded');
         }
         // Identity question — always answer with identity info
         else if (intent === 'identity') {
