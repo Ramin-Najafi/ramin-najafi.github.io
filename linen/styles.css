@@ -333,8 +333,9 @@ button:hover {
     justify-content: center;
     align-items: flex-start;
     text-align: center;
-    padding: 20px;
+    padding: 20px 20px 40px 20px;
     overflow-y: auto;
+    min-height: 100vh;
 }
 
 #onboarding-wizard {
@@ -382,7 +383,11 @@ button:hover {
 @media (max-width: 480px) {
     #onboarding-wizard .step {
         gap: 15px;
-        padding: 15px 0;
+        padding: 30px 0 20px 0;
+    }
+
+    #onboarding-overlay {
+        padding: 15px 15px 60px 15px;
     }
 }
 
