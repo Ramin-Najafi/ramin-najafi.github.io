@@ -549,7 +549,13 @@ class OpenAIAssistant {
             }
             return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
         } catch (e) {
-            console.error("OpenAI key validation failed:", e);
+            console.error("OpenAI key validation failed (likely CORS issue):", e);
+            // CORS error - OpenAI blocks direct browser requests
+            // Accept the key and let first chat attempt verify it
+            if (e.message.includes('cors') || e.name === 'TypeError') {
+                console.log("Linen: CORS detected, accepting OpenAI key for now - will validate on first use");
+                return { valid: true };
+            }
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
@@ -692,7 +698,13 @@ class ClaudeAssistant {
             }
             return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
         } catch (e) {
-            console.error("Claude key validation failed:", e);
+            console.error("Claude key validation failed (likely CORS issue):", e);
+            // CORS error - Some APIs block direct browser requests
+            // Accept the key and let first chat attempt verify it
+            if (e.message.includes('cors') || e.name === 'TypeError') {
+                console.log("Linen: CORS detected, accepting Claude key for now - will validate on first use");
+                return { valid: true };
+            }
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
@@ -830,7 +842,13 @@ class DeepSeekAssistant {
             }
             return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
         } catch (e) {
-            console.error("DeepSeek key validation failed:", e);
+            console.error("DeepSeek key validation failed (likely CORS issue):", e);
+            // CORS error - Some APIs block direct browser requests
+            // Accept the key and let first chat attempt verify it
+            if (e.message.includes('cors') || e.name === 'TypeError') {
+                console.log("Linen: CORS detected, accepting DeepSeek key for now - will validate on first use");
+                return { valid: true };
+            }
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
@@ -968,7 +986,13 @@ class OpenRouterAssistant {
             }
             return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
         } catch (e) {
-            console.error("OpenRouter key validation failed:", e);
+            console.error("OpenRouter key validation failed (likely CORS issue):", e);
+            // CORS error - Some APIs block direct browser requests
+            // Accept the key and let first chat attempt verify it
+            if (e.message.includes('cors') || e.name === 'TypeError') {
+                console.log("Linen: CORS detected, accepting OpenRouter key for now - will validate on first use");
+                return { valid: true };
+            }
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
