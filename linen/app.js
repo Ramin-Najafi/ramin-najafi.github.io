@@ -3954,7 +3954,7 @@ class Linen {
         this.assistant = new LocalAssistant(this.db);
         this.isLocalMode = true;
         this.startApp(null);
-        this.sendChat('[INITIAL_GREETING]');
+        // Note: startApp() already sends the initial greeting, so don't send it again here
     }
 
     showNamePrompt() {
