@@ -4483,6 +4483,8 @@ class Linen {
                 e.stopPropagation();
                 const provider = btn.dataset.provider;
                 console.log("Linen: Provider button clicked:", provider);
+                // CRITICAL: Store the selected provider so it's used during validation
+                this.onboardingProvider = provider;
                 this.setupProviderForm(provider);
                 // Remove active from all, add to clicked
                 providerButtons.forEach(b => b.classList.remove('selected'));
