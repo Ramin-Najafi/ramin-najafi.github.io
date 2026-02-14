@@ -5391,7 +5391,7 @@ class Linen {
 
             // Save as agent in new system
             const providerNames = {
-                'gemini': 'Gemini', 'openai': 'ChatGPT', 'claude': 'Claude',
+                'gemini': 'Gemini', 'openai': 'ChatGPT', 'huggingface': 'Hugging Face',
                 'openrouter': 'OpenRouter'
             };
             const agentConfig = {
@@ -5438,8 +5438,8 @@ class Linen {
                 errorMsg += ' Make sure you created the key at https://aistudio.google.com/app/apikey';
             } else if (provider === 'openai') {
                 errorMsg += ' Make sure you created the key at https://platform.openai.com/api/keys';
-            } else if (provider === 'claude') {
-                errorMsg += ' Make sure you created the key at https://console.anthropic.com/';
+            } else if (provider === 'huggingface') {
+                errorMsg += ' Make sure you created the token at https://huggingface.co/settings/tokens';
             } else if (provider === 'openrouter') {
                 errorMsg += ' Make sure you created the key at https://openrouter.ai/keys';
             }
@@ -5566,7 +5566,7 @@ class Linen {
         // Auto-generate name if not provided
         if (!name) {
             const providerNames = {
-                'gemini': 'Gemini', 'openai': 'ChatGPT', 'claude': 'Claude',
+                'gemini': 'Gemini', 'openai': 'ChatGPT', 'huggingface': 'Hugging Face',
                 'openrouter': 'OpenRouter'
             };
             name = `${providerNames[type] || 'API'} Key`;
@@ -5595,8 +5595,8 @@ class Linen {
                 case 'openai':
                     tempAssistant = new OpenAIAssistant(apiKey, resolvedModel);
                     break;
-                case 'claude':
-                    tempAssistant = new ClaudeAssistant(apiKey, resolvedModel);
+                case 'huggingface':
+                    tempAssistant = new HuggingFaceAssistant(apiKey, resolvedModel);
                     break;
                 case 'openrouter':
                     tempAssistant = new OpenRouterAssistant(apiKey, resolvedModel);
@@ -5859,7 +5859,7 @@ class Linen {
         const models = {
             'gemini': 'gemini-2.0-flash',
             'openai': 'gpt-4',
-            'claude': 'claude-3-opus-20240229',
+            'huggingface': 'meta-llama/Llama-2-7b-chat-hf',
             'openrouter': 'openrouter/auto'
         };
         return models[providerType] || 'default';
@@ -5867,9 +5867,9 @@ class Linen {
 
     getProviderLabel(providerType) {
         const labels = {
-            'gemini': '🔵 Google Gemini',
-            'openai': '🟢 OpenAI',
-            'claude': '🔴 Anthropic Claude',
+            'gemini': '🟢 Google Gemini',
+            'openai': '⚪ OpenAI',
+            'huggingface': '🔴 Hugging Face',
             'openrouter': '🟣 OpenRouter'
         };
         return labels[providerType] || providerType;
@@ -5879,7 +5879,7 @@ class Linen {
         if (!apiKey || apiKey.length < 5) return null;
         const key = apiKey.trim();
 
-        if (key.startsWith('sk-ant-')) return 'claude';
+        if (key.startsWith('hf_')) return 'huggingface';
         if (key.startsWith('sk-or-')) return 'openrouter';
         if (key.startsWith('sk-')) {
             // Default to OpenAI for sk- keys
