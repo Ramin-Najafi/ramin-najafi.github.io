@@ -504,10 +504,18 @@ button:hover {
 /* AI Provider Grid Styles */
 .ai-provider-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 15px;
     margin: 20px 0;
     width: 100%;
+}
+
+@media (max-width: 768px) {
+    .ai-provider-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 15px 0;
+    }
 }
 
 @media (max-width: 480px) {
