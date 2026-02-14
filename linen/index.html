@@ -47,14 +47,6 @@
                     </button>
                     <a href="https://platform.openai.com/api/keys" target="_blank" class="get-api-key-btn">Get API Key</a>
                 </div>
-                <div class="ai-provider-card">
-                    <button type="button" class="ai-provider-btn" data-provider="claude" id="provider-claude">
-                        <span class="provider-icon">🔴</span>
-                        <span class="provider-name">Claude</span>
-                        <span class="provider-info">Claude Pro / API</span>
-                    </button>
-                    <a href="https://platform.claude.com/login?returnTo=%2F%3F" target="_blank" class="get-api-key-btn">Get API Key</a>
-                </div>
             </div>
             <div id="provider-setup">
                 <!-- Provider-specific setup will be shown here -->
@@ -130,7 +122,6 @@
             <div class="provider-badges">
                 <span class="badge">🟢 Gemini</span>
                 <span class="badge">⚪ ChatGPT</span>
-                <span class="badge">🔴 Claude</span>
             </div>
         </div>
 
@@ -205,7 +196,7 @@
                     <p>All your data is stored locally using IndexedDB—a secure, persistent database that lives on your device. Your conversations and memories never leave your computer or phone unless you explicitly choose to connect an API provider. We don't have access to your data. We can't read it. We don't want it.</p>
 
                     <h4 style="margin-top: 1rem; color: var(--accent);">🎮 You Control Everything</h4>
-                    <p>Optional API key integration means you choose which AI provider powers your experience. Supported providers: Google Gemini (free tier available), OpenAI ChatGPT, and Anthropic Claude. Switch between providers anytime. Use multiple providers and pick your favorite. You're in control.</p>
+                    <p>Optional API key integration means you choose which AI provider powers your experience. Supported providers: Google Gemini (free tier available) and OpenAI ChatGPT. Switch between providers anytime. Use multiple providers and pick your favorite. You're in control.</p>
 
                     <h4 style="margin-top: 1rem; color: var(--accent);">🌐 Works Offline</h4>
                     <p>Full functionality without internet connection. Linen includes a built-in Local Assistant that provides intelligent responses completely offline. A Service Worker handles smart caching, so you can access your memories even without internet. No internet? No problem.</p>
@@ -327,7 +318,7 @@
     <h2>Add New Agent</h2>
     <div class="form-group">
         <label for="agent-name">Agent Name:</label>
-        <input type="text" id="agent-name" placeholder="e.g., My Claude, ChatGPT Pro">
+        <input type="text" id="agent-name" placeholder="e.g., My Gemini, ChatGPT Pro">
         <span class="form-help">Give your agent a nickname to remember it</span>
         <span class="form-field-error" id="agent-name-error"></span>
     </div>
@@ -337,7 +328,6 @@
             <option value="">Select a provider</option>
             <option value="gemini">Google Gemini</option>
             <option value="openai">OpenAI (ChatGPT)</option>
-            <option value="claude">Anthropic Claude</option>
             <option value="openrouter">OpenRouter</option>
         </select>
         <span class="form-help">Choose your preferred AI provider</span>
@@ -687,7 +677,7 @@
 
         <h3>Your API Keys</h3>
         <ul>
-            <li>Your ChatGPT, Claude, Gemini keys stay on YOUR device</li>
+            <li>Your ChatGPT and Gemini keys stay on YOUR device</li>
             <li>Linen cannot access them</li>
             <li>Only used locally by Linen</li>
             <li>Delete them anytime, they're gone forever</li>
@@ -702,7 +692,7 @@
 
         <h3>Third Parties</h3>
         <ul>
-            <li>If you choose to use external AI providers (ChatGPT, Claude, Gemini), they receive only what you send them</li>
+            <li>If you choose to use external AI providers (ChatGPT, Gemini), they receive only what you send them</li>
             <li>Read their privacy policies to understand their practices</li>
             <li>Linen has no access to your API usage or data sent to them</li>
         </ul>

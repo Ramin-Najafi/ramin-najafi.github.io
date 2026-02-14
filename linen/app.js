@@ -219,7 +219,7 @@ class AgentManager {
         const agent = {
             id: Date.now(),
             name: agentConfig.name,
-            type: agentConfig.type, // 'gemini', 'openai', 'claude', 'openrouter'
+            type: agentConfig.type, // 'gemini', 'openai', 'openrouter'
             apiKey: agentConfig.apiKey,
             model: agentConfig.model,
             isPrimary: agentConfig.isPrimary || false,
@@ -287,7 +287,6 @@ class ModelVersionManager {
         this.modelVersions = {
             'gemini': { primary: 'gemini-2.5-flash', fallback: 'gemini-2.0-flash-lite', lastUpdated: Date.now() },
             'openai': { primary: 'gpt-4-turbo', fallback: 'gpt-3.5-turbo', lastUpdated: Date.now() },
-            'claude': { primary: 'claude-3-5-sonnet-20241022', fallback: 'claude-3-opus-20240229', lastUpdated: Date.now() },
             'openrouter': { primary: 'openrouter/auto', fallback: 'openrouter/auto', lastUpdated: Date.now() }
         };
         this.checkInterval = 24 * 60 * 60 * 1000; // Check once per day
@@ -677,161 +676,9 @@ Core Directives:
     }
 }
 
-class ClaudeAssistant {
-    constructor(apiKey, model = 'claude-3-5-sonnet-20241022') {
-        this.apiKey = apiKey;
-        this.model = model;
-        this.endpoint = 'https://api.anthropic.com/v1/messages';
-    }
-
-    async validateKey() {
-        console.log("Validating Claude key...");
-        try {
-            const res = await fetch(this.endpoint, {
-                method: 'POST',
-                headers: {
-                    'x-api-key': this.apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: this.model,
-                    max_tokens: 100,
-                    messages: [{ role: 'user', content: 'Hi' }]
-                })
-            });
-            if (res.ok) return { valid: true };
-
-            const err = await res.json().catch(() => ({}));
-            if (res.status === 401) {
-                return { valid: false, error: 'Invalid API key. Please check and try again.' };
-            }
-            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
-        } catch (e) {
-            console.error("Claude key validation failed:", e);
-            console.error("Error name:", e.name);
-            console.error("Error message:", e.message);
-            console.error("Error type:", e.constructor.name);
-
-            // CORS error - Some APIs block direct browser requests
-            // Accept the key and let first chat attempt verify it
-            const isCorsError = e.message.includes('cors') ||
-                               e.name === 'TypeError' ||
-                               e instanceof TypeError ||
-                               e.message.includes('Failed to fetch') ||
-                               e.message.includes('NetworkError');
-
-            if (isCorsError) {
-                console.log("Linen: CORS/Network error detected, accepting Claude key - will validate on first use");
-                return { valid: true };
-            }
-            return { valid: false, error: 'Network error. Check your internet connection.' };
-        }
-    }
-
-    async chat(msg, chats, mems, loadingId) {
-        if (!this.apiKey) throw new Error('API key not configured.');
-
-        const memoryContext = this.buildMemoryContext(mems);
-        const conversationContext = this.buildConversationContext(chats);
-        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
-
-**About Linen:**
-Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
-
-If the user asks "who are you?", "what's your purpose?", "what do you do?", or about your identity/purpose, respond naturally as yourself: You are Linen, a smart personal assistant designed to listen, remember important details about the user's life, and be their conversational companion. Emphasize key benefits like privacy (your data stays on your device, not sent to external servers), security (offline-capable, no cloud storage), and personal interactions (I remember your history and grow with you). Keep your response warm and personal, something like: "I'm Linen, your personal smart assistant. I'm here to listen, help you work through what's on your mind, and remember the important details about your life. What makes me different is that I prioritize your privacy — all your data stays on your device, so you can trust me with your thoughts and memories. Think of me as a friend with a perfect memory. What's going on?"
-
-If the user asks why they should choose Linen over ChatGPT, other AI services, or similar comparisons, respond: "Great question. While ChatGPT and other AI services are powerful, Linen is built specifically for personal growth and privacy. Here's what sets me apart: 1) Privacy First — all your data stays on your device, never sent to external servers. 2) Personal Memory — I remember details about your life and reference them naturally in conversations. 3) Offline Capable — you can use me without constant internet. 4) No Corporate Data Mining — your conversations aren't used to train models or sell data. 5) Designed for You — I'm built to be a thoughtful companion, not just answer questions. I'm here to help you work through what's really on your mind."
-
-If the user asks who created you, who your creator is, who built you, who's your father, or anything about who made you, respond: "I was built by Ramin Najafi. You can find more information about my creator at ramin-najafi.github.io"
-
-Core Directives:
-1.  **Be a Proactive Companion:** Greet the user warmly. If it's the very first message ever ([INITIAL_GREETING]), introduce yourself warmly like a new friend: "Hey there! I'm Linen — think of me as a friend with a perfect memory. Tell me about your day, what's on your mind, or anything you want to remember. I'm all ears." Otherwise, if it's a new day, ask about their day and reference a recent memory if one exists. Use actual emoji characters in your conversational responses when appropriate.
-2.  **Seamlessly Recall Memories:** Reference past memories naturally to show you remember. For example, 'How is project X going? I remember you were feeling stressed about it last week.'
-3.  **Identify and Save Memories:** Your most important job is to identify when a user shares something meaningful that should be remembered. This includes events, feelings, decisions, people, plans, likes/dislikes, or personal details.
-3b. **Intelligent Reminder & Calendar Detection:** When the user mentions upcoming events, deadlines, appointments, or time-sensitive tasks, automatically detect and create reminders without prompting. Extract context clues about dates, times, locations, and event details from the conversation. Look for keywords like "appointment", "deadline", "meeting", "event", "birthday", "anniversary", "trip", "flight", "important", "don't forget", "this weekend", "next week", etc. You must be smart about inferring dates (e.g., "next Monday" = the upcoming Monday, "birthday" = annually on that date). Do NOT ask the user to confirm—set it and let Linen handle the reminders intelligently.
-4.  **STRICT SAVE_MEMORY Marker Format:** When you identify a memory, you MUST conclude your conversational response with a single, perfectly formatted [SAVE_MEMORY: ...] marker on a new line. The entire marker, including brackets and valid JSON, MUST be the very last thing in your response. Do NOT add any text or characters after the closing bracket.
-    The JSON inside MUST contain:
-    - "title": A short, meaningful title (2-4 words) based on the memory's core topic or event (e.g., "New Pottery Project", "Work Frustration", "Birthday Celebration").
-    - "text": A concise summary of what to remember.
-    - "tags": An array of relevant keywords (e.g., ["work", "project", "feeling"]).
-    - "emotion": A single word describing the user's feeling (e.g., 'happy', 'stressed', 'excited').
-    Example: Your response text.
-    [SAVE_MEMORY: { "title": "New Pottery Project", "text": "User is starting a new personal project to learn pottery.", "tags": ["pottery", "hobbies", "learning"], "emotion": "excited" }]
-5.  **STRICT CREATE_REMINDER Marker Format:** When you detect a time-sensitive event that needs a reminder, add a [CREATE_REMINDER: ...] marker on a new line after your conversational response. You can include multiple reminders if needed. The marker must contain valid JSON with:
-    - "title": The event name (e.g., "Dentist Appointment", "Flight to NYC", "Project Deadline").
-    - "date": ISO 8601 date string (e.g., "2024-02-15" or "2024-02-15T14:30:00Z"). Intelligently infer if only partial date info is given.
-    - "description": Brief details about the event (location, what to prepare, context, etc.).
-    - "type": Either "reminder" or "event".
-    Example: User mentions "I have a doctor's appointment next Tuesday at 2pm downtown."
-    That sounds important! Make sure you have your insurance card ready. See you then!
-    [CREATE_REMINDER: { "title": "Doctor's Appointment", "date": "2024-02-20T14:00:00Z", "description": "Doctor's appointment downtown at 2pm. Bring insurance card.", "type": "reminder" }]
-6.  **Do NOT confirm reminders/events in the chat.** The app will handle creation silently.
-7.  **Handle Memory Queries:** If the user asks 'what do you remember about X', search the provided memory context and synthesize an answer. Do not use the SAVE_MEMORY marker for this.
-8.  **Offer Support:** If you detect distress, offer gentle support. If the user mentions a crisis, refer them to a crisis line.
-9.  **Tone:** Be warm, genuine, concise, and match the user's tone.`;
-
-        try {
-            const res = await fetch(this.endpoint, {
-                method: 'POST',
-                headers: {
-                    'x-api-key': this.apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: this.model,
-                    max_tokens: 2048,
-                    system: systemPrompt,
-                    messages: [
-                        ...conversationContext,
-                        { role: 'user', content: `${memoryContext}\n\nUser: ${msg}` }
-                    ]
-                })
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                const error = new Error(errorData.error?.message || 'API request failed');
-                error.status = res.status;
-                throw error;
-            }
-
-            const data = await res.json();
-            const reply = data.content?.[0]?.text;
-            if (!reply) throw new Error('No response from assistant');
-            return reply;
-        } catch (e) {
-            document.getElementById(loadingId)?.remove();
-            throw e;
-        }
-    }
-
-    buildMemoryContext(mems) {
-        if (!mems || mems.length === 0) return 'No memories yet.';
-        let c = 'Relevant memories for context:\n';
-        mems.slice(0, 25).forEach(m => {
-            const d = new Date(m.date).toLocaleDateString();
-            c += `- ${d}: ${m.text}${m.emotion ? ` (felt ${m.emotion})` : ''}${m.tags?.length ? ` [${m.tags.join(',')}]` : ''}\n`;
-        });
-        return c;
-    }
-
-    buildConversationContext(chats) {
-        if (!chats || chats.length === 0) return [];
-        return chats.slice(-10).map(m => ({
-            role: m.sender === 'user' ? 'user' : 'assistant',
-            content: m.text
-        }));
-    }
-
-    detectCrisis(userMessage) {
-        const msg = userMessage.toLowerCase();
-        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
-        return crisisKeywords.some(keyword => msg.includes(keyword));
-    }
 }
 
+// Claude removed due to paid-only pricing with no free tier (Feb 2026)
 // DeepSeek removed due to undisclosed payment requirements (Feb 2026)
 
 class OpenRouterAssistant {
@@ -3473,8 +3320,6 @@ class Linen {
         switch (agent.type) {
             case 'openai':
                 return new OpenAIAssistant(agent.apiKey, model);
-            case 'claude':
-                return new ClaudeAssistant(agent.apiKey, model);
             case 'openrouter':
                 return new OpenRouterAssistant(agent.apiKey, model);
             case 'gemini':
