@@ -5,7 +5,7 @@
  * See LICENSE file for details.
  */
 
-const CACHE_NAME = 'linen-v118'; // Increment this on every update
+const CACHE_NAME = 'linen-v119'; // Increment this on every update
 const BASE_PATH = '/linen';
 const urlsToCache = [
     `${BASE_PATH}/`,
@@ -15,7 +15,8 @@ const urlsToCache = [
     `${BASE_PATH}/manifest.json`,
     `${BASE_PATH}/logo.png`,
     `${BASE_PATH}/icon-192.png`,
-    `${BASE_PATH}/icon-512.png`
+    `${BASE_PATH}/icon-512.png`,
+    `${BASE_PATH}/version.txt`
 ];
 
 self.addEventListener('install', e => {

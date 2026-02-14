@@ -3672,6 +3672,70 @@ class Linen {
             }
         };
 
+        // Smart reload: Check for app code updates and silently reload if new version available
+        const checkForCodeUpdate = async () => {
+            try {
+                const response = await fetch('/linen/version.txt?t=' + Date.now(), { cache: 'no-store' });
+                if (!response.ok) return;
+
+                const newVersion = (await response.text()).trim();
+                const currentVersion = sessionStorage.getItem('linen-app-version') || '1.5.0';
+
+                if (newVersion !== currentVersion) {
+                    console.log(`Linen: New version available (${currentVersion} → ${newVersion}). Initiating smart reload...`);
+                    sessionStorage.setItem('linen-app-version', newVersion);
+
+                    // Save current state before reload
+                    const currentConversationId = sessionStorage.getItem('current-conversation-id');
+                    const scrollPosition = window.scrollY;
+
+                    // Store reload metadata
+                    sessionStorage.setItem('linen-smart-reload', JSON.stringify({
+                        conversationId: currentConversationId,
+                        scrollPosition: scrollPosition,
+                        timestamp: Date.now()
+                    }));
+
+                    console.log("Linen: Reloading app with new version...");
+                    // Reload silently - will restore state on next load
+                    location.reload();
+                }
+            } catch (err) {
+                console.warn("Linen: Error checking for code updates:", err);
+            }
+        };
+
+        // Restore state after smart reload
+        const handleSmartReloadRestore = () => {
+            try {
+                const reloadData = sessionStorage.getItem('linen-smart-reload');
+                if (reloadData) {
+                    const data = JSON.parse(reloadData);
+                    console.log("Linen: Smart reload detected, restoring previous state...");
+
+                    // Clear the reload metadata
+                    sessionStorage.removeItem('linen-smart-reload');
+
+                    // Restore conversation if it existed
+                    if (data.conversationId) {
+                        sessionStorage.setItem('current-conversation-id', data.conversationId);
+                    }
+
+                    // Restore scroll position after DOM is ready
+                    setTimeout(() => {
+                        if (data.scrollPosition > 0) {
+                            window.scrollTo(0, data.scrollPosition);
+                        }
+                    }, 500);
+
+                    this.showToast('Linen updated to the latest version!', 'success');
+                    console.log("Linen: State restored after smart reload");
+                }
+            } catch (err) {
+                console.warn("Linen: Error restoring smart reload state:", err);
+            }
+        };
+
         // Calculate check interval based on power and connection
         const getCheckInterval = () => {
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -3707,16 +3771,30 @@ class Linen {
             }
         };
 
+        // Handle smart reload restoration
+        handleSmartReloadRestore.call(this);
+
+        // Set initial version
+        const currentVersion = sessionStorage.getItem('linen-app-version');
+        if (!currentVersion) {
+            fetch('/linen/version.txt?t=' + Date.now(), { cache: 'no-store' })
+                .then(r => r.text())
+                .then(v => sessionStorage.setItem('linen-app-version', v.trim()))
+                .catch(() => {});
+        }
+
         // Initial check after app loads
         setTimeout(() => {
             checkForServiceWorkerUpdate();
+            checkForCodeUpdate.call(this);
         }, 3000);
 
         // Set up periodic checks
         let checkInterval = getCheckInterval();
         let updateCheckTimeout = setInterval(() => {
             checkForServiceWorkerUpdate();
-        }, checkInterval);
+            checkForCodeUpdate.call(this);
+        }, Math.min(checkInterval, 20000)); // Check for code updates at least every 20 seconds
 
         // Listen for connection changes and reschedule if needed
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
