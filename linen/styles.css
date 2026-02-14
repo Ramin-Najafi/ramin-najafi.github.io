@@ -2183,10 +2183,18 @@ body.keyboard-nav [tabindex]:focus {
 #utilities-modal {
     max-width: 600px;
     width: 90%;
-    max-height: 85vh;
     display: flex;
     flex-direction: column;
     padding: 0;
+    top: 105px !important;
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.9) !important;
+    max-height: calc(100vh - 110px);
+    border-radius: 8px;
+}
+
+#utilities-modal.active {
+    transform: translateX(-50%) scale(1) !important;
 }
 
 .utilities-header {
