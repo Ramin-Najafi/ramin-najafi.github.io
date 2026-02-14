@@ -2241,15 +2241,76 @@ class LocalAssistant {
     }
 
     // Pick a random response that hasn't been used recently
-    pick(category) {
+    // Detect appropriate response length based on user message context
+    detectResponseLength(message) {
+        if (!message) return 'medium';
+
+        const words = message.trim().split(/\s+/).length;
+        const chars = message.length;
+
+        // Very short user messages (1-3 words) = short response
+        if (words <= 3) return 'short';
+
+        // Short user messages (4-8 words) = medium response
+        if (words <= 8) return 'medium';
+
+        // Medium-long messages (9-20 words) = medium-long response
+        if (words <= 20) return 'mediumLong';
+
+        // Long user messages (20+ words) = longer response is appropriate
+        return 'long';
+    }
+
+    // Filter responses by length to match user message length
+    filterResponsesByLength(responses, lengthCategory) {
+        if (!lengthCategory || lengthCategory === 'medium') return responses;
+
+        return responses.filter(r => {
+            const responseWords = (r || '').split(/\s+/).length;
+
+            switch (lengthCategory) {
+                case 'short':
+                    // Prefer responses under 10 words
+                    return responseWords <= 10;
+                case 'mediumLong':
+                    // Prefer responses 10-25 words
+                    return responseWords >= 8 && responseWords <= 25;
+                case 'long':
+                    // Allow longer responses for detailed user messages
+                    return responseWords >= 15;
+                default:
+                    return true;
+            }
+        });
+    }
+
+    pick(category, messageContext = null) {
         const pool = this.responses[category];
         if (!pool || pool.length === 0) return '';
+
+        // Smart length detection based on user message
+        let lengthCategory = 'medium';
+        if (messageContext) {
+            lengthCategory = this.detectResponseLength(messageContext);
+        }
+
         // Filter out recently used
-        const available = pool.filter(r => !this.usedResponses.has(r));
-        // If all used, reset for this category
-        const choices = available.length > 0 ? available : pool;
+        let available = pool.filter(r => !this.usedResponses.has(r));
+
+        // Apply length filtering to match user message
+        let lengthFiltered = this.filterResponsesByLength(available, lengthCategory);
+
+        // If length filtering narrows it too much, be more lenient
+        if (lengthFiltered.length < 3) {
+            lengthFiltered = this.filterResponsesByLength(available, 'medium');
+        }
+
+        // Final fallback to any available response
+        const choices = lengthFiltered.length > 0 ? lengthFiltered : available.length > 0 ? available : pool;
+
         const response = choices[Math.floor(Math.random() * choices.length)];
         this.usedResponses.add(response);
+
         // Keep used set from growing forever — clear if > 30
         if (this.usedResponses.size > 30) {
             this.usedResponses.clear();
@@ -2582,17 +2643,17 @@ class LocalAssistant {
 
         if (onlyShortResponses && intent === 'engaged') {
             // Switch to asking more specific questions instead of generic "keep going"
-            return this.pick('question') || this.pick('engaged');
+            return this.pick('question', message) || this.pick('engaged', message);
         }
 
         // First message — always greet (only once)
         if (!this.hasGreeted && userMsgCount === 1) {
-            response = this.pick('greeting');
+            response = this.pick('greeting', message);
             this.hasGreeted = true;
         }
         // Utility functions — timers, alarms, notes
         else if (intent === 'timerSet') {
-            response = this.pick('timerSet');
+            response = this.pick('timerSet', message);
             // Call native timer via UtilityManager
             if (this.utilityManager) {
                 const durationMs = this.extractTimeDuration(message);
@@ -2602,14 +2663,14 @@ class LocalAssistant {
             }
         }
         else if (intent === 'alarmSet') {
-            response = this.pick('alarmSet');
+            response = this.pick('alarmSet', message);
             // Call native alarm via UtilityManager
             if (this.utilityManager) {
                 this.utilityManager.setAlarm(message, 'Linen Alarm');
             }
         }
         else if (intent === 'noteAdded') {
-            response = this.pick('noteAdded');
+            response = this.pick('noteAdded', message);
             // Extract note content and save to device
             if (this.utilityManager) {
                 const noteContent = this.extractNoteContent(message);
@@ -2620,28 +2681,28 @@ class LocalAssistant {
         }
         // Identity question — always answer with identity info
         else if (intent === 'identity') {
-            response = this.pick('identity');
+            response = this.pick('identity', message);
         }
         // Creator question — always answer with creator info
         else if (intent === 'creator') {
-            response = this.pick('creator');
+            response = this.pick('creator', message);
         }
         // Priority intents — out-of-scope, frustration, distress, and referencing back
         else if (intent === 'outOfScope') {
-            response = this.pick('outOfScope');
+            response = this.pick('outOfScope', message);
         }
         else if (intent === 'frustrated') {
-            response = this.pick('frustrated');
+            response = this.pick('frustrated', message);
         }
         else if (intent === 'distressed') {
-            response = this.pick('distressed');
+            response = this.pick('distressed', message);
         }
         else if (intent === 'referenceBack') {
             // Find what the user might be referring to and acknowledge it
             const relevantMsg = this.findRelevantPreviousMessage();
             if (relevantMsg) {
                 // Enhance response with specific context acknowledgment
-                const baseResponse = this.pick('referenceBack');
+                const baseResponse = this.pick('referenceBack', message);
                 // Add a brief reference to what they said
                 if (relevantMsg.length > 50) {
                     response = baseResponse.replace(/\?$/, ` You said: "${relevantMsg.substring(0, 60)}..."`);
@@ -2649,16 +2710,16 @@ class LocalAssistant {
                     response = baseResponse.replace(/\?$/, ` You were talking about: "${relevantMsg}"`);
                 }
             } else {
-                response = this.pick('referenceBack');
+                response = this.pick('referenceBack', message);
             }
         }
         // Positive mood takes priority — acknowledge and celebrate
         else if (mood === 'positive') {
-            response = this.pick('positive');
+            response = this.pick('positive', message);
         }
         // All other intents — use the matching category
         else {
-            response = this.pick(intent);
+            response = this.pick(intent, message);
         }
 
         // Personalize with name occasionally
