@@ -5499,7 +5499,9 @@ class Linen {
         console.log("Linen: Validating API key...");
 
         // Auto-detect provider or use onboarding's selected provider
-        const provider = this.detectProvider(key) || this.onboardingProvider || 'gemini';
+        const detectedProvider = this.detectProvider(key);
+        const provider = detectedProvider || this.onboardingProvider || 'gemini';
+        console.log(`Linen: Provider detected: ${detectedProvider}, onboarding provider: ${this.onboardingProvider}, final provider: ${provider}`);
         let tempAssistant;
 
         switch (provider) {
@@ -5553,8 +5555,23 @@ class Linen {
 
             onSuccess();
         } else {
-            console.error(`Linen: API key validation failed: ${result.error}`);
-            errorEl.textContent = `Key validation failed: ${result.error}`;
+            console.error(`Linen: API key validation failed for ${provider}: ${result.error}`);
+
+            // Provide provider-specific error message
+            let errorMsg = result.error;
+            if (provider === 'gemini') {
+                errorMsg += ' Make sure you created the key at https://aistudio.google.com/app/apikey';
+            } else if (provider === 'openai') {
+                errorMsg += ' Make sure you created the key at https://platform.openai.com/api/keys';
+            } else if (provider === 'claude') {
+                errorMsg += ' Make sure you created the key at https://console.anthropic.com/';
+            } else if (provider === 'deepseek') {
+                errorMsg += ' Make sure you created the key at https://platform.deepseek.com/';
+            } else if (provider === 'openrouter') {
+                errorMsg += ' Make sure you created the key at https://openrouter.ai/keys';
+            }
+
+            errorEl.textContent = `${provider.toUpperCase()}: ${errorMsg}`;
 
             // Show error message and suggest fallback
             this.showToast(`${result.error}. You can still use local mode or try another API.`, 'error');
