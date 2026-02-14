@@ -461,6 +461,23 @@ button:hover {
     padding: 20px;
     text-align: left;
 }
+
+#step-3.active {
+    align-items: center;
+    width: 100%;
+}
+
+#step-3.active .close-onboarding {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
+
+#step-3.active h2,
+#step-3.active > p {
+    width: 100%;
+    text-align: center;
+}
 .step-indicator {
     display: flex;
     justify-content: center;
