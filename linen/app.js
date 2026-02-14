@@ -4398,10 +4398,14 @@ class Linen {
             this.onboardingProvider = provider;
             // Validate and save key for all providers
             this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
+                // After successful save and activation message, show chat
                 const done = await this.db.getSetting('onboarding-complete');
                 if (done) {
-                    this.startApp(this.assistant.apiKey);
+                    // User already saw onboarding, just show chat
+                    const appContainer = document.getElementById('app-container');
+                    if (appContainer) appContainer.style.display = 'block';
                 } else {
+                    // First time user, show step 3 (install as app)
                     this.showOnboardingStep(3);
                 }
             });
@@ -5540,10 +5544,84 @@ class Linen {
             this.currentAgent = agent;
             this.isLocalMode = false;
             errorEl.textContent = '';
+
+            // Close all modals and return to chat
+            this.closeAllModals();
+
+            // Send activation confirmation message
+            await this.sendApiActivationMessage(providerNames[provider]);
+
             onSuccess();
         } else {
             console.error(`Linen: API key validation failed: ${result.error}`);
             errorEl.textContent = `Key validation failed: ${result.error}`;
+
+            // Show error message and suggest fallback
+            this.showToast(`${result.error}. You can still use local mode or try another API.`, 'error');
+        }
+    }
+
+    closeAllModals() {
+        // Close onboarding overlay
+        const onboardingOverlay = document.getElementById('onboarding-overlay');
+        if (onboardingOverlay) {
+            onboardingOverlay.style.display = 'none';
+        }
+
+        // Close settings modal
+        const settingsModal = document.getElementById('settings-modal');
+        if (settingsModal) {
+            settingsModal.classList.remove('active');
+        }
+
+        // Close backdrop
+        const backdrop = document.getElementById('modal-backdrop');
+        if (backdrop) {
+            backdrop.classList.remove('active');
+        }
+
+        console.log("Linen: All modals closed");
+    }
+
+    async sendApiActivationMessage(providerName) {
+        try {
+            // Get user's first name if available
+            const firstName = await this.db.getSetting('profile-first-name') || '';
+            let greeting = '';
+
+            if (firstName) {
+                greeting = `🎉 Perfect! Your ${providerName} API key is all set, ${firstName}! I'm ready to help you with so much more now.`;
+            } else {
+                greeting = `🎉 Excellent! Your ${providerName} API key is activated and working! Before we get started, what would you like me to call you?`;
+            }
+
+            // Add system message confirming API activation
+            const message = {
+                sender: 'assistant',
+                text: greeting,
+                timestamp: Date.now(),
+                type: 'system'
+            };
+
+            const currentConversationId = sessionStorage.getItem('current-conversation-id');
+            if (currentConversationId) {
+                const conversation = await this.db.getConversation(currentConversationId);
+                if (conversation) {
+                    conversation.messages = conversation.messages || [];
+                    conversation.messages.push(message);
+                    conversation.updatedAt = Date.now();
+                    await this.db.saveConversation(conversation);
+
+                    // Update UI
+                    this.addChatMessage(message.text, 'assistant', 'system');
+                }
+            }
+
+            console.log("Linen: API activation message sent");
+        } catch (err) {
+            console.warn("Linen: Error sending activation message:", err);
+            // Still greet the user even if there's an error
+            this.showToast('API key activated! Welcome back.', 'success');
         }
     }
 
