@@ -455,6 +455,11 @@ button:hover {
 
 .instructions {
     display: none;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: left;
 }
 .step-indicator {
     display: flex;
@@ -475,6 +480,8 @@ button:hover {
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    justify-content: center;
+    width: 100%;
 }
 
 /* AI Provider Grid Styles */
