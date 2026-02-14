@@ -5411,8 +5411,8 @@ class Linen {
             await this.db.setSetting('agent-ids', JSON.stringify(existingIds));
             await this.db.setSetting('primary-agent-id', agent.id);
 
-            // Also save for backward compatibility
-            await this.db.setSetting('gemini-api-key', key);
+            // Set the loaded agent as primary
+            this.agentManager.setPrimaryAgent(agent.id);
 
             this.assistant = tempAssistant;
             this.currentAgent = agent;
