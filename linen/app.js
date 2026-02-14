@@ -1989,7 +1989,7 @@ class LocalAssistant {
             relationships: ['friend', 'friendship', 'best friend', 'bff', 'close friend', 'acquaintance', 'colleague', 'coworker', 'teammate', 'peer', 'equal', 'rival', 'competitor', 'opponent', 'enemy', 'adversary', 'foe', 'nemesis', 'stranger', 'outsider', 'intruder', 'interloper', 'guest', 'visitor', 'host', 'hostess', 'family', 'relative', 'relation', 'kin', 'kinship', 'clan', 'tribe', 'household', 'nuclear family', 'extended family', 'bloodline', 'lineage', 'ancestry', 'descent', 'heritage', 'parent', 'mother', 'father', 'mom', 'dad', 'mum', 'pa', 'papa', 'mama', 'mommy', 'daddy', 'mummy', 'pappy', 'old man', 'old lady', 'parental', 'filial', 'sibling', 'sister', 'brother', 'sis', 'bro', 'big sister', 'big brother', 'little sister', 'little brother', 'twin', 'fraternal', 'identical', 'child', 'children', 'kid', 'kids', 'son', 'daughter', 'boy', 'girl', 'lad', 'lass', 'youngster', 'youth', 'juvenile', 'minor', 'infant', 'baby', 'toddler', 'tyke', 'mite', 'little one', 'young one', 'grandparent', 'grandfather', 'grandmother', 'grandpa', 'grandma', 'gramps', 'grandpop', 'granddad', 'great-grandparent', 'great grandparent', 'grandchild', 'grandson', 'granddaughter', 'great-grandchild', 'great grandchild', 'aunt', 'uncle', 'auntie', 'aunty', 'unc', 'cousin', 'first cousin', 'second cousin', 'third cousin', 'kissing cousin', 'step-parent', 'stepmother', 'stepfather', 'step-sibling', 'stepsister', 'stepbrother', 'step-child', 'stepdaughter', 'stepson', 'in-law', 'mother-in-law', 'father-in-law', 'sister-in-law', 'brother-in-law', 'daughter-in-law', 'son-in-law', 'spouse', 'partner', 'husband', 'wife', 'bride', 'groom', 'newlywed', 'conjugal', 'matrimonial', 'marital', 'wedlock', 'marriage', 'matrimony', 'union', 'couple', 'pair', 'duo', 'twosome', 'lover', 'beloved', 'sweetheart', 'honey', 'darling', 'dear', 'dearest', 'love', 'crush', 'flame', 'old flame', 'paramour', 'mistress', 'concubine', 'admirer', 'fanatic', 'fan', 'devotee', 'enthusiast', 'aficionado', 'buff', 'geek', 'nerd', 'junkie', 'addict', 'mate', 'companion', 'comrade', 'ally', 'pal', 'buddy', 'partner-in-crime', 'soulmate', 'kindred spirit', 'confidant', 'confidante', 'mentor', 'protégé', 'role model', 'inspiration', 'idol', 'hero', 'heroine', 'villain', 'antagonist', 'protagonist', 'rival', 'nemesis', 'friend', 'frenemy', 'acquaintance', 'intimate', 'associate', 'connection', 'contact', 'network', 'circle', 'group', 'gang', 'crew', 'squad', 'posse', 'brotherhood', 'sisterhood', 'community', 'society', 'organization', 'establishment', 'institution', 'collective', 'society', 'community', 'people', 'folks', 'populace', 'masses', 'public', 'society', 'culture', 'civilization', 'population', 'demographic', 'generation', 'cohort', 'age group', 'peer group', 'clique', 'in-crowd', 'out-crowd', 'social circle', 'intimate circle', 'inner circle', 'outer circle', 'closed circle', 'open community'],
 
             // Common day-to-day phrases and expressions (500+ words)
-            commonPhrases: ['how are you', 'whats up', 'how is it going', 'how are you doing', 'you okay', 'everything alright', 'what is new', 'whats new with you', 'any updates', 'long time no talk', 'been a while', 'havent heard from you', 'miss you', 'thinking of you', 'can't wait to see you', 'looking forward to it', 'so excited', 'thats awesome', 'thats cool', 'thats great', 'love that', 'thats perfect', 'exactly right', 'on point', 'nailed it', 'absolutely', 'one hundred percent', 'totally agree', 'same here', 'me too', 'same boat', 'tell me about it', 'i know', 'i hear you', 'i feel you', 'i get it', 'makes sense', 'understandable', 'completely normal', 'dont worry', 'it is fine', 'no worries', 'no problem', 'anytime', 'my pleasure', 'happy to help', 'glad i could help', 'let me know', 'keep me posted', 'stay in touch', 'talk later', 'catch you soon', 'see you later', 'goodbye', 'take care', 'until next time', 'see you around', 'catch you later', 'have a good one', 'enjoy', 'have fun', 'good luck', 'fingers crossed', 'hoping for the best', 'keeping my fingers crossed', 'wish me luck', 'thanks for everything', 'appreciate it', 'grateful for that', 'thankful', 'owe you one', 'really sorry', 'my bad', 'my fault', 'excuse me', 'pardon me', 'forgive me', 'i apologize', 'didnt mean to', 'wasnt intentional', 'i messed up', 'made a mistake', 'slipped up', 'its all good', 'water under the bridge', 'lets move on', 'forget about it', 'ancient history', 'lets start fresh', 'new beginning', 'clean slate', 'second chance', 'give it another try', 'one more time', 'last attempt', 'final shot', 'make it count', 'pull through', 'hang in there', 'hold tight', 'stay strong', 'you got this', 'believe in yourself', 'im rooting for you', 'im in your corner', 'have your back', 'always there for you', 'no matter what', 'thick and thin', 'through everything', 'always and forever', 'till the end', 'when youre ready', 'take your time', 'no rush', 'whenever you want', 'just say the word', 'on my way', 'coming right up', 'moment please', 'one second', 'hold on', 'just a minute', 'practically there', 'almost done', 'nearly finished', 'just about', 'roughly speaking', 'generally speaking', 'to be honest', 'to tell the truth', 'frankly', 'honestly', 'truthfully', 'fact is', 'reality is', 'the truth is', 'what matters is', 'bottom line', 'long story short', 'in a nutshell', 'cut to the chase', 'get to the point', 'without further ado', 'without any delay', 'without hesitation', 'right away', 'immediately', 'at once', 'straight away', 'quick', 'quick as a wink', 'faster than light', 'lightning fast', 'in a flash', 'in a jiffy', 'in no time', 'before you know it', 'next thing you know', 'suddenly', 'all of a sudden', 'out of nowhere', 'out of the blue', 'unexpected', 'surprising', 'shocking', 'mind blowing', 'incredible', 'unbelievable', 'cant believe it', 'no way', 'seriously', 'really', 'are you serious', 'are you kidding', 'you must be joking', 'for real', 'being serious', 'im being serious', 'i mean it', 'no joke', 'not joking', 'im not kidding', 'cross my heart', 'scouts honor', 'swear to it', 'word of honor', 'my word on it', 'i promise', 'i give you my word', 'that\'s a promise', 'you have my word', 'guaranteed', 'you can count on it', 'its certain', 'absolutely certain', 'no doubt about it', 'definite', 'for certain', 'for sure', 'mark my words', 'believe me', 'trust me', 'take it from me', 'let me tell you', 'id say', 'id venture to say', 'id guess', 'my guess is', 'my thoughts are', 'if you ask me', 'in my opinion', 'in my view', 'the way i see it', 'as i understand it', 'as far as i know', 'from what ive heard', 'ive been told', 'apparently', 'reportedly', 'supposedly', 'its said that', 'they say', 'the word is', 'i heard that', 'word on the street', 'rumor has it', 'scuttlebutt is', 'the buzz is', 'chatter is', 'gossip is', 'people are saying', 'word around town', 'the latest is', 'breaking news', 'hot off the presses', 'fresh info', 'latest update', 'new development', 'plot twist', 'unexpected turn', 'turn of events', 'change of plans', 'shake up', 'upheaval', 'disruption', 'uproar', 'commotion', 'fuss', 'hubbub', 'kerfuffle', 'brouhaha', 'ruckus', 'racket', 'din', 'noise', 'commotion', 'crazy', 'insane', 'wild', 'chaotic', 'hectic', 'frantic', 'stressed out', 'swamped', 'overwhelmed', 'drowning in work', 'buried in tasks', 'knee deep', 'up to my ears', 'over my head', 'in deep', 'trapped', 'stuck', 'boxed in', 'cornered', 'backed against the wall', 'between a rock and a hard place', 'damned if i do damned if i dont', 'lose lose', 'no win situation', 'catch 22', 'damned if you do', 'if worst comes to worst', 'worst case scenario', 'best case scenario', 'likely scenario', 'possible outcome', 'potential result', 'silver lining', 'bright side', 'upside', 'plus side', 'advantage', 'benefit', 'perk', 'bonus', 'extra', 'added bonus', 'icing on the cake', 'cherry on top', 'piece of cake', 'easy peasy', 'no sweat', 'piece of cake', 'walk in the park', 'childs play', 'cake walk', 'simple', 'straightforward', 'uncomplicated', 'not complicated', 'easy enough', 'manageable', 'doable', 'achievable', 'attainable', 'reachable', 'within reach', 'possible', 'feasible', 'practical', 'realistic', 'reasonable', 'sensible', 'makes sense', 'logical', 'rational', 'makes rational sense', 'no brainer', 'obvious choice', 'clear as day', 'plain as day', 'clear cut', 'black and white', 'cut and dried', 'straightforward', 'obvious', 'evident', 'apparent', 'clear', 'manifest', 'patent', 'glaring', 'striking', 'remarkable', 'notable', 'noteworthy', 'significant', 'important', 'crucial', 'critical', 'vital', 'essential', 'fundamental', 'basic', 'key', 'core', 'central', 'main', 'primary', 'principal', 'chief', 'major', 'significant', 'big', 'major', 'major league', 'big league', 'big time', 'heavyweight', 'titan', 'giant', 'mogul', 'powerhouse', 'big player', 'big shot', 'bigwig', 'big name', 'celebrity', 'star', 'luminary', 'personage', 'notable', 'somebody', 'someone important', 'vip', 'dignitary', 'politician', 'executive', 'leader', 'boss', 'head honcho', 'top dog', 'shot caller', 'decision maker', 'power player', 'wheeler dealer', 'operator', 'mover and shaker', 'go getter', 'striver', 'achiever', 'overachiever', 'high flyer', 'climber', 'ambitious', 'driven', 'motivated', 'determined', 'goal oriented', 'focused', 'dedicated', 'committed', 'unwavering', 'steadfast', 'resolute', 'firm', 'unshakeable', 'unbreakable', 'solid as a rock', 'rock solid', 'dependable', 'reliable', 'trustworthy', 'loyal', 'faithful', 'true', 'genuine', 'sincere', 'authentic', 'honest', 'truthful', 'candid', 'frank', 'blunt', 'direct', 'straight', 'forthright', 'upfront', 'transparent', 'open', 'clear', 'plain spoken', 'outspoken', 'vocal', 'loud', 'loud and clear', 'clear as crystal', 'crystal clear', 'perfectly clear', 'abundantly clear', 'undeniably clear', 'unquestionably clear'],
+            commonPhrases: ['how are you', 'whats up', 'how is it going', 'how are you doing', 'you okay', 'everything alright', 'what is new', 'whats new with you', 'any updates', 'long time no talk', 'been a while', 'havent heard from you', 'miss you', 'thinking of you', 'cant wait to see you', 'looking forward to it', 'so excited', 'thats awesome', 'thats cool', 'thats great', 'love that', 'thats perfect', 'exactly right', 'on point', 'nailed it', 'absolutely', 'one hundred percent', 'totally agree', 'same here', 'me too', 'same boat', 'tell me about it', 'i know', 'i hear you', 'i feel you', 'i get it', 'makes sense', 'understandable', 'completely normal', 'dont worry', 'it is fine', 'no worries', 'no problem', 'anytime', 'my pleasure', 'happy to help', 'glad i could help', 'let me know', 'keep me posted', 'stay in touch', 'talk later', 'catch you soon', 'see you later', 'goodbye', 'take care', 'until next time', 'see you around', 'catch you later', 'have a good one', 'enjoy', 'have fun', 'good luck', 'fingers crossed', 'hoping for the best', 'keeping my fingers crossed', 'wish me luck', 'thanks for everything', 'appreciate it', 'grateful for that', 'thankful', 'owe you one', 'really sorry', 'my bad', 'my fault', 'excuse me', 'pardon me', 'forgive me', 'i apologize', 'didnt mean to', 'wasnt intentional', 'i messed up', 'made a mistake', 'slipped up', 'its all good', 'water under the bridge', 'lets move on', 'forget about it', 'ancient history', 'lets start fresh', 'new beginning', 'clean slate', 'second chance', 'give it another try', 'one more time', 'last attempt', 'final shot', 'make it count', 'pull through', 'hang in there', 'hold tight', 'stay strong', 'you got this', 'believe in yourself', 'im rooting for you', 'im in your corner', 'have your back', 'always there for you', 'no matter what', 'thick and thin', 'through everything', 'always and forever', 'till the end', 'when youre ready', 'take your time', 'no rush', 'whenever you want', 'just say the word', 'on my way', 'coming right up', 'moment please', 'one second', 'hold on', 'just a minute', 'practically there', 'almost done', 'nearly finished', 'just about', 'roughly speaking', 'generally speaking', 'to be honest', 'to tell the truth', 'frankly', 'honestly', 'truthfully', 'fact is', 'reality is', 'the truth is', 'what matters is', 'bottom line', 'long story short', 'in a nutshell', 'cut to the chase', 'get to the point', 'without further ado', 'without any delay', 'without hesitation', 'right away', 'immediately', 'at once', 'straight away', 'quick', 'quick as a wink', 'faster than light', 'lightning fast', 'in a flash', 'in a jiffy', 'in no time', 'before you know it', 'next thing you know', 'suddenly', 'all of a sudden', 'out of nowhere', 'out of the blue', 'unexpected', 'surprising', 'shocking', 'mind blowing', 'incredible', 'unbelievable', 'cant believe it', 'no way', 'seriously', 'really', 'are you serious', 'are you kidding', 'you must be joking', 'for real', 'being serious', 'im being serious', 'i mean it', 'no joke', 'not joking', 'im not kidding', 'cross my heart', 'scouts honor', 'swear to it', 'word of honor', 'my word on it', 'i promise', 'i give you my word', 'thats a promise', 'you have my word', 'guaranteed', 'you can count on it', 'its certain', 'absolutely certain', 'no doubt about it', 'definite', 'for certain', 'for sure', 'mark my words', 'believe me', 'trust me', 'take it from me', 'let me tell you', 'id say', 'id venture to say', 'id guess', 'my guess is', 'my thoughts are', 'if you ask me', 'in my opinion', 'in my view', 'the way i see it', 'as i understand it', 'as far as i know', 'from what ive heard', 'ive been told', 'apparently', 'reportedly', 'supposedly', 'its said that', 'they say', 'the word is', 'i heard that', 'word on the street', 'rumor has it', 'scuttlebutt is', 'the buzz is', 'chatter is', 'gossip is', 'people are saying', 'word around town', 'the latest is', 'breaking news', 'hot off the presses', 'fresh info', 'latest update', 'new development', 'plot twist', 'unexpected turn', 'turn of events', 'change of plans', 'shake up', 'upheaval', 'disruption', 'uproar', 'commotion', 'fuss', 'hubbub', 'kerfuffle', 'brouhaha', 'ruckus', 'racket', 'din', 'noise', 'commotion', 'crazy', 'insane', 'wild', 'chaotic', 'hectic', 'frantic', 'stressed out', 'swamped', 'overwhelmed', 'drowning in work', 'buried in tasks', 'knee deep', 'up to my ears', 'over my head', 'in deep', 'trapped', 'stuck', 'boxed in', 'cornered', 'backed against the wall', 'between a rock and a hard place', 'damned if i do damned if i dont', 'lose lose', 'no win situation', 'catch 22', 'damned if you do', 'if worst comes to worst', 'worst case scenario', 'best case scenario', 'likely scenario', 'possible outcome', 'potential result', 'silver lining', 'bright side', 'upside', 'plus side', 'advantage', 'benefit', 'perk', 'bonus', 'extra', 'added bonus', 'icing on the cake', 'cherry on top', 'piece of cake', 'easy peasy', 'no sweat', 'piece of cake', 'walk in the park', 'childs play', 'cake walk', 'simple', 'straightforward', 'uncomplicated', 'not complicated', 'easy enough', 'manageable', 'doable', 'achievable', 'attainable', 'reachable', 'within reach', 'possible', 'feasible', 'practical', 'realistic', 'reasonable', 'sensible', 'makes sense', 'logical', 'rational', 'makes rational sense', 'no brainer', 'obvious choice', 'clear as day', 'plain as day', 'clear cut', 'black and white', 'cut and dried', 'straightforward', 'obvious', 'evident', 'apparent', 'clear', 'manifest', 'patent', 'glaring', 'striking', 'remarkable', 'notable', 'noteworthy', 'significant', 'important', 'crucial', 'critical', 'vital', 'essential', 'fundamental', 'basic', 'key', 'core', 'central', 'main', 'primary', 'principal', 'chief', 'major', 'significant', 'big', 'major', 'major league', 'big league', 'big time', 'heavyweight', 'titan', 'giant', 'mogul', 'powerhouse', 'big player', 'big shot', 'bigwig', 'big name', 'celebrity', 'star', 'luminary', 'personage', 'notable', 'somebody', 'someone important', 'vip', 'dignitary', 'politician', 'executive', 'leader', 'boss', 'head honcho', 'top dog', 'shot caller', 'decision maker', 'power player', 'wheeler dealer', 'operator', 'mover and shaker', 'go getter', 'striver', 'achiever', 'overachiever', 'high flyer', 'climber', 'ambitious', 'driven', 'motivated', 'determined', 'goal oriented', 'focused', 'dedicated', 'committed', 'unwavering', 'steadfast', 'resolute', 'firm', 'unshakeable', 'unbreakable', 'solid as a rock', 'rock solid', 'dependable', 'reliable', 'trustworthy', 'loyal', 'faithful', 'true', 'genuine', 'sincere', 'authentic', 'honest', 'truthful', 'candid', 'frank', 'blunt', 'direct', 'straight', 'forthright', 'upfront', 'transparent', 'open', 'clear', 'plain spoken', 'outspoken', 'vocal', 'loud', 'loud and clear', 'clear as crystal', 'crystal clear', 'perfectly clear', 'abundantly clear', 'undeniably clear', 'unquestionably clear'],
 
             // Food and drinks (150+ words)
             foodDrinks: ['coffee', 'tea', 'water', 'juice', 'milk', 'soda', 'beer', 'wine', 'alcohol', 'drink', 'beverage', 'smoothie', 'milkshake', 'latte', 'cappuccino', 'espresso', 'macchiato', 'americano', 'mocha', 'flat white', 'cortado', 'affogato', 'lungo', 'ristretto', 'green tea', 'black tea', 'herbal tea', 'chamomile', 'peppermint', 'ginger', 'hot chocolate', 'cocoa', 'cold brew', 'iced coffee', 'iced tea', 'lemonade', 'iced lemonade', 'kombucha', 'energy drink', 'protein shake', 'breakfast', 'lunch', 'dinner', 'brunch', 'supper', 'snack', 'meal', 'feast', 'spread', 'buffet', 'potluck', 'takeout', 'delivery', 'dine in', 'eating out', 'restaurant', 'cafe', 'diner', 'bistro', 'pizzeria', 'bakery', 'sandwich shop', 'burger joint', 'taco stand', 'food truck', 'street food', 'fast food', 'slow food', 'home cooked', 'homemade', 'from scratch', 'ingredients', 'recipe', 'cook', 'bake', 'grill', 'fry', 'broil', 'steam', 'boil', 'simmer', 'toast', 'roast', 'sauté', 'scramble', 'stir', 'whisk', 'blend', 'chop', 'slice', 'dice', 'mince', 'shred', 'grate', 'crush', 'blend', 'puree', 'strain', 'sift', 'knead', 'roll', 'flatten', 'shape', 'mold', 'plate', 'serve', 'taste', 'flavor', 'seasoning', 'spice', 'herb', 'salt', 'pepper', 'oil', 'vinegar', 'sauce', 'gravy', 'dressing', 'spread', 'butter', 'margarine', 'cream', 'cheese', 'yogurt', 'bread', 'toast', 'bagel', 'croissant', 'donut', 'pastry', 'muffin', 'cake', 'cookie', 'brownie', 'pie', 'cake', 'tart', 'cupcake', 'cereal', 'oatmeal', 'granola', 'yogurt', 'fruit', 'berries', 'apple', 'banana', 'orange', 'lemon', 'lime', 'grape', 'melon', 'watermelon', 'pineapple', 'mango', 'peach', 'plum', 'strawberry', 'blueberry', 'blackberry', 'raspberry', 'cranberry', 'vegetable', 'carrot', 'celery', 'broccoli', 'cauliflower', 'spinach', 'kale', 'lettuce', 'tomato', 'cucumber', 'pepper', 'onion', 'garlic', 'potato', 'sweet potato', 'rice', 'pasta', 'noodle', 'bean', 'lentil', 'chickpea', 'tofu', 'tempeh', 'seitan', 'meat', 'beef', 'chicken', 'pork', 'turkey', 'lamb', 'fish', 'salmon', 'tuna', 'cod', 'shellfish', 'shrimp', 'crab', 'lobster', 'clam', 'oyster', 'mussel', 'scallop', 'egg', 'dairy', 'milk', 'cheese', 'yogurt', 'butter', 'cream', 'sour cream', 'whipped cream', 'nuts', 'almond', 'walnut', 'peanut', 'cashew', 'pistachio', 'hazelnut', 'pecan', 'macadamia', 'seeds', 'sunflower', 'pumpkin', 'sesame', 'flax', 'chia', 'oil', 'olive oil', 'coconut oil', 'vegetable oil', 'canola oil', 'avocado oil', 'sesame oil', 'peanut oil', 'condiment', 'ketchup', 'mustard', 'mayo', 'relish', 'hot sauce', 'salsa', 'hummus', 'guacamole', 'pesto', 'soy sauce', 'teriyaki', 'vinaigrette'],
@@ -2785,6 +2785,139 @@ class LocalAssistant {
     clearSession() {
         this.sessionMemory = [];
         this.usedResponses.clear();
+    }
+
+    // ========== SMART RESPONSE LOGIC FOR PRODUCTION ==========
+    // Enhanced conversation intelligence without breaking existing functionality
+
+    // Detect multiple topics in a single message for smarter responses
+    detectMultipleTopics(message) {
+        const msg = message.toLowerCase();
+        const detectedTopics = {};
+        let multiTopicCount = 0;
+
+        // Check for work-related keywords
+        if (this.vocabulary.work && this.vocabulary.work.some(word => msg.includes(word))) {
+            detectedTopics.work = true;
+            multiTopicCount++;
+        }
+        // Check for relationship keywords
+        if (this.vocabulary.relationships && this.vocabulary.relationships.some(word => msg.includes(word))) {
+            detectedTopics.relationships = true;
+            multiTopicCount++;
+        }
+        // Check for health/wellness keywords
+        if (['tired', 'sick', 'sleep', 'exercise', 'health', 'doctor', 'pain', 'stress'].some(k => msg.includes(k))) {
+            detectedTopics.wellness = true;
+            multiTopicCount++;
+        }
+        // Check for emotional keywords
+        if (this.vocabulary.emotions && this.vocabulary.emotions.some(word => msg.includes(word))) {
+            detectedTopics.emotions = true;
+            multiTopicCount++;
+        }
+
+        return { topics: detectedTopics, isMultiTopic: multiTopicCount > 1, count: multiTopicCount };
+    }
+
+    // Track sentiment momentum (is mood getting better or worse?)
+    calculateSentimentMomentum() {
+        const userMsgs = this.sessionMemory.filter(m => m.role === 'user').slice(-5);
+        if (userMsgs.length < 2) return 'neutral'; // Not enough data
+
+        const moods = userMsgs.map(m => m.mood || 'neutral');
+        const moodValues = {
+            'positive': 1,
+            'engaged': 0.5,
+            'neutral': 0,
+            'anxious': -0.5,
+            'distressed': -1,
+            'frustrated': -0.7
+        };
+
+        const scores = moods.map(m => moodValues[m] || 0);
+        const momentum = scores[scores.length - 1] - scores[0];
+
+        if (momentum > 0.3) return 'improving';
+        if (momentum < -0.3) return 'declining';
+        return 'stable';
+    }
+
+    // Get last topic discussed for context chaining
+    getLastTopicContext() {
+        const userMsgs = this.sessionMemory.filter(m => m.role === 'user').slice(-3);
+        if (userMsgs.length === 0) return null;
+
+        for (const msg of userMsgs.reverse()) {
+            const topics = this.detectMultipleTopics(msg.content);
+            if (Object.keys(topics.topics).length > 0) {
+                return topics.topics;
+            }
+        }
+        return null;
+    }
+
+    // Smart response selection to avoid repetition
+    pickSmartResponse(category) {
+        const pool = this.responses[category];
+        if (!pool || pool.length === 0) return '';
+
+        // Prefer responses we haven't used recently
+        const recent = Array.from(this.usedResponses).slice(-3);
+        const available = pool.filter(r => !recent.includes(r));
+
+        // If all recent responses are used, expand to last 10
+        if (available.length === 0) {
+            const recentTen = Array.from(this.usedResponses).slice(-10);
+            const availableTen = pool.filter(r => !recentTen.includes(r));
+            const choices = availableTen.length > 0 ? availableTen : pool;
+            const selected = choices[Math.floor(Math.random() * choices.length)];
+            this.usedResponses.add(selected);
+            return selected;
+        }
+
+        const selected = available[Math.floor(Math.random() * available.length)];
+        this.usedResponses.add(selected);
+        return selected;
+    }
+
+    // Enhanced mood inference using context
+    inferMoodWithContext(message) {
+        const baseMood = this.detectMood(message);
+        const momentum = this.calculateSentimentMomentum();
+
+        // If mood is stable but momentum is improving, suggest slight uplift
+        if (baseMood === 'neutral' && momentum === 'improving') {
+            return 'engaged'; // More positive inference
+        }
+
+        // If mood is positive but momentum is declining, temper expectations
+        if (baseMood === 'positive' && momentum === 'declining') {
+            return 'engaged'; // Not as optimistic
+        }
+
+        return baseMood;
+    }
+
+    // Check if user seems disengaged or needs intervention
+    checkEngagementLevel() {
+        const userMsgs = this.sessionMemory.filter(m => m.role === 'user').slice(-5);
+        if (userMsgs.length < 3) return 'normal';
+
+        const avgLength = userMsgs.reduce((sum, m) => sum + m.content.split(/\s+/).length, 0) / userMsgs.length;
+        const moodMomentum = this.calculateSentimentMomentum();
+
+        // Disengaged if: short responses AND declining mood
+        if (avgLength < 3 && moodMomentum === 'declining') {
+            return 'low';
+        }
+
+        // Normal engagement
+        if (avgLength >= 5 && moodMomentum !== 'declining') {
+            return 'high';
+        }
+
+        return 'normal';
     }
 }
 
