@@ -5422,6 +5422,9 @@ class Linen {
             // Close all modals and return to chat
             this.closeAllModals();
 
+            // Refresh agents list in settings so new key appears
+            await this.loadAgentsList();
+
             // Send activation confirmation message
             await this.sendApiActivationMessage(providerNames[provider]);
 
