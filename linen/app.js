@@ -4011,6 +4011,31 @@ class Linen {
         });
     }
 
+    setupProfileAccordion() {
+        const profileAccordionBtn = document.getElementById('profile-accordion-btn');
+        const profileForm = document.getElementById('profile-form');
+        const profileSection = document.getElementById('profile-section');
+
+        if (!profileAccordionBtn || !profileForm || !profileSection) return;
+
+        profileAccordionBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log("Linen: Profile accordion toggled");
+
+            profileSection.classList.toggle('active');
+            if (profileSection.classList.contains('active')) {
+                profileForm.style.display = 'block';
+                profileForm.style.maxHeight = '2000px';
+                profileAccordionBtn.querySelector('.accordion-icon').style.transform = 'rotate(180deg)';
+            } else {
+                profileForm.style.display = 'none';
+                profileForm.style.maxHeight = '0';
+                profileAccordionBtn.querySelector('.accordion-icon').style.transform = 'rotate(0deg)';
+            }
+        });
+    }
+
     generateSessionTitle(conversations) {
         if (!conversations || conversations.length === 0) return 'Conversation - ' + new Date().toLocaleDateString();
         const firstUserMsg = conversations.find(c => c.sender === 'user');
@@ -4476,6 +4501,8 @@ class Linen {
                     settingsModal.classList.add('active');
                     backdrop.classList.add('active');
                     logoMenu.classList.add('hidden');
+                    // Setup profile accordion when settings opens
+                    this.setupProfileAccordion();
                 });
             }
         } else {

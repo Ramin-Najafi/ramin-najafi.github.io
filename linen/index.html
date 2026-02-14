@@ -537,8 +537,11 @@
         <button class="close-modal" id="close-settings-modal">×</button>
 
         <div class="settings-section" id="profile-section">
-            <h3 class="settings-heading">👤 User Profile</h3>
-            <div id="profile-form" class="profile-form">
+            <button type="button" class="accordion-header" id="profile-accordion-btn">
+                <span>👤 User Profile</span>
+                <span class="accordion-icon">▼</span>
+            </button>
+            <div id="profile-form" class="profile-form" style="display: none;">
                 <div class="form-group">
                     <label for="profile-first-name">First Name</label>
                     <input type="text" id="profile-first-name" placeholder="Your first name" autocomplete="given-name">

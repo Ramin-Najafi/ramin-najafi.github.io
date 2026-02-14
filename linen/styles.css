@@ -2045,6 +2045,18 @@ body.keyboard-nav [tabindex]:focus {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 1rem;
+    background: #1f1f1f;
+    border-top: 1px solid #333;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.profile-form[style*="display: block"],
+#profile-section.active .profile-form {
+    max-height: 2000px;
+    padding: 1rem;
 }
 
 .profile-form .form-group {
