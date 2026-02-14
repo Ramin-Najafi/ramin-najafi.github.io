@@ -3679,7 +3679,7 @@ class Linen {
                 if (!response.ok) return;
 
                 const newVersion = (await response.text()).trim();
-                const currentVersion = sessionStorage.getItem('linen-app-version') || '1.5.0';
+                const currentVersion = sessionStorage.getItem('linen-app-version') || '1.5.1';
 
                 if (newVersion !== currentVersion) {
                     console.log(`Linen: New version available (${currentVersion} → ${newVersion}). Initiating smart reload...`);
