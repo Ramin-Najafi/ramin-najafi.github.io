@@ -394,7 +394,22 @@ class GeminiAssistant {
             }
             return { valid: false, error: `Something went wrong (HTTP ${res.status}). Please try again.` };
         } catch (e) {
-            console.error("Key validation failed:", e);
+            console.error("Gemini key validation error:", e);
+            console.error("Error name:", e.name);
+            console.error("Error message:", e.message);
+
+            // CORS error - Gemini blocks direct browser requests
+            // Accept the key and let first chat attempt verify it
+            const isCorsError = e.message.includes('cors') ||
+                               e.name === 'TypeError' ||
+                               e instanceof TypeError ||
+                               e.message.includes('Failed to fetch') ||
+                               e.message.includes('NetworkError');
+
+            if (isCorsError) {
+                console.log("Linen: CORS/Network error detected, accepting Gemini key - will validate on first use");
+                return { valid: true };
+            }
             return { valid: false, error: 'Network error. Check your internet connection.' };
         }
     }
