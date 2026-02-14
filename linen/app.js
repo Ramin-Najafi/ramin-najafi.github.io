@@ -4396,22 +4396,15 @@ class Linen {
             }
             // Store selected provider
             this.onboardingProvider = provider;
-            // For now, validate as Gemini to test (in production, validate per provider)
-            if (provider === 'gemini') {
-                this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
-                    const done = await this.db.getSetting('onboarding-complete');
-                    if (done) {
-                        this.startApp(this.assistant.apiKey);
-                    } else {
-                        this.showOnboardingStep(3);
-                    }
-                });
-            } else {
-                // For other providers, just save the key for now
-                // TODO: Add provider-specific validation
-                this.showToast(`${config.name} API key saved successfully`, 'success');
-                this.showOnboardingStep(3);
-            }
+            // Validate and save key for all providers
+            this.validateAndSaveKey('onboarding-api-key', 'onboarding-error', async () => {
+                const done = await this.db.getSetting('onboarding-complete');
+                if (done) {
+                    this.startApp(this.assistant.apiKey);
+                } else {
+                    this.showOnboardingStep(3);
+                }
+            });
         };
 
         saveBtn.addEventListener('click', saveKey);
@@ -5925,7 +5918,11 @@ class Linen {
 
         if (key.startsWith('sk-ant-')) return 'claude';
         if (key.startsWith('sk-or-')) return 'openrouter';
-        if (key.startsWith('sk-')) return 'openai';
+        if (key.startsWith('sk-')) {
+            // Could be OpenAI or DeepSeek - check pattern
+            if (key.includes('deepseek') || key.length > 48) return 'deepseek';
+            return 'openai';
+        }
         if (key.startsWith('AIza')) return 'gemini';
 
         return null;
