@@ -6097,9 +6097,13 @@ class Linen {
             }
 
             // Determine if we should try to fallback
-            const canFallback = (status === 0 && !navigator.onLine) || // Offline
+            // Don't fallback on CORS/network errors (status 0) - those are expected for browser-based APIs
+            // Only fallback on actual authentication/quota issues
+            const isCorsError = status === 0 && (msgText.includes('Failed to fetch') || msgText.includes('CORS'));
+            const canFallback = (!isCorsError && status === 0 && !navigator.onLine) || // Offline (but not CORS)
                                 (status === 429) || // Rate limited
                                 (status === 403 && msgText.toLowerCase().includes('quota')) || // Quota exceeded
+                                (status === 401) || // Invalid key
                                 (msgText.includes('API key not configured')); // No API key
 
             if (canFallback && !this.isLocalMode) {
