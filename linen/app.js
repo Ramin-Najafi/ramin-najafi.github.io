@@ -548,11 +548,22 @@ class OpenAIAssistant {
             }
             return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
         } catch (e) {
-            console.error("OpenAI key validation failed (likely CORS issue):", e);
+            console.error("OpenAI key validation failed:", e);
+            console.error("Error name:", e.name);
+            console.error("Error message:", e.message);
+            console.error("Error type:", e.constructor.name);
+
             // CORS error - OpenAI blocks direct browser requests
             // Accept the key and let first chat attempt verify it
-            if (e.message.includes('cors') || e.name === 'TypeError') {
-                console.log("Linen: CORS detected, accepting OpenAI key for now - will validate on first use");
+            // Check for CORS, network, and general fetch errors
+            const isCorsError = e.message.includes('cors') ||
+                               e.name === 'TypeError' ||
+                               e instanceof TypeError ||
+                               e.message.includes('Failed to fetch') ||
+                               e.message.includes('NetworkError');
+
+            if (isCorsError) {
+                console.log("Linen: CORS/Network error detected, accepting OpenAI key - will validate on first use");
                 return { valid: true };
             }
             return { valid: false, error: 'Network error. Check your internet connection.' };
@@ -697,11 +708,21 @@ class ClaudeAssistant {
             }
             return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
         } catch (e) {
-            console.error("Claude key validation failed (likely CORS issue):", e);
+            console.error("Claude key validation failed:", e);
+            console.error("Error name:", e.name);
+            console.error("Error message:", e.message);
+            console.error("Error type:", e.constructor.name);
+
             // CORS error - Some APIs block direct browser requests
             // Accept the key and let first chat attempt verify it
-            if (e.message.includes('cors') || e.name === 'TypeError') {
-                console.log("Linen: CORS detected, accepting Claude key for now - will validate on first use");
+            const isCorsError = e.message.includes('cors') ||
+                               e.name === 'TypeError' ||
+                               e instanceof TypeError ||
+                               e.message.includes('Failed to fetch') ||
+                               e.message.includes('NetworkError');
+
+            if (isCorsError) {
+                console.log("Linen: CORS/Network error detected, accepting Claude key - will validate on first use");
                 return { valid: true };
             }
             return { valid: false, error: 'Network error. Check your internet connection.' };
