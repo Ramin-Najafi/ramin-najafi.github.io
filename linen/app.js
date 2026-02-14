@@ -4005,6 +4005,96 @@ class Linen {
         }, 8000);
     }
 
+    async forceRefresh() {
+        console.log("Linen: Force refresh initiated by user");
+        const statusEl = document.getElementById('refresh-status');
+        const btn = document.getElementById('force-refresh-btn');
+
+        try {
+            // Disable button and show loading state
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Checking for updates...';
+            }
+            if (statusEl) {
+                statusEl.textContent = 'Checking for updates...';
+                statusEl.style.color = '#4a9eff';
+            }
+
+            let newVersionAvailable = false;
+
+            // Check service worker for updates
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        await registration.update();
+                        console.log("Linen: Service worker update check complete");
+                        if (registration.waiting) {
+                            newVersionAvailable = true;
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Linen: Error checking service worker updates:", err);
+                }
+            }
+
+            // Check for code updates via version.txt
+            try {
+                const response = await fetch('/linen/version.txt?t=' + Date.now(), { cache: 'no-store' });
+                if (response.ok) {
+                    const newVersion = (await response.text()).trim();
+                    const currentVersion = sessionStorage.getItem('linen-app-version') || '1.5.3';
+
+                    console.log(`Linen: Version check - Current: ${currentVersion}, Available: ${newVersion}`);
+
+                    if (newVersion !== currentVersion) {
+                        newVersionAvailable = true;
+                        console.log("Linen: New version available, reloading...");
+                    }
+                }
+            } catch (err) {
+                console.warn("Linen: Error checking version.txt:", err);
+            }
+
+            // If new version is available, reload the page
+            if (newVersionAvailable) {
+                if (statusEl) {
+                    statusEl.textContent = 'Updating app... Please wait.';
+                    statusEl.style.color = '#4a9eff';
+                }
+                console.log("Linen: New version found, reloading application...");
+                // Small delay to ensure status message is visible
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            } else {
+                // Already on latest version
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Check for Updates & Refresh';
+                }
+                if (statusEl) {
+                    statusEl.textContent = '✓ You\'re already on the latest version!';
+                    statusEl.style.color = '#4ade80';
+                }
+                this.showToast('Linen is up to date!', 'success');
+                console.log("Linen: Already on latest version");
+            }
+        } catch (err) {
+            console.error("Linen: Error during force refresh:", err);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Check for Updates & Refresh';
+            }
+            if (statusEl) {
+                statusEl.textContent = 'Error checking for updates. Please try again.';
+                statusEl.style.color = '#ff6b6b';
+            }
+            this.showToast('Error checking for updates', 'error');
+        }
+    }
+
     startTrialMode() {
         this.trialMode = true;
         this.trialCount = 0;
@@ -4840,6 +4930,7 @@ class Linen {
         document.getElementById('export-data').addEventListener('click', () => this.exportData());
         document.getElementById('clear-data').addEventListener('click', () => this.clearAll());
         document.getElementById('clear-chat-history').addEventListener('click', () => this.clearChatHistory());
+        document.getElementById('force-refresh-btn').addEventListener('click', () => this.forceRefresh());
         document.getElementById('memory-search').addEventListener('input', (e) => this.loadMemories(e.target.value));
 
 
@@ -4911,6 +5002,22 @@ class Linen {
             });
         } else {
             console.warn("Linen: add-agent-btn not found in DOM");
+        }
+
+        // Close Add Agent Modal button
+        if (closeAddAgent) {
+            closeAddAgent.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Linen: Close add agent button clicked");
+                // Close the add agent modal
+                if (addAgentModal) {
+                    addAgentModal.classList.remove('active');
+                }
+                document.getElementById('modal-backdrop').classList.remove('active');
+            });
+        } else {
+            console.warn("Linen: close-add-agent button not found in DOM");
         }
 
         // Add agent modal removed - using onboarding overlay instead
