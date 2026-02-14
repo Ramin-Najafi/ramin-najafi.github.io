@@ -5522,10 +5522,10 @@ class Linen {
         errorEl.textContent = 'Validating...';
         console.log("Linen: Validating API key...");
 
-        // Auto-detect provider or use onboarding's selected provider
+        // Use onboarding's selected provider FIRST (user's choice), then auto-detect, then default to gemini
         const detectedProvider = this.detectProvider(key);
-        const provider = detectedProvider || this.onboardingProvider || 'gemini';
-        console.log(`Linen: Provider detected: ${detectedProvider}, onboarding provider: ${this.onboardingProvider}, final provider: ${provider}`);
+        const provider = this.onboardingProvider || detectedProvider || 'gemini';
+        console.log(`Linen: Onboarding provider: ${this.onboardingProvider}, detected provider: ${detectedProvider}, final provider: ${provider}`);
         let tempAssistant;
 
         switch (provider) {
@@ -6038,8 +6038,9 @@ class Linen {
         if (key.startsWith('sk-ant-')) return 'claude';
         if (key.startsWith('sk-or-')) return 'openrouter';
         if (key.startsWith('sk-')) {
-            // Could be OpenAI or DeepSeek - check pattern
-            if (key.includes('deepseek') || key.length > 48) return 'deepseek';
+            // Could be OpenAI or DeepSeek - DeepSeek keys contain 'deepseek' in the key itself
+            if (key.toLowerCase().includes('deepseek')) return 'deepseek';
+            // Default to OpenAI for other sk- keys
             return 'openai';
         }
         if (key.startsWith('AIza')) return 'gemini';
