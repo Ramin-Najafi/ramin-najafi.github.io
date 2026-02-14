@@ -676,6 +676,142 @@ Core Directives:
     }
 }
 
+class HuggingFaceAssistant {
+    constructor(apiKey, model = 'meta-llama/Llama-2-7b-chat-hf') {
+        this.apiKey = apiKey;
+        this.model = model;
+        this.endpoint = 'https://api-inference.huggingface.co/models/' + model;
+    }
+
+    async validateKey() {
+        console.log("Validating Hugging Face key...");
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: 'Hi'
+                })
+            });
+            if (res.ok) return { valid: true };
+
+            const err = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                return { valid: false, error: 'Invalid API key. Please check and try again.' };
+            }
+            if (res.status === 503) {
+                // Model loading - accept the key, it will work
+                return { valid: true };
+            }
+            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
+        } catch (e) {
+            console.error("Hugging Face key validation failed:", e);
+            console.error("Error name:", e.name);
+            console.error("Error message:", e.message);
+
+            // CORS error - Hugging Face may block direct browser requests
+            // Accept the key and let first chat attempt verify it
+            const isCorsError = e.message.includes('cors') ||
+                               e.name === 'TypeError' ||
+                               e instanceof TypeError ||
+                               e.message.includes('Failed to fetch') ||
+                               e.message.includes('NetworkError');
+
+            if (isCorsError) {
+                console.log("Linen: CORS/Network error detected, accepting Hugging Face key - will validate on first use");
+                return { valid: true };
+            }
+            return { valid: false, error: 'Network error. Check your internet connection.' };
+        }
+    }
+
+    async chat(msg, chats, mems, loadingId) {
+        if (!this.apiKey) throw new Error('API key not configured.');
+
+        const memoryContext = this.buildMemoryContext(mems);
+        const conversationContext = this.buildConversationContext(chats);
+        const systemPrompt = `You are Linen, a smart personal assistant created by Ramin Najafi. Your primary function is to be a conversational partner that remembers important details about the user's life.
+
+**About Linen:**
+Linen was designed and built by Ramin Najafi. You can learn more about Ramin and see other projects at https://ramin-najafi.github.io/
+
+If the user asks "who are you?", "what's your purpose?", "what do you do?", or about your identity/purpose, respond naturally as yourself: You are Linen, a smart personal assistant designed to listen, remember important details about the user's life, and be their conversational companion. Emphasize key benefits like privacy (your data stays on your device, not sent to external servers), security (offline-capable, no cloud storage), and personal interactions (I remember your history and grow with you). Keep your response warm and personal, something like: "I'm Linen, your personal smart assistant. I'm here to listen, help you work through what's on your mind, and remember the important details about your life. What makes me different is that I prioritize your privacy — all your data stays on your device, so you can trust me with your thoughts and memories. Think of me as a friend with a perfect memory. What's going on?"
+
+If the user asks why they should choose Linen over ChatGPT, other AI services, or similar comparisons, respond: "Great question. While ChatGPT and other AI services are powerful, Linen is built specifically for personal growth and privacy. Here's what sets me apart: 1) Privacy First — all your data stays on your device, never sent to external servers. 2) Personal Memory — I remember details about your life and reference them naturally in conversations. 3) Offline Capable — you can use me without constant internet. 4) No Corporate Data Mining — your conversations aren't used to train models or sell data. 5) Designed for You — I'm built to be a thoughtful companion, not just answer questions. I'm here to help you work through what's really on your mind."
+
+If the user asks who created you, who your creator is, who built you, who's your father, or anything about who made you, respond: "I was built by Ramin Najafi. You can find more information about my creator at ramin-najafi.github.io"
+
+Core Directives:
+1. Be a Proactive Companion, 2. Seamlessly Recall Memories, 3. Identify and Save Memories, 4. STRICT SAVE_MEMORY Marker Format, 5. STRICT CREATE_REMINDER Marker Format, 6. Do NOT confirm reminders/events, 7. Handle Memory Queries, 8. Offer Support, 9. Tone: warm and genuine.`;
+
+        try {
+            const prompt = `${systemPrompt}\n\n${memoryContext}\n\nConversation:\n${conversationContext.map(m => `${m.role}: ${m.content}`).join('\n')}\n\nuser: ${msg}\nassistant:`;
+
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: prompt,
+                    parameters: {
+                        max_length: 2048,
+                        temperature: 0.7
+                    }
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const error = new Error(errorData.error?.message || errorData.error || 'API request failed');
+                error.status = res.status;
+                throw error;
+            }
+
+            const data = await res.json();
+            // Hugging Face returns array with { generated_text }
+            const reply = Array.isArray(data) ? data[0]?.generated_text : data.generated_text;
+            if (!reply) throw new Error('No response from assistant');
+
+            // Extract only the assistant's response (after "assistant:")
+            const assistantStart = reply.lastIndexOf('assistant:');
+            if (assistantStart !== -1) {
+                return reply.substring(assistantStart + 10).trim();
+            }
+            return reply;
+        } catch (e) {
+            document.getElementById(loadingId)?.remove();
+            throw e;
+        }
+    }
+
+    buildMemoryContext(mems) {
+        if (!mems || mems.length === 0) return 'No memories yet.';
+        let c = 'Relevant memories for context:\n';
+        mems.slice(0, 10).forEach(m => {
+            const d = new Date(m.date).toLocaleDateString();
+            c += `- ${d}: ${m.text}\n`;
+        });
+        return c;
+    }
+
+    buildConversationContext(chats) {
+        if (!chats || chats.length === 0) return [];
+        return chats.slice(-5).map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text
+        }));
+    }
+
+    detectCrisis(userMessage) {
+        const msg = userMessage.toLowerCase();
+        const crisisKeywords = ['suicidal', 'kill myself', 'end my life', 'want to die', 'self harm', 'self-harm', 'hurt myself', 'cut myself', 'starve myself', 'overdose', 'no point living', 'no reason to live', 'abuse', 'being abused', 'crisis', 'emergency'];
+        return crisisKeywords.some(keyword => msg.includes(keyword));
+    }
 }
 
 // Claude removed due to paid-only pricing with no free tier (Feb 2026)
@@ -4091,15 +4227,16 @@ class Linen {
                     'Copy the key and paste it below'
                 ]
             },
-            'claude': {
-                name: 'Anthropic Claude',
-                url: 'https://platform.claude.com/login?returnTo=%2F%3F',
+            'huggingface': {
+                name: 'Hugging Face',
+                url: 'https://huggingface.co/settings/tokens',
                 steps: [
-                    'Tap the button below to go to Claude Platform',
-                    'Sign in with your Anthropic account',
-                    'Go to API Keys',
-                    'Click "Create Key"',
-                    'Copy the key and paste it below'
+                    'Tap the button below to go to Hugging Face',
+                    'Sign in with your Hugging Face account (or create one)',
+                    'Go to Access Tokens section',
+                    'Click "New token"',
+                    'Give it a name and create it (read access is fine)',
+                    'Copy the token and paste it below'
                 ]
             }
         };
@@ -5242,7 +5379,7 @@ class Linen {
 
         switch (provider) {
             case 'openai': tempAssistant = new OpenAIAssistant(key); break;
-            case 'claude': tempAssistant = new ClaudeAssistant(key); break;
+            case 'huggingface': tempAssistant = new HuggingFaceAssistant(key); break;
             case 'openrouter': tempAssistant = new OpenRouterAssistant(key); break;
             default: tempAssistant = new GeminiAssistant(key);
         }
