@@ -4240,6 +4240,8 @@ class Linen {
             getApiKeyDirect.addEventListener('click', (e) => {
                 e.stopPropagation();
                 closePitchModal();
+                // Ensure onboarding interactions are wired before showing step 2
+                this.bindOnboardingEvents();
                 // Show onboarding at step 2 (provider selection with direct links)
                 document.getElementById('onboarding-overlay').style.display = 'flex';
                 this.showOnboardingStep(2);
@@ -4994,6 +4996,8 @@ class Linen {
                 if (settingsModal) {
                     settingsModal.classList.add('hidden');
                 }
+                // Ensure onboarding button handlers are bound in returning-user flows
+                this.bindOnboardingEvents();
                 const onboardingOverlay = document.getElementById('onboarding-overlay');
                 if (onboardingOverlay) {
                     onboardingOverlay.style.display = 'flex';
