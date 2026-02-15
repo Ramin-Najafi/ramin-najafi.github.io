@@ -5,6 +5,8 @@
  * See LICENSE file for details.
  */
 
+const LINEN_BUILD_COMMIT = '535b03c';
+
 class LinenDB {
     constructor() {
         this.db = null;
@@ -3810,6 +3812,7 @@ class Linen {
         console.log("Linen: Calling bindEvents()");
         try {
             this.bindEvents();
+            this.updateBuildCommitDisplay();
             console.log("Linen: bindEvents() complete");
         } catch (err) {
             console.error("Linen: Error in bindEvents():", err);
@@ -7106,6 +7109,13 @@ class Linen {
         if (settingsVersion) settingsVersion.textContent = `Version ${normalized} [beta]`;
 
         console.log("Linen: Version updated to", newVersion);
+    }
+
+    updateBuildCommitDisplay() {
+        const buildCommitInfo = document.getElementById('build-commit-info');
+        if (buildCommitInfo) {
+            buildCommitInfo.textContent = `Build Commit ${LINEN_BUILD_COMMIT}`;
+        }
     }
 
     showShareNotification() {
