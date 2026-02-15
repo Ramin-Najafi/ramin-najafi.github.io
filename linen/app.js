@@ -3528,6 +3528,18 @@ class Linen {
         this._voiceInputActive = false;
         this._eventPermissionAsked = false;
         this._showAgentSwitchMessage = false;
+        this.learningProfile = null;
+        this.communityLearning = null;
+        this.learningStopWords = new Set([
+            'the', 'a', 'an', 'and', 'or', 'but', 'if', 'then', 'else', 'for', 'to', 'of', 'in', 'on',
+            'at', 'by', 'with', 'from', 'about', 'into', 'over', 'after', 'before', 'between', 'through',
+            'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'do', 'does', 'did', 'doing',
+            'have', 'has', 'had', 'having', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'my',
+            'mine', 'your', 'yours', 'our', 'ours', 'their', 'theirs', 'this', 'that', 'these', 'those',
+            'there', 'here', 'what', 'when', 'where', 'why', 'how', 'who', 'whom', 'which', 'can', 'could',
+            'should', 'would', 'will', 'just', 'really', 'very', 'also', 'too', 'so', 'as', 'not', 'no',
+            'yes', 'ok', 'okay', 'hey', 'hi', 'hello', 'please', 'thanks', 'thank'
+        ]);
     }
 
     normalizeApiKey(rawKey) {
@@ -3557,6 +3569,209 @@ class Linen {
             this.localAssistant.eventDetector = new EventDetector(this.db, this.utilities);
         }
         return this.localAssistant;
+    }
+
+    getDefaultLearningProfile() {
+        return {
+            schemaVersion: 1,
+            turnsAnalyzed: 0,
+            avgUserMessageWords: 0,
+            topicCounts: {},
+            intentCounts: {},
+            styleSignals: { concise: 0, detailed: 0, emotional: 0, pragmatic: 0 },
+            learnedTerms: {},
+            updatedAt: Date.now()
+        };
+    }
+
+    getDefaultCommunityLearning() {
+        return {
+            schemaVersion: 1,
+            turnsAnalyzed: 0,
+            categoryTerms: {},
+            categoryPhrases: {},
+            updatedAt: Date.now()
+        };
+    }
+
+    async loadLearningState() {
+        try {
+            const profileRaw = await this.db.getSetting('learning-profile-v1');
+            const communityRaw = await this.db.getSetting('learning-community-v1');
+
+            this.learningProfile = profileRaw ? JSON.parse(profileRaw) : this.getDefaultLearningProfile();
+            this.communityLearning = communityRaw ? JSON.parse(communityRaw) : this.getDefaultCommunityLearning();
+        } catch (e) {
+            console.warn('Linen: Failed loading learning state, using defaults.', e);
+            this.learningProfile = this.getDefaultLearningProfile();
+            this.communityLearning = this.getDefaultCommunityLearning();
+        }
+
+        this.applyLearnedVocabularyToLocalAssistant();
+    }
+
+    normalizeLearningText(text) {
+        return String(text || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    tokenizeLearningText(text) {
+        const normalized = this.normalizeLearningText(text);
+        if (!normalized) return [];
+        return normalized.split(' ').filter(Boolean);
+    }
+
+    extractLearningTerms(tokens) {
+        const terms = new Set();
+        tokens.forEach((t) => {
+            if (t.length < 3 || t.length > 24) return;
+            if (/^\d+$/.test(t)) return;
+            if (this.learningStopWords.has(t)) return;
+            terms.add(t);
+        });
+        return Array.from(terms);
+    }
+
+    extractLearningPhrases(tokens) {
+        const phrases = new Set();
+        if (!tokens || tokens.length < 2) return [];
+
+        for (let size = 2; size <= 3; size++) {
+            for (let i = 0; i <= tokens.length - size; i++) {
+                const slice = tokens.slice(i, i + size);
+                const meaningful = slice.filter(t => !this.learningStopWords.has(t) && t.length >= 3);
+                if (meaningful.length < 2) continue;
+                phrases.add(slice.join(' '));
+            }
+        }
+        return Array.from(phrases);
+    }
+
+    incrementCounter(map, key, amount = 1) {
+        if (!key) return;
+        map[key] = (map[key] || 0) + amount;
+    }
+
+    pruneCounterMap(map, maxEntries = 2500, minCount = 2) {
+        const entries = Object.entries(map || {})
+            .filter(([, count]) => count >= minCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, maxEntries);
+        return Object.fromEntries(entries);
+    }
+
+    topCounterTerms(map, limit = 400, minCount = 2) {
+        return Object.entries(map || {})
+            .filter(([, count]) => count >= minCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, limit)
+            .map(([term]) => term);
+    }
+
+    applyLearnedVocabularyToLocalAssistant() {
+        if (!this.communityLearning) return;
+        const local = this.ensureLocalAssistant();
+        const pack = this.generateLearningVocabularyPack({ minCount: 2, perCategoryLimit: 200, commonPhraseLimit: 500 });
+        if (!pack || Object.keys(pack).length === 0) return;
+        local.mergeVocabularyPack(pack);
+        local.initializeVocabularyEngine();
+    }
+
+    generateLearningVocabularyPack(options = {}) {
+        const minCount = options.minCount ?? 2;
+        const perCategoryLimit = options.perCategoryLimit ?? 250;
+        const commonPhraseLimit = options.commonPhraseLimit ?? 600;
+        const pack = {};
+        const categoryTerms = this.communityLearning?.categoryTerms || {};
+        const categoryPhrases = this.communityLearning?.categoryPhrases || {};
+
+        Object.entries(categoryTerms).forEach(([category, termMap]) => {
+            const terms = this.topCounterTerms(termMap, perCategoryLimit, minCount);
+            if (terms.length > 0) pack[category] = terms;
+        });
+
+        const mergedPhrases = {};
+        Object.values(categoryPhrases).forEach((phraseMap) => {
+            Object.entries(phraseMap || {}).forEach(([phrase, count]) => {
+                mergedPhrases[phrase] = (mergedPhrases[phrase] || 0) + count;
+            });
+        });
+        const topPhrases = this.topCounterTerms(mergedPhrases, commonPhraseLimit, minCount);
+        if (topPhrases.length > 0) pack.commonPhrases = topPhrases;
+
+        return pack;
+    }
+
+    async recordLearningFromTurn(userMessage, assistantMessage, meta = {}) {
+        if (!userMessage || typeof userMessage !== 'string') return;
+        if (!this.learningProfile || !this.communityLearning) return;
+
+        const local = this.ensureLocalAssistant();
+        const tokens = this.tokenizeLearningText(userMessage);
+        if (tokens.length === 0) return;
+
+        const intent = local.detectIntent(userMessage) || 'engaged';
+        const mood = local.detectMood(userMessage) || 'neutral';
+        const topicScores = local.scoreVocabularyCategories(userMessage);
+        const topCategories = Object.entries(topicScores)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 2)
+            .map(([category]) => category);
+        const categories = topCategories.length > 0 ? topCategories : ['general'];
+
+        this.learningProfile.turnsAnalyzed += 1;
+        this.communityLearning.turnsAnalyzed += 1;
+        this.incrementCounter(this.learningProfile.intentCounts, intent, 1);
+        categories.forEach((cat) => this.incrementCounter(this.learningProfile.topicCounts, cat, 1));
+
+        const words = tokens.length;
+        const priorTurns = Math.max(this.learningProfile.turnsAnalyzed - 1, 0);
+        this.learningProfile.avgUserMessageWords = ((this.learningProfile.avgUserMessageWords * priorTurns) + words) / (priorTurns + 1);
+
+        if (words <= 6) this.learningProfile.styleSignals.concise += 1;
+        if (words >= 18) this.learningProfile.styleSignals.detailed += 1;
+        if (mood !== 'neutral') this.learningProfile.styleSignals.emotional += 1;
+        if (/\b(can you|please|help|need|want|should|plan|schedule|remind)\b/i.test(userMessage)) {
+            this.learningProfile.styleSignals.pragmatic += 1;
+        }
+
+        const terms = this.extractLearningTerms(tokens);
+        const phrases = this.extractLearningPhrases(tokens);
+
+        terms.forEach((term) => this.incrementCounter(this.learningProfile.learnedTerms, term, 1));
+        categories.forEach((cat) => {
+            if (!this.communityLearning.categoryTerms[cat]) this.communityLearning.categoryTerms[cat] = {};
+            if (!this.communityLearning.categoryPhrases[cat]) this.communityLearning.categoryPhrases[cat] = {};
+            terms.forEach((term) => this.incrementCounter(this.communityLearning.categoryTerms[cat], term, 1));
+            phrases.forEach((phrase) => this.incrementCounter(this.communityLearning.categoryPhrases[cat], phrase, 1));
+        });
+
+        if (meta.usedRemote) {
+            this.incrementCounter(this.learningProfile.intentCounts, 'remoteIntervention', 1);
+        } else {
+            this.incrementCounter(this.learningProfile.intentCounts, 'localHandled', 1);
+        }
+
+        if (this.learningProfile.turnsAnalyzed % 20 === 0) {
+            this.learningProfile.learnedTerms = this.pruneCounterMap(this.learningProfile.learnedTerms, 3000, 2);
+            Object.keys(this.communityLearning.categoryTerms).forEach((cat) => {
+                this.communityLearning.categoryTerms[cat] = this.pruneCounterMap(this.communityLearning.categoryTerms[cat], 3000, 2);
+                this.communityLearning.categoryPhrases[cat] = this.pruneCounterMap(this.communityLearning.categoryPhrases[cat], 2000, 2);
+            });
+        }
+
+        this.learningProfile.updatedAt = Date.now();
+        this.communityLearning.updatedAt = Date.now();
+
+        await this.db.setSetting('learning-profile-v1', JSON.stringify(this.learningProfile));
+        await this.db.setSetting('learning-community-v1', JSON.stringify(this.communityLearning));
+
+        if (this.learningProfile.turnsAnalyzed % 5 === 0) {
+            this.applyLearnedVocabularyToLocalAssistant();
+        }
     }
 
     hasRemoteAssistant() {
@@ -3697,6 +3912,7 @@ class Linen {
             this.analytics.trackPageView();
             await this.db.init();
             this.profileManager = new ProfileManager(this.db);
+            await this.loadLearningState();
 
             const existingConvs = await this.db.getConversations();
             // Only archive if there's actual user interaction (more than just initial greeting/bot messages)
@@ -5090,6 +5306,10 @@ class Linen {
         }
 
         document.getElementById('export-data').addEventListener('click', () => this.exportData());
+        const exportLearningBtn = document.getElementById('export-learning-pack');
+        if (exportLearningBtn) {
+            exportLearningBtn.addEventListener('click', () => this.exportLearningPack());
+        }
         document.getElementById('clear-data').addEventListener('click', () => this.clearAll());
         document.getElementById('clear-chat-history').addEventListener('click', () => this.clearChatHistory());
         document.getElementById('force-refresh-btn').addEventListener('click', () => this.forceRefresh());
@@ -6597,6 +6817,7 @@ class Linen {
 
                 // Analyze user message for potential calendar events/reminders
                 await this.analyzeForEvents(msg);
+                await this.recordLearningFromTurn(msg, reply, { usedRemote: attemptedRemote });
             }
 
             // Trial mode is deprecated - users can always use LocalAssistant
@@ -6641,6 +6862,7 @@ class Linen {
                 if (!initialMessage && !isInitialGreeting) {
                     await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
                     await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
+                    await this.recordLearningFromTurn(msg, localReply, { usedRemote: attemptedRemote });
                 }
             } else if (!navigator.onLine) {
                 const ediv = document.createElement('div');
@@ -6671,6 +6893,36 @@ class Linen {
         document.body.removeChild(a);
     }
 
+    async exportLearningPack() {
+        const pack = this.generateLearningVocabularyPack({ minCount: 2, perCategoryLimit: 500, commonPhraseLimit: 1200 });
+        const payload = {
+            schemaVersion: 1,
+            exportedAt: new Date().toISOString(),
+            privacy: {
+                noRawMessages: true,
+                noUserIdentifiers: true,
+                noSpeakerAttribution: true
+            },
+            stats: {
+                turnsAnalyzed: this.learningProfile?.turnsAnalyzed || 0,
+                communityTurns: this.communityLearning?.turnsAnalyzed || 0
+            },
+            vocabularyExpansion: pack
+        };
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        a.href = url;
+        a.download = `linen-learning-pack-${stamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.showToast('Anonymized learning pack exported', 'success');
+    }
+
     async clearAll() {
         if (!confirm('Are you sure you want to clear ALL data (memories and settings)? This cannot be undone.')) return;
         await this.db.clearAllMemories();
@@ -6679,6 +6931,8 @@ class Linen {
         await this.db.setSetting('primary-agent-id', null);
         await this.db.setSetting('legacy-key-migrated', null);
         await this.db.setSetting('onboarding-complete', false);
+        await this.db.setSetting('learning-profile-v1', null);
+        await this.db.setSetting('learning-community-v1', null);
         if (this.profileManager) {
             await this.profileManager.deleteProfile();
         }
