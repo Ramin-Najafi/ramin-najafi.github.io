@@ -6295,10 +6295,7 @@ class Linen {
         const container = document.getElementById('chat-messages');
         const convs = await this.db.getConversations();
         container.innerHTML = '';
-        if (!convs || convs.length === 0) {
-            this.sendChat('[INITIAL_GREETING]');
-            return;
-        }
+        if (!convs || convs.length === 0) return;
         convs.forEach(msg => {
             const div = document.createElement('div');
             div.className = msg.sender === 'user' ? 'user-message' : 'assistant-message';
@@ -6315,12 +6312,29 @@ class Linen {
         }
     }
 
+    getShortInitialGreeting() {
+        return "Hey, I'm Linen. What's on your mind today?";
+    }
+
     async sendChat(initialMessage) {
         const input = document.getElementById('chat-input');
         const msg = initialMessage || input.value.trim();
         if (!msg || !this.assistant) return;
 
         const container = document.getElementById('chat-messages');
+        const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
+
+        // Keep startup greeting short and ensure only one greeting appears when chat is empty.
+        if (isInitialGreeting) {
+            const hasMessages = container.querySelector('.assistant-message, .user-message');
+            if (hasMessages) return;
+            const greetingDiv = document.createElement('div');
+            greetingDiv.className = 'assistant-message';
+            greetingDiv.textContent = this.getShortInitialGreeting();
+            container.appendChild(greetingDiv);
+            this.scrollToBottom();
+            return;
+        }
 
         if (!initialMessage) {
             input.value = '';
@@ -6401,7 +6415,6 @@ class Linen {
 
             // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
             // Don't save if it's the initial greeting message
-            const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
             if (!initialMessage && !isInitialGreeting) {
                 await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
                 await this.db.addConversation({ text: reply, sender: 'assistant', date: Date.now() });
