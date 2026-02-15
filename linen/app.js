@@ -2238,6 +2238,95 @@ class LocalAssistant {
                 "100%, that's facts.",
             ],
         };
+
+        // Build fast lookup indexes so all vocabulary categories can participate in context routing.
+        this.initializeVocabularyEngine();
+    }
+
+    initializeVocabularyEngine() {
+        this.vocabIndex = {};
+        this.allVocabularyTerms = new Set();
+
+        Object.entries(this.vocabulary).forEach(([category, terms]) => {
+            const words = new Set();
+            const phrases = [];
+
+            (terms || []).forEach((rawTerm) => {
+                const term = this.normalizeText(rawTerm);
+                if (!term) return;
+                this.allVocabularyTerms.add(term);
+                if (term.includes(' ')) phrases.push(term);
+                else words.add(term);
+            });
+
+            this.vocabIndex[category] = { words, phrases };
+        });
+
+        this.allVocabularyList = Array.from(this.allVocabularyTerms);
+    }
+
+    normalizeText(text) {
+        return (text || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    tokenize(text) {
+        const normalized = this.normalizeText(text);
+        if (!normalized) return [];
+        return normalized.split(' ').filter(Boolean);
+    }
+
+    scoreVocabularyCategories(message) {
+        const normalized = this.normalizeText(message);
+        const padded = ` ${normalized} `;
+        const tokens = new Set(this.tokenize(message));
+        const scores = {};
+
+        Object.entries(this.vocabIndex || {}).forEach(([category, index]) => {
+            let score = 0;
+
+            tokens.forEach((token) => {
+                if (index.words.has(token)) score += 1;
+            });
+
+            // Multi-word term matches get slightly higher weight for context precision.
+            index.phrases.forEach((phrase) => {
+                if (padded.includes(` ${phrase} `)) score += 2;
+            });
+
+            if (score > 0) scores[category] = score;
+        });
+
+        return scores;
+    }
+
+    inferTopicIntentFromVocabulary(message) {
+        const scores = this.scoreVocabularyCategories(message);
+        const normalized = this.normalizeText(message);
+
+        const goalHints = [
+            'goal', 'goals', 'plan', 'plans', 'planning', 'future', 'career',
+            'ambition', 'dream', 'dreams', 'objective', 'target', 'milestone'
+        ];
+        const healthHints = [
+            'health', 'sleep', 'sick', 'doctor', 'pain', 'therapy', 'anxiety',
+            'depression', 'medication', 'workout', 'exercise', 'diet'
+        ];
+
+        const topicScores = {
+            topicWork: (scores.work || 0),
+            topicRelationships: (scores.relationships || 0),
+            topicHealth: (scores.emotions || 0) + healthHints.filter(h => normalized.includes(h)).length,
+            topicHobbies: (scores.hobbiesActivities || 0) + (scores.activities || 0) + (scores.foodDrinks || 0),
+            topicGoals: (scores.timeWords || 0) + goalHints.filter(h => normalized.includes(h)).length
+        };
+
+        const ranked = Object.entries(topicScores).sort((a, b) => b[1] - a[1]);
+        if (ranked.length === 0 || ranked[0][1] < 2) return null;
+        return ranked[0][0];
     }
 
     // Pick a random response that hasn't been used recently
@@ -2386,12 +2475,9 @@ class LocalAssistant {
         const positiveWords = ['happy', 'excited', 'great', 'wonderful', 'amazing', 'proud', 'grateful', 'awesome', 'fantastic', 'love it', 'best', 'good news', 'pumped', 'thrilled', 'doing what i love', 'never been happier', 'sharper', 'physically', 'mentally'];
         if (positiveWords.some(k => msg.includes(k))) return 'positive';
 
-        // Topic detection
-        if (['work', 'job', 'boss', 'project', 'deadline', 'meeting', 'office', 'coworker', 'intern', 'internship'].some(k => msg.includes(k))) return 'topicWork';
-        if (['friend', 'family', 'partner', 'mom', 'dad', 'brother', 'sister', 'girlfriend', 'boyfriend', 'relationship', 'dating'].some(k => msg.includes(k))) return 'topicRelationships';
-        if (['tired', 'sick', 'sleep', 'exercise', 'health', 'doctor', 'pain', 'headache', 'ill'].some(k => msg.includes(k))) return 'topicHealth';
-        if (['hobby', 'play', 'music', 'read', 'game', 'art', 'write', 'draw', 'cook', 'sport', 'watch', 'movie', 'show'].some(k => msg.includes(k))) return 'topicHobbies';
-        if (['goal', 'dream', 'achieve', 'trying', 'plan', 'future', 'career', 'aspire', 'ambition'].some(k => msg.includes(k))) return 'topicGoals';
+        // Topic detection backed by the full vocabulary index
+        const vocabTopicIntent = this.inferTopicIntentFromVocabulary(message);
+        if (vocabTopicIntent) return vocabTopicIntent;
 
         // Out-of-scope factual question detection — common factual queries
         const factualKeywords = ['price', 'cost', 'weather', 'temperature', 'stock', 'score', 'result', 'who won', 'when is', 'what is the', 'how much', 'how many', 'capital of', 'population of', 'definition of'];
@@ -2476,6 +2562,11 @@ class LocalAssistant {
         if (distressKeywords.some(k => msg.includes(k))) return 'distressed';
         if (anxiousKeywords.some(k => msg.includes(k))) return 'anxious';
         if (positiveKeywords.some(k => msg.includes(k))) return 'positive';
+
+        // Fallback sentiment inference from the expanded emotion vocabulary.
+        const sentiment = this.calculateSentimentScore(message);
+        if (sentiment.negativeWords >= 2 && sentiment.score < -0.2) return 'distressed';
+        if (sentiment.positiveWords >= 2 && sentiment.score > 0.2) return 'positive';
         return 'neutral';
     }
 
@@ -2575,32 +2666,21 @@ class LocalAssistant {
         return null;
     }
 
-    // Get conversation topic for context using expanded vocabulary
+    // Get conversation topic for context using scored vocabulary categories.
     getConversationTopic() {
         const recentMessages = this.sessionMemory.slice(-6); // Last 6 messages
-        const allText = recentMessages.map(m => m.content).join(' ').toLowerCase();
+        const allText = recentMessages.map(m => m.content).join(' ');
+        const inferredIntent = this.inferTopicIntentFromVocabulary(allText);
+        if (!inferredIntent) return null;
 
-        // Work-related keywords from expanded vocabulary
-        const workKeywords = ['work', 'job', 'boss', 'project', 'deadline', 'meeting', 'office', 'coworker', 'intern', 'internship', 'career', 'employment', 'profession', 'occupation', 'company', 'business', 'enterprise', 'manager', 'supervisor', 'executive', 'colleague'];
-        if (workKeywords.some(k => allText.includes(k))) return 'work';
-
-        // Relationship keywords
-        const relationshipKeywords = ['friend', 'family', 'relationship', 'dating', 'partner', 'husband', 'wife', 'boyfriend', 'girlfriend', 'mom', 'dad', 'brother', 'sister', 'parent', 'child', 'lover', 'spouse', 'marriage', 'wedding'];
-        if (relationshipKeywords.some(k => allText.includes(k))) return 'relationship';
-
-        // Health-related keywords
-        const healthKeywords = ['tired', 'sick', 'health', 'exercise', 'sleep', 'doctor', 'pain', 'headache', 'ill', 'illness', 'disease', 'fitness', 'workout', 'medication', 'treatment', 'hospital', 'clinic'];
-        if (healthKeywords.some(k => allText.includes(k))) return 'health';
-
-        // Hobby and entertainment keywords
-        const hobbyKeywords = ['play', 'game', 'music', 'read', 'art', 'draw', 'write', 'cook', 'sport', 'watch', 'movie', 'show', 'hobby', 'interest', 'hobby', 'entertainment', 'recreation', 'leisure', 'fun'];
-        if (hobbyKeywords.some(k => allText.includes(k))) return 'hobby';
-
-        // Goal and aspiration keywords
-        const goalKeywords = ['goal', 'dream', 'achieve', 'trying', 'plan', 'future', 'career', 'aspire', 'ambition', 'objective', 'target', 'aim', 'vision', 'mission', 'success', 'accomplish'];
-        if (goalKeywords.some(k => allText.includes(k))) return 'goal';
-
-        return null;
+        const intentToTopic = {
+            topicWork: 'work',
+            topicRelationships: 'relationship',
+            topicHealth: 'health',
+            topicHobbies: 'hobby',
+            topicGoals: 'goal'
+        };
+        return intentToTopic[inferredIntent] || null;
     }
 
     async chat(message) {
@@ -2719,7 +2799,9 @@ class LocalAssistant {
         }
         // All other intents — use the matching category
         else {
-            response = this.pick(intent, message);
+            // If generic engagement was detected, route through vocabulary-based topic inference first.
+            const contextualIntent = intent === 'engaged' ? this.inferTopicIntentFromVocabulary(message) : null;
+            response = this.pick(contextualIntent || intent, message) || this.pick('engaged', message);
         }
 
         // Personalize with name occasionally
@@ -2744,28 +2826,10 @@ class LocalAssistant {
     // ========== VOCABULARY-BASED TOPIC AND SENTIMENT ANALYSIS ==========
     // Analyzes message for topic relevance using the expanded 5000+ word vocabulary
     analyzeTopicsInMessage(message) {
-        const msg = message.toLowerCase();
-        const topics = [];
-
-        // Check each vocabulary category for matches
-        if (this.vocabulary.work.some(word => msg.includes(word))) {
-            topics.push({ topic: 'work', confidence: this.vocabulary.work.filter(word => msg.includes(word)).length });
-        }
-        if (this.vocabulary.relationships.some(word => msg.includes(word))) {
-            topics.push({ topic: 'relationships', confidence: this.vocabulary.relationships.filter(word => msg.includes(word)).length });
-        }
-        if (this.vocabulary.activities.some(word => msg.includes(word))) {
-            topics.push({ topic: 'activities', confidence: this.vocabulary.activities.filter(word => msg.includes(word)).length });
-        }
-        if (this.vocabulary.emotions.some(word => msg.includes(word))) {
-            topics.push({ topic: 'emotions', confidence: this.vocabulary.emotions.filter(word => msg.includes(word)).length });
-        }
-        if (this.vocabulary.timeWords.some(word => msg.includes(word))) {
-            topics.push({ topic: 'time', confidence: this.vocabulary.timeWords.filter(word => msg.includes(word)).length });
-        }
-
-        // Sort by confidence (highest first)
-        return topics.sort((a, b) => b.confidence - a.confidence);
+        const scores = this.scoreVocabularyCategories(message);
+        return Object.entries(scores)
+            .map(([topic, confidence]) => ({ topic, confidence }))
+            .sort((a, b) => b.confidence - a.confidence);
     }
 
     // Calculate sentiment score using emotion vocabulary
@@ -2800,26 +2864,12 @@ class LocalAssistant {
     getVocabularyCoverage(message) {
         const msg = message.toLowerCase().split(/\s+/);
         let coveredWords = 0;
-
-        const allVocabWords = [
-            ...this.vocabulary.verbs,
-            ...this.vocabulary.emotions,
-            ...this.vocabulary.adjectives,
-            ...this.vocabulary.nouns,
-            ...this.vocabulary.places,
-            ...this.vocabulary.timeWords,
-            ...this.vocabulary.activities,
-            ...this.vocabulary.responses,
-            ...this.vocabulary.questions,
-            ...this.vocabulary.pronouns,
-            ...this.vocabulary.utilities,
-            ...this.vocabulary.work,
-            ...this.vocabulary.relationships
-        ];
+        const allVocabWords = this.allVocabularyList || [];
 
         msg.forEach(word => {
             // Clean word of punctuation
-            const cleanWord = word.replace(/[!?.,;:'-]/g, '').toLowerCase();
+            const cleanWord = this.normalizeText(word);
+            if (!cleanWord) return;
             if (allVocabWords.some(vocabWord => vocabWord.includes(cleanWord) || cleanWord.includes(vocabWord))) {
                 coveredWords++;
             }
@@ -2853,32 +2903,14 @@ class LocalAssistant {
 
     // Detect multiple topics in a single message for smarter responses
     detectMultipleTopics(message) {
-        const msg = message.toLowerCase();
         const detectedTopics = {};
-        let multiTopicCount = 0;
+        const topicScores = this.analyzeTopicsInMessage(message);
+        topicScores.slice(0, 4).forEach(({ topic, confidence }) => {
+            if (confidence > 0) detectedTopics[topic] = true;
+        });
 
-        // Check for work-related keywords
-        if (this.vocabulary.work && this.vocabulary.work.some(word => msg.includes(word))) {
-            detectedTopics.work = true;
-            multiTopicCount++;
-        }
-        // Check for relationship keywords
-        if (this.vocabulary.relationships && this.vocabulary.relationships.some(word => msg.includes(word))) {
-            detectedTopics.relationships = true;
-            multiTopicCount++;
-        }
-        // Check for health/wellness keywords
-        if (['tired', 'sick', 'sleep', 'exercise', 'health', 'doctor', 'pain', 'stress'].some(k => msg.includes(k))) {
-            detectedTopics.wellness = true;
-            multiTopicCount++;
-        }
-        // Check for emotional keywords
-        if (this.vocabulary.emotions && this.vocabulary.emotions.some(word => msg.includes(word))) {
-            detectedTopics.emotions = true;
-            multiTopicCount++;
-        }
-
-        return { topics: detectedTopics, isMultiTopic: multiTopicCount > 1, count: multiTopicCount };
+        const count = Object.keys(detectedTopics).length;
+        return { topics: detectedTopics, isMultiTopic: count > 1, count };
     }
 
     // Track sentiment momentum (is mood getting better or worse?)
