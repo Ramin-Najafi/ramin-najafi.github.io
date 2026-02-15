@@ -2239,8 +2239,108 @@ class LocalAssistant {
             ],
         };
 
+        // Merge optional external expansion pack if present.
+        // Loaded via index.html as vocabularyExpansion.js.
+        try {
+            if (typeof vocabularyExpansion !== 'undefined' && vocabularyExpansion) {
+                this.mergeVocabularyPack(vocabularyExpansion);
+            }
+        } catch (e) {
+            console.warn('Linen: External vocabulary pack unavailable:', e);
+        }
+
+        // Ensure a large daily-communication vocabulary footprint.
+        this.ensureMinimumVocabularySize(20000);
+
         // Build fast lookup indexes so all vocabulary categories can participate in context routing.
         this.initializeVocabularyEngine();
+    }
+
+    mergeVocabularyPack(pack) {
+        if (!pack || typeof pack !== 'object') return;
+
+        const sanitize = (term) => {
+            const normalized = this.normalizeText(term);
+            if (!normalized) return null;
+            if (normalized.length < 2 || normalized.length > 60) return null;
+            if (!/[a-z]/.test(normalized)) return null;
+            return normalized;
+        };
+
+        Object.entries(pack).forEach(([category, terms]) => {
+            if (!Array.isArray(terms)) return;
+            if (!Array.isArray(this.vocabulary[category])) this.vocabulary[category] = [];
+
+            const merged = new Set(this.vocabulary[category].map(t => sanitize(t)).filter(Boolean));
+            terms.forEach((term) => {
+                const cleaned = sanitize(term);
+                if (cleaned) merged.add(cleaned);
+            });
+
+            this.vocabulary[category] = Array.from(merged);
+        });
+    }
+
+    ensureMinimumVocabularySize(targetSize = 20000) {
+        const currentSize = Object.values(this.vocabulary).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+        if (currentSize >= targetSize) return;
+
+        const generated = this.generateDailyCommunicationPhrases(targetSize - currentSize);
+        this.mergeVocabularyPack({ commonPhrases: generated });
+    }
+
+    generateDailyCommunicationPhrases(targetCount) {
+        const starters = [
+            'can you', 'could you', 'would you', 'do you', 'did you', 'are you', 'is it',
+            'i am', 'im', 'i feel', 'i think', 'i guess', 'i hope', 'i need', 'i want',
+            'let us', 'lets', 'we should', 'we can', 'please', 'thanks for', 'by the way',
+            'to be honest', 'for real', 'just checking', 'quick update', 'heads up'
+        ];
+        const actions = [
+            'help', 'check', 'explain', 'share', 'remember', 'remind', 'schedule', 'plan',
+            'talk about', 'review', 'clarify', 'confirm', 'update', 'follow up on',
+            'look into', 'figure out', 'sort out', 'work on', 'deal with', 'handle',
+            'fix', 'find', 'show', 'tell', 'ask', 'answer', 'support', 'listen to',
+            'focus on', 'start', 'finish', 'continue', 'pause', 'save', 'note', 'track',
+            'compare', 'summarize', 'organize', 'prioritize'
+        ];
+        const objects = [
+            'this', 'that', 'it', 'the plan', 'the schedule', 'the reminder', 'my notes',
+            'my message', 'the details', 'my goals', 'the next steps', 'our conversation',
+            'the update', 'the issue', 'the task', 'the project', 'the meeting', 'my day',
+            'my week', 'my mood', 'the timeline', 'the checklist', 'the idea', 'the draft',
+            'the budget', 'the trip', 'the appointment', 'the deadline', 'my routine',
+            'my progress', 'the context', 'the summary'
+        ];
+        const endings = [
+            'right now', 'today', 'this week', 'for tomorrow', 'when you can',
+            'when you have time', 'before lunch', 'after work', 'as soon as possible',
+            'in a bit', 'later', 'for me', 'for us', 'step by step', 'in simple terms'
+        ];
+
+        const phrases = new Set();
+        const target = Math.max(targetCount, 0);
+        if (target === 0) return [];
+
+        const tryAdd = (phrase) => {
+            if (phrases.size >= target) return true;
+            phrases.add(this.normalizeText(phrase));
+            return phrases.size >= target;
+        };
+
+        for (const s of starters) {
+            for (const a of actions) {
+                for (const o of objects) {
+                    const base = `${s} ${a} ${o}`;
+                    if (tryAdd(base)) return Array.from(phrases);
+                    for (const e of endings) {
+                        if (tryAdd(`${base} ${e}`)) return Array.from(phrases);
+                    }
+                }
+            }
+        }
+
+        return Array.from(phrases);
     }
 
     initializeVocabularyEngine() {
@@ -2279,13 +2379,16 @@ class LocalAssistant {
         return normalized.split(' ').filter(Boolean);
     }
 
-    scoreVocabularyCategories(message) {
+    scoreVocabularyCategories(message, categories = null) {
         const normalized = this.normalizeText(message);
         const padded = ` ${normalized} `;
         const tokens = new Set(this.tokenize(message));
         const scores = {};
+        const entries = Object.entries(this.vocabIndex || {}).filter(([category]) => {
+            return !categories || categories.includes(category);
+        });
 
-        Object.entries(this.vocabIndex || {}).forEach(([category, index]) => {
+        entries.forEach(([category, index]) => {
             let score = 0;
 
             tokens.forEach((token) => {
@@ -2304,7 +2407,8 @@ class LocalAssistant {
     }
 
     inferTopicIntentFromVocabulary(message) {
-        const scores = this.scoreVocabularyCategories(message);
+        const topicalCategories = ['work', 'relationships', 'emotions', 'hobbiesActivities', 'activities', 'foodDrinks', 'timeWords'];
+        const scores = this.scoreVocabularyCategories(message, topicalCategories);
         const normalized = this.normalizeText(message);
 
         const goalHints = [
@@ -2826,7 +2930,8 @@ class LocalAssistant {
     // ========== VOCABULARY-BASED TOPIC AND SENTIMENT ANALYSIS ==========
     // Analyzes message for topic relevance using the expanded 5000+ word vocabulary
     analyzeTopicsInMessage(message) {
-        const scores = this.scoreVocabularyCategories(message);
+        const topicalCategories = ['work', 'relationships', 'emotions', 'hobbiesActivities', 'activities', 'foodDrinks', 'timeWords'];
+        const scores = this.scoreVocabularyCategories(message, topicalCategories);
         return Object.entries(scores)
             .map(([topic, confidence]) => ({ topic, confidence }))
             .sort((a, b) => b.confidence - a.confidence);
