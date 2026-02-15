@@ -550,38 +550,19 @@ class OpenAIAssistant {
 
     async validateKey() {
         console.log("Validating OpenAI key...");
-        try {
-            const res = await fetch('https://api.openai.com/v1/models', {
-                headers: { 'Authorization': `Bearer ${this.apiKey}` }
-            });
-            if (res.ok) return { valid: true };
+        // Do local format validation only to avoid browser-side CORS failures during key setup.
+        // Real verification happens on first API call.
+        const key = (this.apiKey || '').trim();
+        if (!key) return { valid: false, error: 'API key is required.' };
+        if (key.length < 20) return { valid: false, error: 'API key looks too short.' };
 
-            const err = await res.json().catch(() => ({}));
-            if (res.status === 401) {
-                return { valid: false, error: 'Invalid API key. Please check and try again.' };
-            }
-            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
-        } catch (e) {
-            console.error("OpenAI key validation failed:", e);
-            console.error("Error name:", e.name);
-            console.error("Error message:", e.message);
-            console.error("Error type:", e.constructor.name);
-
-            // CORS error - OpenAI blocks direct browser requests
-            // Accept the key and let first chat attempt verify it
-            // Check for CORS, network, and general fetch errors
-            const isCorsError = e.message.includes('cors') ||
-                               e.name === 'TypeError' ||
-                               e instanceof TypeError ||
-                               e.message.includes('Failed to fetch') ||
-                               e.message.includes('NetworkError');
-
-            if (isCorsError) {
-                console.log("Linen: CORS/Network error detected, accepting OpenAI key - will validate on first use");
-                return { valid: true };
-            }
-            return { valid: false, error: 'Network error. Check your internet connection.' };
+        // Accept common OpenAI-style and project-scoped key prefixes.
+        const looksLikeOpenAIKey = /^(sk-|sess-)/i.test(key);
+        if (!looksLikeOpenAIKey) {
+            return { valid: false, error: 'This does not look like a valid OpenAI key format.' };
         }
+
+        return { valid: true };
     }
 
     async chat(msg, chats, mems, loadingId) {
@@ -5838,12 +5819,12 @@ class Linen {
             return;
         }
 
-        errorEl.textContent = 'Validating...';
-        console.log("Linen: Validating API key...");
-
         // Use onboarding's selected provider FIRST (user's choice), then auto-detect, then default to gemini
         const detectedProvider = this.detectProvider(key);
         const provider = this.onboardingProvider || detectedProvider || 'gemini';
+        const isOpenAIProvider = provider === 'openai';
+        errorEl.textContent = isOpenAIProvider ? 'Checking OpenAI key format...' : 'Validating...';
+        console.log(`Linen: ${isOpenAIProvider ? 'Checking OpenAI key format' : 'Validating API key'}...`);
         console.log(`Linen: Onboarding provider: ${this.onboardingProvider}, detected provider: ${detectedProvider}, final provider: ${provider}`);
         let tempAssistant;
 
@@ -6054,7 +6035,7 @@ class Linen {
             saveBtn.textContent = 'Adding...';
         }
 
-        errorEl.textContent = 'Validating API key...';
+        errorEl.textContent = type === 'openai' ? 'Checking OpenAI key format...' : 'Validating API key...';
 
         try {
             // Validate API key for the selected provider
