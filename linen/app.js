@@ -681,47 +681,18 @@ class HuggingFaceAssistant {
 
     async validateKey() {
         console.log("Validating Hugging Face key...");
-        try {
-            const res = await fetch(this.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    inputs: 'Hi'
-                })
-            });
-            if (res.ok) return { valid: true };
+        // Do local format validation only to avoid browser-side CORS failures during key setup.
+        // Real verification happens on first API call.
+        const key = (this.apiKey || '').trim();
+        if (!key) return { valid: false, error: 'API key is required.' };
+        if (key.length < 20) return { valid: false, error: 'API key looks too short.' };
 
-            const err = await res.json().catch(() => ({}));
-            if (res.status === 401) {
-                return { valid: false, error: 'Invalid API key. Please check and try again.' };
-            }
-            if (res.status === 503) {
-                // Model loading - accept the key, it will work
-                return { valid: true };
-            }
-            return { valid: false, error: `Authentication failed (HTTP ${res.status})` };
-        } catch (e) {
-            console.error("Hugging Face key validation failed:", e);
-            console.error("Error name:", e.name);
-            console.error("Error message:", e.message);
-
-            // CORS error - Hugging Face may block direct browser requests
-            // Accept the key and let first chat attempt verify it
-            const isCorsError = e.message.includes('cors') ||
-                               e.name === 'TypeError' ||
-                               e instanceof TypeError ||
-                               e.message.includes('Failed to fetch') ||
-                               e.message.includes('NetworkError');
-
-            if (isCorsError) {
-                console.log("Linen: CORS/Network error detected, accepting Hugging Face key - will validate on first use");
-                return { valid: true };
-            }
-            return { valid: false, error: 'Network error. Check your internet connection.' };
+        // Hugging Face User Access Tokens typically begin with hf_.
+        if (!/^hf_/i.test(key)) {
+            return { valid: false, error: 'This does not look like a valid Hugging Face token format.' };
         }
+
+        return { valid: true };
     }
 
     async chat(msg, chats, mems, loadingId) {
@@ -5823,8 +5794,13 @@ class Linen {
         const detectedProvider = this.detectProvider(key);
         const provider = this.onboardingProvider || detectedProvider || 'gemini';
         const isOpenAIProvider = provider === 'openai';
-        errorEl.textContent = isOpenAIProvider ? 'Checking OpenAI key format...' : 'Validating...';
-        console.log(`Linen: ${isOpenAIProvider ? 'Checking OpenAI key format' : 'Validating API key'}...`);
+        const isHuggingFaceProvider = provider === 'huggingface';
+        errorEl.textContent = isOpenAIProvider
+            ? 'Checking OpenAI key format...'
+            : isHuggingFaceProvider
+                ? 'Checking Hugging Face token format...'
+                : 'Validating...';
+        console.log(`Linen: ${isOpenAIProvider ? 'Checking OpenAI key format' : isHuggingFaceProvider ? 'Checking Hugging Face token format' : 'Validating API key'}...`);
         console.log(`Linen: Onboarding provider: ${this.onboardingProvider}, detected provider: ${detectedProvider}, final provider: ${provider}`);
         let tempAssistant;
 
@@ -6035,7 +6011,11 @@ class Linen {
             saveBtn.textContent = 'Adding...';
         }
 
-        errorEl.textContent = type === 'openai' ? 'Checking OpenAI key format...' : 'Validating API key...';
+        errorEl.textContent = type === 'openai'
+            ? 'Checking OpenAI key format...'
+            : type === 'huggingface'
+                ? 'Checking Hugging Face token format...'
+                : 'Validating API key...';
 
         try {
             // Validate API key for the selected provider
