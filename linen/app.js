@@ -3513,8 +3513,10 @@ class Linen {
         this.utilities = null; // Will be initialized after db.init()
         this.profileManager = null; // Initialized after db.init()
         this.assistant = null; // Will be GeminiAssistant or LocalAssistant
+        this.localAssistant = null; // Always-on local assistant for local-first routing
         this.currentAgent = null; // Track current agent
         this.isLocalMode = false;
+        this.localFirstMode = true; // Linen should prioritize local responses first
         this.savedApiKey = null; // Store API key for lazy validation
         this._onboardingBound = false;
         this._eventsBound = false;
@@ -3540,6 +3542,61 @@ class Linen {
         const p = String(provider || '').toLowerCase().trim();
         if (p === 'chatgpt') return 'openai';
         return p;
+    }
+
+    ensureLocalAssistant() {
+        if (!this.utilities) {
+            this.utilities = new UtilitiesApp(this.db);
+        }
+        if (!this.localAssistant && this.assistant instanceof LocalAssistant) {
+            this.localAssistant = this.assistant;
+        }
+        if (!this.localAssistant) {
+            this.localAssistant = new LocalAssistant(this.db, this.utilities);
+        } else if (!this.localAssistant.eventDetector && this.utilities) {
+            this.localAssistant.eventDetector = new EventDetector(this.db, this.utilities);
+        }
+        return this.localAssistant;
+    }
+
+    hasRemoteAssistant() {
+        return !!(this.assistant && !(this.assistant instanceof LocalAssistant));
+    }
+
+    shouldEscalateToRemote(message) {
+        if (!this.localFirstMode) return this.hasRemoteAssistant() && navigator.onLine;
+        if (!this.hasRemoteAssistant() || !navigator.onLine) return false;
+
+        const local = this.ensureLocalAssistant();
+        const normalized = local.normalizeText(message);
+        const tokens = local.tokenize(message);
+        const intent = local.detectIntent(message);
+        const mood = local.detectMood(message);
+        const scores = local.scoreVocabularyCategories(message);
+        const vocabHits = Object.values(scores).reduce((sum, n) => sum + n, 0);
+
+        const localSafeIntents = new Set([
+            'greetingReply', 'howAreYou', 'thanks', 'farewell', 'question',
+            'casualChat', 'engaged', 'positive', 'negative', 'referenceBack',
+            'timerSet', 'alarmSet', 'noteAdded', 'identity', 'creator',
+            'frustrated', 'distressed'
+        ]);
+
+        if (localSafeIntents.has(intent) && tokens.length <= 20 && vocabHits >= 1) {
+            return false;
+        }
+
+        const hasQuestionSignal = /\?|\b(what|why|how|when|where|which|who|can you|could you|would you)\b/i.test(message);
+        const needsDeepReasoning = /\b(explain|analyze|compare|evaluate|reason|strategy|tradeoff|pros and cons|step by step)\b/i.test(normalized);
+        const contentGeneration = /\b(write|draft|rewrite|summarize|brainstorm|outline|email|essay|post|caption|script)\b/i.test(normalized);
+        const technicalTask = /\b(code|debug|bug|error|stack|api|database|sql|regex|javascript|python|typescript)\b/i.test(normalized);
+
+        if (intent === 'outOfScope') return true;
+        if (needsDeepReasoning || contentGeneration || technicalTask) return true;
+        if (hasQuestionSignal && tokens.length >= 16 && vocabHits < 3) return true;
+        if (mood === 'neutral' && intent === 'engaged' && tokens.length >= 28) return true;
+
+        return false;
     }
 
     showLocalModeToast(reason) {
@@ -6464,8 +6521,11 @@ class Linen {
         div.id = id;
         div.className = 'assistant-message';
 
-        // Show typing indicator bubble for local mode, "Thinking..." for API mode
-        if (this.isLocalMode) {
+        const localAssistant = this.ensureLocalAssistant();
+        const shouldUseRemote = this.shouldEscalateToRemote(msg);
+
+        // Show typing indicator bubble for local-first responses, "Thinking..." only for escalated remote calls
+        if (!shouldUseRemote) {
             div.classList.add('typing-indicator');
             div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
         } else {
@@ -6475,20 +6535,22 @@ class Linen {
         this.scrollToBottom();
 
         let reply = '';
+        let attemptedRemote = false;
         try {
             const mems = await this.db.getAllMemories();
             const convs = await this.db.getConversations();
 
-            // If in local mode, add a short delay to simulate thinking
-            if (this.isLocalMode) {
-                console.log("Linen: Currently in local mode. Using LocalAssistant.");
+            if (!shouldUseRemote) {
+                // Local-first path
+                console.log("Linen: Local-first response path.");
                 const delay = 800 + Math.random() * 700; // 800ms–1500ms
                 await new Promise(resolve => setTimeout(resolve, delay));
-                reply = await this.assistant.chat(msg);
+                reply = await localAssistant.chat(msg);
             } else {
-                // Use primary agent or fallback to next available
+                attemptedRemote = true;
+                // Escalate to remote assistant only when local routing says it is needed
                 console.log("Linen: Attempting to use primary agent:", this.currentAgent?.name || 'Unknown');
-                if (!initialMessage && this.assistant.detectCrisis(msg)) {
+                if (!initialMessage && this.assistant?.detectCrisis && this.assistant.detectCrisis(msg)) {
                     this.showCrisisModal();
                 }
                 reply = await this.assistant.chat(msg, convs, mems, id);
@@ -6496,8 +6558,8 @@ class Linen {
 
             document.getElementById(id)?.remove();
 
-            // Parse and strip memory markers (only if using API assistants)
-            if (!this.isLocalMode) {
+            // Parse and strip memory markers (only for remote assistant responses)
+            if (attemptedRemote) {
                 // Extract ALL memory markers (can be multiple)
                 const memoryMarkerRegex = /\[SAVE_MEMORY:\s*(\{[^}]*(?:\{[^}]*\}[^}]*)*\})\s*\]/g;
                 let memoryMatch;
@@ -6514,7 +6576,7 @@ class Linen {
             }
 
             // Filter happy emojis from replies to distressed users
-            if (!this.isLocalMode && !initialMessage) {
+            if (attemptedRemote && !initialMessage) {
                 reply = this.filterEmojis(reply, msg);
             }
 
@@ -6556,91 +6618,34 @@ class Linen {
                 this.updateAgentStatus(this.currentAgent.id, newStatus, msgText);
             }
 
-            // Determine if we should try to fallback
-            // Don't fallback on CORS/network errors (status 0) - those are expected for browser-based APIs
-            // Only fallback on actual authentication/quota issues
-            const isCorsError = status === 0 && (msgText.includes('Failed to fetch') || msgText.includes('CORS'));
-            const canFallback = (!isCorsError && status === 0 && !navigator.onLine) || // Offline (but not CORS)
-                                (status === 429) || // Rate limited
-                                (status === 403 && msgText.toLowerCase().includes('quota')) || // Quota exceeded
-                                (status === 401) || // Invalid key
-                                (msgText.includes('API key not configured')); // No API key
+            if (attemptedRemote) {
+                console.log("Linen: Remote path failed, falling back to LocalAssistant.", e);
 
-            if (canFallback && !this.isLocalMode) {
-                // Try to switch to next available agent
-                const agents = this.agentManager.getAgents();
-                let nextAgent = null;
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'assistant-message typing-indicator';
+                typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+                container.appendChild(typingDiv);
+                container.scrollTop = container.scrollHeight;
+                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+                typingDiv.remove();
 
-                if (this.currentAgent && agents.length > 1) {
-                    // Try to switch to next agent
-                    nextAgent = this.agentManager.switchToNextAvailableAgent(this.currentAgent.id);
+                const localReply = await localAssistant.chat(msg);
+                const rdiv = document.createElement('div');
+                rdiv.className = 'assistant-message';
+                rdiv.textContent = localReply;
+                container.appendChild(rdiv);
+                container.scrollTop = container.scrollHeight;
+
+                this.showLocalModeToast(msgText || 'remote-failed');
+
+                if (!initialMessage && !isInitialGreeting) {
+                    await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
+                    await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
                 }
-
-                if (nextAgent) {
-                    console.log("Linen: Switching to next available agent:", nextAgent.name);
-                    this.currentAgent = nextAgent;
-                    this.assistant = this.createAssistantFromAgent(nextAgent);
-                    this.showToast(`Switched to ${nextAgent.name}`, 'info');
-                    // Retry the chat with new agent
-                    return this.sendChat(initialMessage);
-                } else {
-                    // No alternative agents, fall back to LocalAssistant
-                    console.log("Linen: No alternative agents available. Falling back to LocalAssistant.");
-                    // Initialize utilities if not done yet
-                    if (!this.utilities) {
-                        this.utilities = new UtilitiesApp(this.db);
-                    }
-                    this.assistant = new LocalAssistant(this.db, this.utilities);
-                    this.isLocalMode = true;
-                    // Show typing bubble with delay
-                    const typingDiv = document.createElement('div');
-                    typingDiv.className = 'assistant-message typing-indicator';
-                    typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-                    container.appendChild(typingDiv);
-                    container.scrollTop = container.scrollHeight;
-                    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
-                    typingDiv.remove();
-                    const localReply = await this.assistant.chat(msg);
-                    const rdiv = document.createElement('div');
-                    rdiv.className = 'assistant-message';
-                    rdiv.textContent = localReply;
-                    container.appendChild(rdiv);
-                    container.scrollTop = container.scrollHeight;
-
-                    // Show toast once when switching to local mode
-                    if (this.trialMode) {
-                        this.showLocalModeToast('trial');
-                    } else {
-                        this.showLocalModeToast(msgText);
-                    }
-                    // Only save conversation if it's a real user message (not initial greeting or bot-only messages)
-                    const isInitialGreeting = initialMessage === '[INITIAL_GREETING]';
-                    if (!initialMessage && !isInitialGreeting) {
-                        await this.db.addConversation({ text: msg, sender: 'user', date: Date.now() });
-                        await this.db.addConversation({ text: localReply, sender: 'assistant', date: Date.now() });
-                    }
-                }
-            } else if (canFallback && this.isLocalMode) {
-                 // Already in local mode, show typing bubble then respond
-                 console.log("Linen: Already in local mode. LocalAssistant responding to error.");
-                 const typingDiv = document.createElement('div');
-                 typingDiv.className = 'assistant-message typing-indicator';
-                 typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-                 container.appendChild(typingDiv);
-                 container.scrollTop = container.scrollHeight;
-                 await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
-                 typingDiv.remove();
-                 const localReply = await this.assistant.chat(msg);
-                 const rdiv = document.createElement('div');
-                 rdiv.className = 'assistant-message';
-                 rdiv.textContent = localReply;
-                 container.appendChild(rdiv);
-                 container.scrollTop = container.scrollHeight;
-            }
-            else if (!navigator.onLine) {
+            } else if (!navigator.onLine) {
                 const ediv = document.createElement('div');
                 ediv.className = 'assistant-message error-message';
-                ediv.textContent = "You're offline. Please check your internet connection.";
+                ediv.textContent = "You're offline, but local chat is still available. Try sending again.";
                 container.appendChild(ediv);
             }
             // All other non-recoverable errors
