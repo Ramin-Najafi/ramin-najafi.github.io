@@ -7095,10 +7095,15 @@ class Linen {
         const headerVersion = document.getElementById('header-version');
         const aboutVersion = document.getElementById('about-version');
         const settingsVersion = document.getElementById('version-info');
+        const normalized = String(newVersion || '')
+            .replace(/^v\.?/i, '')
+            .replace(/^Version\s*/i, '')
+            .replace(/\s*\[beta\]\s*$/i, '')
+            .trim();
 
-        if (headerVersion) headerVersion.textContent = newVersion;
-        if (aboutVersion) aboutVersion.textContent = newVersion;
-        if (settingsVersion) settingsVersion.textContent = `Version-${newVersion}`;
+        if (headerVersion) headerVersion.textContent = `v${normalized} [beta]`;
+        if (aboutVersion) aboutVersion.textContent = `v${normalized} [beta]`;
+        if (settingsVersion) settingsVersion.textContent = `Version ${normalized} [beta]`;
 
         console.log("Linen: Version updated to", newVersion);
     }
