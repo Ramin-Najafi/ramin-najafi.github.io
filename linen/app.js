@@ -3538,6 +3538,12 @@ class Linen {
             .trim();
     }
 
+    normalizeProviderType(provider) {
+        const p = String(provider || '').toLowerCase().trim();
+        if (p === 'chatgpt') return 'openai';
+        return p;
+    }
+
     showLocalModeToast(reason) {
         if (this._localModeToastShown) return;
         this._localModeToastShown = true;
@@ -5804,7 +5810,7 @@ class Linen {
 
         // Use onboarding's selected provider FIRST (user's choice), then auto-detect, then default to gemini
         const detectedProvider = this.detectProvider(key);
-        const provider = this.onboardingProvider || detectedProvider || 'gemini';
+        const provider = this.normalizeProviderType(this.onboardingProvider || detectedProvider || 'gemini');
         const isOpenAIProvider = provider === 'openai';
         const isHuggingFaceProvider = provider === 'huggingface';
         errorEl.textContent = isOpenAIProvider
