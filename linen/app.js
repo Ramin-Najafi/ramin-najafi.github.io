@@ -543,7 +543,7 @@ Core Directives:
 
 class OpenAIAssistant {
     constructor(apiKey, model = 'gpt-4-turbo') {
-        this.apiKey = apiKey;
+        this.apiKey = String(apiKey || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '').trim();
         this.model = model;
         this.endpoint = 'https://api.openai.com/v1/chat/completions';
     }
@@ -674,7 +674,7 @@ Core Directives:
 
 class HuggingFaceAssistant {
     constructor(apiKey, model = 'meta-llama/Llama-2-7b-chat-hf') {
-        this.apiKey = apiKey;
+        this.apiKey = String(apiKey || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '').trim();
         this.model = model;
         this.endpoint = 'https://api-inference.huggingface.co/models/' + model;
     }
@@ -3528,6 +3528,14 @@ class Linen {
         this._showAgentSwitchMessage = false;
     }
 
+    normalizeApiKey(rawKey) {
+        if (!rawKey) return '';
+        return String(rawKey)
+            .replace(/[\u200B-\u200D\uFEFF]/g, '') // remove zero-width chars
+            .replace(/\s+/g, '') // remove spaces/newlines from copy-paste
+            .trim();
+    }
+
     showLocalModeToast(reason) {
         if (this._localModeToastShown) return;
         this._localModeToastShown = true;
@@ -5782,7 +5790,8 @@ class Linen {
         console.log(`Linen: Validating and saving key from input: ${inputId}`);
         const input = document.getElementById(inputId);
         const errorEl = document.getElementById(errorId);
-        const key = input.value.trim();
+        const key = this.normalizeApiKey(input.value);
+        input.value = key;
 
         if (!key) {
             errorEl.textContent = 'Please enter an API key.';
@@ -5959,7 +5968,8 @@ class Linen {
 
         let name = nameInput.value.trim();
         const type = typeSelect.value;
-        const apiKey = keyInput.value.trim();
+        const apiKey = this.normalizeApiKey(keyInput.value);
+        keyInput.value = apiKey;
         const model = modelInput.value.trim();
         const isPrimary = primaryCheckbox.checked;
 
