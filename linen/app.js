@@ -2201,6 +2201,15 @@ class LocalAssistant {
             console.warn('Linen: External vocabulary pack unavailable:', e);
         }
 
+        // Merge community-managed vocabulary additions (auto-ingested from anonymized packs).
+        try {
+            if (typeof vocabularyCommunity !== 'undefined' && vocabularyCommunity) {
+                this.mergeVocabularyPack(vocabularyCommunity);
+            }
+        } catch (e) {
+            console.warn('Linen: Community vocabulary pack unavailable:', e);
+        }
+
         // Ensure a large daily-communication vocabulary footprint.
         this.ensureMinimumVocabularySize(20000);
 
