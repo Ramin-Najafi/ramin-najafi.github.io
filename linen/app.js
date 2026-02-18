@@ -11,7 +11,7 @@ class LinenDB {
     }
     async init() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('linen-db', 4);
+            const request = indexedDB.open('linen-db', 5);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 this.db = request.result;
@@ -37,6 +37,10 @@ class LinenDB {
                 }
                 if (!db.objectStoreNames.contains('userProfile')) {
                     db.createObjectStore('userProfile', { keyPath: 'id' });
+                }
+                // Dictionary support for enhanced vocabulary
+                if (!db.objectStoreNames.contains('dictionaryIndex')) {
+                    db.createObjectStore('dictionaryIndex', { keyPath: 'word' });
                 }
             };
         });
