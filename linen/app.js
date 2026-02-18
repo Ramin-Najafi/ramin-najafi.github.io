@@ -119,6 +119,15 @@ class LinenDB {
             };
         });
     }
+    async getAllSettingKeys() {
+        return new Promise((r, j) => {
+            const t = this.db.transaction(['settings'], 'readonly');
+            const s = t.objectStore('settings');
+            const req = s.getAllKeys();
+            req.onsuccess = () => r(req.result || []);
+            req.onerror = () => j(req.error);
+        });
+    }
     async clearAllMemories() {
         return new Promise((r, j) => {
             const t = this.db.transaction(['memories', 'conversations'], 'readwrite');
@@ -187,10 +196,38 @@ class AgentManager {
             return;
         }
         try {
+            let ids = [];
             const idsJson = await this.db.getSetting('agent-ids');
-            if (!idsJson) return;
 
-            const ids = JSON.parse(idsJson);
+            if (idsJson) {
+                ids = JSON.parse(idsJson);
+            }
+
+            // Recovery mode: if agent-ids is empty or missing, scan for orphaned agent-* keys
+            if (ids.length === 0) {
+                console.log("Linen: agent-ids is empty, attempting recovery by scanning for agent-* keys...");
+                try {
+                    const allKeys = await this.db.getAllSettingKeys();
+                    const agentKeys = allKeys.filter(k => String(k).startsWith('agent-') && String(k) !== 'agent-ids');
+                    if (agentKeys.length > 0) {
+                        // Extract IDs from agent-{id} keys
+                        ids = agentKeys.map(k => {
+                            const match = String(k).match(/^agent-(.+)$/);
+                            return match ? match[1] : null;
+                        }).filter(id => id !== null);
+                        console.log(`Linen: Recovered ${ids.length} agent IDs from database scan: ${ids.join(', ')}`);
+                        // Reconstruct and save agent-ids
+                        await this.db.setSetting('agent-ids', JSON.stringify(ids));
+                    } else {
+                        console.log("Linen: No agent keys found in database");
+                        return;
+                    }
+                } catch (scanErr) {
+                    console.error("Linen: Failed to scan for agent keys:", scanErr);
+                    return;
+                }
+            }
+
             const primaryAgentId = await this.db.getSetting('primary-agent-id');
 
             for (const id of ids) {
@@ -208,7 +245,7 @@ class AgentManager {
                     }
                 }
             }
-            console.log(`Linen: Loaded ${this.agents.length} agents from database`);
+            console.log(`Linen: Loaded ${this.agents.length} agents from database, primaryAgent set: ${!!this.primaryAgent}`);
         } catch (e) {
             console.error("Linen: Error loading agents:", e);
         }
@@ -3944,6 +3981,14 @@ class Linen {
 
             // Try to load primary agent from the loaded agents
             let primaryAgent = this.agentManager.primaryAgent;
+
+            // If no primary agent is set but we have agents, use the first one
+            if (!primaryAgent && this.agentManager.getAgents().length > 0) {
+                console.log("Linen: No primary agent set, selecting first available agent");
+                const firstAgent = this.agentManager.getAgents()[0];
+                this.agentManager.setPrimaryAgent(firstAgent.id);
+                primaryAgent = this.agentManager.primaryAgent;
+            }
 
             if (primaryAgent) {
                 console.log("Linen: Found primary agent:", primaryAgent.name);
