@@ -2514,6 +2514,128 @@ class LocalAssistant {
         return response;
     }
 
+    detectResponseUncertainty(message, intent) {
+        const msg = message.toLowerCase();
+        const words = message.split(/\s+/);
+        const vocabCoverage = this.getVocabularyCoverage(message);
+
+        // Check 1: Multiple unknown words suggest domain/expertise gap
+        const unknownWordThreshold = 0.4; // >40% unknown words = uncertainty
+        if (vocabCoverage.coverage < (1 - unknownWordThreshold)) {
+            return { shouldEscalate: true, reason: 'low vocabulary coverage (' + Math.round(vocabCoverage.coverage * 100) + '%)' };
+        }
+
+        // Check 2: Technical/code-like patterns
+        const technicalPatterns = [
+            /\b(debug|error|bug|crash|stack trace|stack|exception|syntax|regex|regex pattern|api|endpoint|database|sql|sql injection|query|command|bash|terminal|console|log|print|function|method|class|object|variable|array|loop|condition|if|else|switch|case)\b/i,
+            /[{}\[\]();=]/,  // Code-like syntax
+            /\.(js|py|java|cpp|ts|tsx|jsx|html|css|sql)$/i  // File extensions
+        ];
+        const isCodeish = technicalPatterns.some(p => p.test(message));
+        if (isCodeish && !intent.includes('code') && !intent.includes('debug')) {
+            return { shouldEscalate: true, reason: 'potential technical/code question without clear intent' };
+        }
+
+        // Check 3: Factual question patterns (needs real knowledge)
+        const factualPatterns = [
+            /\b(what is|what's|when was|when is|who is|who was|where is|where was|how many|how much|what year|capital of|population of|definition of|meaning of)\b/i,
+            /\b\d{4}\b/,  // Years
+            /\b(today|tomorrow|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b.*\b(weather|temperature|forecast|date|time|year)\b/i
+        ];
+        const isFactual = factualPatterns.some(p => p.test(message));
+        if (isFactual && !this.sessionMemory.some(m => m.role === 'assistant' && m.content.toLowerCase().includes(message.split(/\s+/).slice(0, 3).join(' ')))) {
+            return { shouldEscalate: true, reason: 'likely factual question requiring current knowledge' };
+        }
+
+        // Check 4: Multi-step reasoning required
+        const reasoningPatterns = [
+            /\b(analyze|explain|compare|evaluate|why|how would|what if|if.*then|pros and cons|tradeoffs|strategy|approach|solution|problem|solve|complex)\b/i,
+            /[,;:] and [,;:]/  // Multiple clauses suggesting compound reasoning
+        ];
+        const needsReasoning = reasoningPatterns.some(p => p.test(message));
+        if (needsReasoning && words.length > 20) {
+            return { shouldEscalate: true, reason: 'complex reasoning required' };
+        }
+
+        // Check 5: Follow-up to local response (context gap risk)
+        if (this.sessionMemory.length >= 2) {
+            const lastAssistantMsg = this.sessionMemory.findLast(m => m.role === 'assistant');
+            const lastUserMsg = this.sessionMemory.findLast(m => m.role === 'user');
+            // If last assistant response was generic/templated and user is asking follow-up with new info
+            if (lastAssistantMsg && lastUserMsg && lastAssistantMsg.content.length < 100) {
+                const isFollowUp = /\b(but|however|actually|wait|no|except|unless|instead|what about)\b/i.test(msg);
+                if (isFollowUp && vocabCoverage.coverage < 0.7) {
+                    return { shouldEscalate: true, reason: 'follow-up question with new context - template response insufficient' };
+                }
+            }
+        }
+
+        // Check 6: Empty or minimal vocabulary hits
+        const hits = this.scoreVocabularyCategories(message);
+        const totalHits = Object.values(hits).reduce((a, b) => a + b, 0);
+        if (totalHits === 0) {
+            return { shouldEscalate: true, reason: 'no vocabulary hits - unknown domain' };
+        }
+
+        // Passed all checks - local AI can handle this
+        return { shouldEscalate: false, reason: 'confident local response possible' };
+    }
+
+    calculateResponseConfidence(response, message, intent, sessionLength) {
+        const msg = message.toLowerCase();
+        let confidenceScore = 0.7; // Start at baseline
+
+        // Factor 1: Response length appropriateness (0.1 weight)
+        const userWordCount = message.split(/\s+/).length;
+        const responseWordCount = response.split(/\s+/).length;
+        if (userWordCount <= 5 && responseWordCount >= 3 && responseWordCount <= 20) {
+            confidenceScore += 0.1; // Good length match for short input
+        } else if (userWordCount > 20 && responseWordCount >= 10) {
+            confidenceScore += 0.05;
+        } else if (Math.abs(userWordCount - responseWordCount) > 50) {
+            confidenceScore -= 0.1; // Very mismatched length
+        }
+
+        // Factor 2: Template/generic response detection (-0.2 to +0.1)
+        const genericPhrases = ['i\'m not sure', 'that\'s interesting', 'i understand', 'makes sense', 'sounds good', 'alright', 'okay', 'tell me more', 'what else'];
+        const hasGenericStart = genericPhrases.some(p => response.toLowerCase().startsWith(p));
+        if (hasGenericStart) {
+            confidenceScore -= 0.15; // Template response detected
+        }
+
+        // Factor 3: Vocabulary alignment (0.1 weight)
+        const keywords = message.split(/\s+/).filter(w => w.length > 4);
+        const userKeywordsInResponse = keywords.filter(k => response.toLowerCase().includes(k.toLowerCase())).length;
+        const keywordMatchRatio = keywords.length > 0 ? userKeywordsInResponse / keywords.length : 0;
+        if (keywordMatchRatio > 0.5) {
+            confidenceScore += 0.1;
+        } else if (keywordMatchRatio < 0.2) {
+            confidenceScore -= 0.1;
+        }
+
+        // Factor 4: Intent clarity (0.15 weight)
+        const clearIntents = ['greeting', 'timerSet', 'alarmSet', 'noteAdded', 'creator', 'identity'];
+        if (clearIntents.includes(intent)) {
+            confidenceScore += 0.15;
+        } else if (intent === 'engaged' && !msg.includes('?')) {
+            confidenceScore -= 0.1; // Unclear topic
+        }
+
+        // Factor 5: Conversation context (0.1 weight)
+        if (this.sessionMemory.length > 5) {
+            confidenceScore += 0.08; // More context = higher confidence
+        }
+
+        // Factor 6: Response specificity
+        const demonstratesUnderstanding = /\b(you|your|mentioned|said|asked|about)\b/i.test(response);
+        if (demonstratesUnderstanding && this.sessionMemory.length > 1) {
+            confidenceScore += 0.1;
+        }
+
+        // Clamp between 0 and 1
+        return Math.max(0, Math.min(1, confidenceScore));
+    }
+
     detectIntent(message) {
         const msg = message.toLowerCase().trim().replace(/[!?.,']+/g, '');
         const words = msg.split(/\s+/);
@@ -2802,6 +2924,14 @@ class LocalAssistant {
         if (name) this.userProfile.name = name;
         if (mood !== 'neutral') this.userProfile.mood = mood;
 
+        // Early uncertainty detection - check if local AI should escalate to remote
+        const uncertaintyCheck = this.detectResponseUncertainty(message, intent);
+        if (uncertaintyCheck.shouldEscalate) {
+            console.log("LocalAssistant escalation:", uncertaintyCheck.reason);
+            this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
+            return { escalateToRemote: true, reason: uncertaintyCheck.reason };
+        }
+
         this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
 
         let response = '';
@@ -2924,6 +3054,27 @@ class LocalAssistant {
             } catch (e) {
                 console.log("LocalAssistant: Event detection error:", e);
             }
+        }
+
+        // Calculate response confidence score
+        const sessionLength = this.sessionMemory.filter(m => m.role === 'assistant').length;
+        const confidence = this.calculateResponseConfidence(response, message, intent, sessionLength);
+
+        // Dynamic threshold based on query complexity
+        const messageWordCount = message.split(/\s+/).length;
+        let confidenceThreshold = 0.6; // Default
+        if (messageWordCount <= 10) {
+            confidenceThreshold = 0.5; // Simple query - lower threshold
+        } else if (messageWordCount > 20) {
+            confidenceThreshold = 0.8; // Complex query - higher threshold
+        }
+
+        console.log(`LocalAssistant confidence: ${confidence.toFixed(2)} (threshold: ${confidenceThreshold.toFixed(2)})`);
+
+        // If confidence is below threshold, escalate to remote
+        if (confidence < confidenceThreshold) {
+            console.log("LocalAssistant low confidence escalation");
+            return { escalateToRemote: true, reason: `low confidence (${confidence.toFixed(2)}) for query complexity`, originalResponse: response };
         }
 
         return response;
@@ -3840,26 +3991,80 @@ class Linen {
         const scores = local.scoreVocabularyCategories(message);
         const vocabHits = Object.values(scores).reduce((sum, n) => sum + n, 0);
 
+        // Reduce localSafeIntents to only truly safe, simple queries
+        // More intents now escalate to remote for better quality responses
         const localSafeIntents = new Set([
-            'greetingReply', 'howAreYou', 'thanks', 'farewell', 'question',
-            'casualChat', 'engaged', 'positive', 'negative', 'referenceBack',
-            'timerSet', 'alarmSet', 'noteAdded', 'identity', 'creator',
-            'frustrated', 'distressed'
+            'greetingReply',      // Simple greeting response
+            'casualChat',         // Short casual conversation
+            'thanks',             // Simple gratitude
+            'farewell',           // Goodbye
+            'timerSet',           // Utility: timer
+            'alarmSet',           // Utility: alarm
+            'noteAdded',          // Utility: note
+            'identity',           // "What are you?"
+            'creator'             // "Who created you?"
         ]);
 
+        // Intents that should escalate to remote
+        const escalateIntents = new Set([
+            'question',           // Informational questions - need knowledge
+            'howAreYou',          // Formal status check - needs better contextual response
+            'engaged',            // General conversation - complex queries
+            'referenceBack',      // Requires deep context understanding
+            'positive', 'negative' // Mood tracking - needs nuanced responses
+        ]);
+
+        // Always escalate these intents
+        const alwaysEscalate = new Set([
+            'distressed',         // Crisis/emotional distress - needs professional touch
+            'frustrated',         // User is frustrated - needs quality response
+            'outOfScope',         // Factual queries - needs knowledge
+            'anxious'             // Anxiety - needs professional tone
+        ]);
+
+        // Always escalate critical intents
+        if (alwaysEscalate.has(intent)) {
+            console.log(`Linen: Always escalate intent: ${intent}`);
+            return true;
+        }
+
+        // Escalate if intent requires remote
+        if (escalateIntents.has(intent)) {
+            console.log(`Linen: Escalate intent: ${intent}`);
+            return true;
+        }
+
+        // Check if local-safe intent can handle this message
         if (localSafeIntents.has(intent) && tokens.length <= 20 && vocabHits >= 1) {
             return false;
         }
 
+        // Pattern-based escalation for complexity
         const hasQuestionSignal = /\?|\b(what|why|how|when|where|which|who|can you|could you|would you)\b/i.test(message);
         const needsDeepReasoning = /\b(explain|analyze|compare|evaluate|reason|strategy|tradeoff|pros and cons|step by step)\b/i.test(normalized);
         const contentGeneration = /\b(write|draft|rewrite|summarize|brainstorm|outline|email|essay|post|caption|script)\b/i.test(normalized);
         const technicalTask = /\b(code|debug|bug|error|stack|api|database|sql|regex|javascript|python|typescript)\b/i.test(normalized);
 
-        if (intent === 'outOfScope') return true;
-        if (needsDeepReasoning || contentGeneration || technicalTask) return true;
-        if (hasQuestionSignal && tokens.length >= 16 && vocabHits < 3) return true;
-        if (mood === 'neutral' && intent === 'engaged' && tokens.length >= 28) return true;
+        if (needsDeepReasoning || contentGeneration || technicalTask) {
+            console.log("Linen: Complex task pattern detected - escalating");
+            return true;
+        }
+
+        if (hasQuestionSignal && tokens.length >= 16 && vocabHits < 3) {
+            console.log("Linen: Complex question pattern detected - escalating");
+            return true;
+        }
+
+        if (mood === 'neutral' && intent === 'engaged' && tokens.length >= 28) {
+            console.log("Linen: Long complex conversation - escalating");
+            return true;
+        }
+
+        // Vocabulary gap detection
+        if (vocabHits === 0) {
+            console.log("Linen: No vocabulary hits - escalating");
+            return true;
+        }
 
         return false;
     }
@@ -6848,6 +7053,27 @@ class Linen {
                 const delay = 800 + Math.random() * 700; // 800ms–1500ms
                 await new Promise(resolve => setTimeout(resolve, delay));
                 reply = await localAssistant.chat(msg);
+
+                // Check if local AI is escalating due to uncertainty
+                if (reply && typeof reply === 'object' && reply.escalateToRemote === true) {
+                    console.log("Linen: Local AI escalated -", reply.reason);
+                    shouldUseRemote = true;
+                    attemptedRemote = true;
+
+                    // Show thinking indicator for remote call
+                    const typingDiv = document.createElement('div');
+                    typingDiv.className = 'assistant-message typing-indicator';
+                    typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+                    container.appendChild(typingDiv);
+                    this.scrollToBottom();
+
+                    // Call remote assistant
+                    if (this.assistant?.detectCrisis && this.assistant.detectCrisis(msg)) {
+                        this.showCrisisModal();
+                    }
+                    reply = await this.assistant.chat(msg, convs, mems, id);
+                    typingDiv.remove();
+                }
             } else {
                 attemptedRemote = true;
                 // Escalate to remote assistant only when local routing says it is needed
