@@ -945,7 +945,13 @@ Core Directives:
             }
             return reply;
         } catch (e) {
-            console.error("OpenRouter chat error:", e.message);
+            console.error("OpenRouter chat error - Full details:", {
+                message: e.message,
+                status: e.status,
+                name: e.name,
+                stack: e.stack,
+                fullError: e
+            });
             document.getElementById(loadingId)?.remove();
             throw e;
         }
@@ -4318,6 +4324,14 @@ class Linen {
 
     createAssistantFromAgent(agent) {
         console.log("Linen: Creating assistant from agent:", agent.name, agent.type);
+        console.log("Linen: Agent details -", {
+            id: agent.id,
+            name: agent.name,
+            type: agent.type,
+            model: agent.model,
+            apiKeyLength: agent.apiKey ? agent.apiKey.length : 0,
+            apiKeyPrefix: agent.apiKey ? agent.apiKey.substring(0, 10) + '...' : 'MISSING'
+        });
         const model = agent.model || this.modelVersionManager.getModel(agent.type, 'primary');
 
         switch (agent.type) {
