@@ -7128,7 +7128,13 @@ class Linen {
                 reply = this.filterEmojis(reply, msg);
             }
 
-            // Final safety check: Strip any remaining memory markers before display
+            // Final safety check: ensure reply is a string
+            if (typeof reply !== 'string') {
+                console.error("Reply is not a string, converting:", reply);
+                reply = String(reply || 'No response');
+            }
+
+            // Strip any remaining memory markers before display
             reply = reply.replace(/\[SAVE_MEMORY:\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}\s*\]/g, '').trim();
 
             const rdiv = document.createElement('div');
@@ -7178,7 +7184,14 @@ class Linen {
                 await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
                 typingDiv.remove();
 
-                const localReply = await localAssistant.chat(msg);
+                let localReply = await localAssistant.chat(msg);
+
+                // If local AI returned an object (escalation signal), convert to error message
+                if (typeof localReply === 'object') {
+                    console.error("Local assistant returned object instead of string:", localReply);
+                    localReply = "I'm having trouble reaching the AI right now, but I'm still here. Try again in a moment.";
+                }
+
                 const rdiv = document.createElement('div');
                 rdiv.className = 'assistant-message';
                 rdiv.textContent = localReply;
