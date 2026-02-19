@@ -4197,8 +4197,15 @@ class Linen {
 
             const apiKey = await this.db.getSetting('gemini-api-key');
             const primaryAgentId = await this.db.getSetting('primary-agent-id');
+            const agentIds = await this.db.getSetting('agent-ids');
 
-            console.log(`Linen: API Key found in DB: ${apiKey ? '[REDACTED]' : 'false'}, Agent: ${primaryAgentId ? 'Yes' : 'No'}, Agents loaded: ${this.agentManager.getAgents().length}`);
+            console.log(`Linen: Agent setup status`, {
+                hasLegacyGeminiKey: !!apiKey,
+                primaryAgentId: primaryAgentId,
+                savedAgentIds: agentIds ? JSON.parse(agentIds) : [],
+                agentsLoaded: this.agentManager.getAgents().length,
+                agents: this.agentManager.getAgents().map(a => ({ id: a.id, name: a.name, type: a.type }))
+            });
 
             // Try to load primary agent from the loaded agents
             let primaryAgent = this.agentManager.primaryAgent;
