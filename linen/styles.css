@@ -1422,6 +1422,31 @@ hr {
     transform: scale(0.98);
 }
 
+.input-icon-btn {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: #4a9eff;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-icon-btn:hover {
+    opacity: 0.9;
+}
+
+.input-icon-btn:active {
+    transform: scale(0.98);
+}
+
 .voice-status-display {
     padding: 12px;
     background: #333;

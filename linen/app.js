@@ -5247,6 +5247,7 @@ class Linen {
         const chatInput = document.getElementById('chat-input');
         const chatTypeBtn = document.getElementById('chat-type');
         const chatTalkBtn = document.getElementById('chat-talk');
+        const chatTalkIconBtn = document.getElementById('chat-talk-icon');
         const inputButtonsDiv = document.getElementById('input-buttons');
         const textInputMode = document.getElementById('text-input-mode');
         const voiceInputMode = document.getElementById('voice-input-mode');
@@ -5291,6 +5292,29 @@ class Linen {
             });
         } else {
             console.warn("Linen: Chat Talk button not found");
+        }
+
+        if (chatTalkIconBtn) {
+            chatTalkIconBtn.addEventListener('click', () => {
+                console.log("Linen: Microphone icon button clicked");
+                // Open voice modal lightbox
+                const voiceModal = document.getElementById('voice-modal');
+                const modalBackdrop = document.getElementById('modal-backdrop');
+                if (voiceModal && modalBackdrop) {
+                    // Show the elements
+                    voiceModal.style.display = 'flex';
+                    modalBackdrop.style.display = 'block';
+                    // Add active classes for styling
+                    voiceModal.classList.add('active');
+                    modalBackdrop.classList.add('active');
+                    console.log("Voice modal opened, starting voice input");
+                    this.startVoiceInput();
+                } else {
+                    console.error("Voice modal or backdrop not found");
+                }
+            });
+        } else {
+            console.warn("Linen: Microphone icon button not found");
         }
 
         // Text input send button - keep input open after sending

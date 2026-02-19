@@ -383,13 +383,14 @@
     <main class="main-content" id="chat-view">
         <div id="chat-messages"></div>
         <div id="chat-input-area">
-            <!-- Default state: Hamburger + Input + Send button -->
+            <!-- Default state: Hamburger + Input + Mic + Send button -->
             <div id="input-default-row" class="input-default-row">
                 <button id="hamburger-menu-btn" class="hamburger-menu-btn" aria-label="Open navigation menu" title="Open navigation menu">&#9776;</button>
                 <textarea id="chat-input" placeholder="Ask me anything..." rows="1"></textarea>
+                <button id="chat-talk-icon" class="input-icon-btn" aria-label="Switch to voice input mode" title="Voice input (🎤)">🎤</button>
                 <button id="send-message-btn" class="send-message-btn" aria-label="Send message" title="Send message (Enter)">Send</button>
             </div>
-            <div id="input-buttons" class="input-buttons">
+            <div id="input-buttons" class="input-buttons" style="display: none;">
                 <button id="chat-type" class="input-btn" aria-label="Switch to text input mode" title="Type message">Text</button>
                 <button id="chat-talk" class="input-btn" aria-label="Switch to voice input mode" title="Voice input">Talk</button>
             </div>
