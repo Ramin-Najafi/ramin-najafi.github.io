@@ -930,16 +930,22 @@ Core Directives:
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                const error = new Error(errorData.error?.message || 'API request failed');
+                const errorMsg = errorData.error?.message || JSON.stringify(errorData) || 'API request failed';
+                console.error("OpenRouter API error:", res.status, errorMsg);
+                const error = new Error(errorMsg);
                 error.status = res.status;
                 throw error;
             }
 
             const data = await res.json();
             const reply = data.choices?.[0]?.message?.content;
-            if (!reply) throw new Error('No response from assistant');
+            if (!reply) {
+                console.error("No response from OpenRouter. Response data:", data);
+                throw new Error('No response from assistant');
+            }
             return reply;
         } catch (e) {
+            console.error("OpenRouter chat error:", e.message);
             document.getElementById(loadingId)?.remove();
             throw e;
         }
