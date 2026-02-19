@@ -2937,12 +2937,13 @@ class LocalAssistant {
         if (mood !== 'neutral') this.userProfile.mood = mood;
 
         // Early uncertainty detection - check if local AI should escalate to remote
-        const uncertaintyCheck = this.detectResponseUncertainty(message, intent);
-        if (uncertaintyCheck.shouldEscalate) {
-            console.log("LocalAssistant escalation:", uncertaintyCheck.reason);
-            this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
-            return { escalateToRemote: true, reason: uncertaintyCheck.reason };
-        }
+        // NOTE: Escalation is now handled by Linen after checking if remote is available
+        // const uncertaintyCheck = this.detectResponseUncertainty(message, intent);
+        // if (uncertaintyCheck.shouldEscalate) {
+        //     console.log("LocalAssistant escalation:", uncertaintyCheck.reason);
+        //     this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
+        //     return { escalateToRemote: true, reason: uncertaintyCheck.reason };
+        // }
 
         this.sessionMemory.push({ role: 'user', content: message, mood, intent, timestamp: Date.now() });
 
@@ -3993,7 +3994,12 @@ class Linen {
 
     shouldEscalateToRemote(message) {
         if (!this.localFirstMode) return this.hasRemoteAssistant() && navigator.onLine;
-        if (!this.hasRemoteAssistant() || !navigator.onLine) return false;
+
+        // If no remote assistant is configured, don't escalate - local will handle it
+        if (!this.hasRemoteAssistant() || !navigator.onLine) {
+            console.log("Linen: No remote assistant available - keeping local-first mode");
+            return false;
+        }
 
         const local = this.ensureLocalAssistant();
         const normalized = local.normalizeText(message);
@@ -7084,31 +7090,54 @@ class Linen {
                 // Check if local AI is escalating due to uncertainty
                 if (reply && typeof reply === 'object' && reply.escalateToRemote === true) {
                     console.log("Linen: Local AI escalated -", reply.reason);
-                    shouldUseRemote = true;
+
+                    // Check if remote assistant is available
+                    if (!this.assistant || !this.hasRemoteAssistant()) {
+                        console.warn("Linen: Local AI requested escalation but no remote agent is configured. User can add one in settings.");
+                        // Call local AI again to get its best attempt
+                        reply = await localAssistant.chat(msg);
+                        // If it returns another escalation signal, just use a default message
+                        if (typeof reply === 'object' && reply.escalateToRemote === true) {
+                            reply = "I'm working with what I know locally. For more accurate answers, you can add an AI provider (like OpenRouter, OpenAI, or Gemini) in settings.";
+                        }
+                    } else {
+                        shouldUseRemote = true;
+                        attemptedRemote = true;
+
+                        // Show thinking indicator for remote call
+                        const typingDiv = document.createElement('div');
+                        typingDiv.className = 'assistant-message typing-indicator';
+                        typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+                        container.appendChild(typingDiv);
+                        this.scrollToBottom();
+
+                        // Call remote assistant
+                        if (this.assistant?.detectCrisis && this.assistant.detectCrisis(msg)) {
+                            this.showCrisisModal();
+                        }
+                        reply = await this.assistant.chat(msg, convs, mems, id);
+                        typingDiv.remove();
+                    }
+                }
+            } else {
+                // Check if remote assistant is available before trying to use it
+                if (!this.assistant || !this.hasRemoteAssistant()) {
+                    console.warn("Linen: Attempted to use remote but no remote agent is configured");
+                    // Fall back to local assistant
+                    reply = await localAssistant.chat(msg);
+                    // If local also escalates, convert to helpful message
+                    if (typeof reply === 'object' && reply.escalateToRemote === true) {
+                        reply = "I'm working with limited knowledge here. Adding an AI provider in settings would help me give better answers to questions like this.";
+                    }
+                } else {
                     attemptedRemote = true;
-
-                    // Show thinking indicator for remote call
-                    const typingDiv = document.createElement('div');
-                    typingDiv.className = 'assistant-message typing-indicator';
-                    typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-                    container.appendChild(typingDiv);
-                    this.scrollToBottom();
-
-                    // Call remote assistant
-                    if (this.assistant?.detectCrisis && this.assistant.detectCrisis(msg)) {
+                    // Escalate to remote assistant only when local routing says it is needed
+                    console.log("Linen: Attempting to use primary agent:", this.currentAgent?.name || 'Unknown');
+                    if (!initialMessage && this.assistant?.detectCrisis && this.assistant.detectCrisis(msg)) {
                         this.showCrisisModal();
                     }
                     reply = await this.assistant.chat(msg, convs, mems, id);
-                    typingDiv.remove();
                 }
-            } else {
-                attemptedRemote = true;
-                // Escalate to remote assistant only when local routing says it is needed
-                console.log("Linen: Attempting to use primary agent:", this.currentAgent?.name || 'Unknown');
-                if (!initialMessage && this.assistant?.detectCrisis && this.assistant.detectCrisis(msg)) {
-                    this.showCrisisModal();
-                }
-                reply = await this.assistant.chat(msg, convs, mems, id);
             }
 
             document.getElementById(id)?.remove();
