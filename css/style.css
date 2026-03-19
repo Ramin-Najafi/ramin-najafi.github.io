@@ -733,13 +733,7 @@ footer {
     align-items: stretch;
   }
 
-  .project-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    margin-top: 30px;
-    padding: 0 70px;
-  }
+
 
   .project-item {
     min-height: 250px;
@@ -751,11 +745,6 @@ footer {
     flex-direction: column;
     justify-content: space-between;
   }
-@media (max-width: 859px) {
-  .project-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 .skills-goals-grid {
     display: grid;
@@ -944,11 +933,6 @@ footer {
   margin: 30px auto;
 }
 
-@media (min-width: 860px) {
-  .project-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 
 .project-box {
   background: linear-gradient(180deg, #1E2D40, #111827);
