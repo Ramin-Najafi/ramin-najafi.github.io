@@ -43,3 +43,6 @@ cypress.config.js
 .claude/
 .next/
 package.json
+
+# Linen project - kept locally only, hosted at linen-pa.github.io
+linen/
