@@ -188,7 +188,7 @@ p {
   text-align: center;
   border-bottom: 1px solid rgba(59, 130, 246, 0.15);
   background-image: url('../assets/images/headerBkg.jpg');
-  background-size: 80%;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   color: #fff;
