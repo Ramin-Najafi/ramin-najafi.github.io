@@ -126,52 +126,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-async function submitContact(event) {
-    event.preventDefault(); // Prevent default form submission
+function submitContact(event) {
+    event.preventDefault();
 
-    const form = document.getElementById('contactForm');
-    const successMsg = document.getElementById('successMsg');
-    const submitButton = form.querySelector('button[type="submit"]');
+    const name    = document.getElementById('name').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const subject = document.getElementById('subject').value.trim();
+    const message = document.getElementById('message').value.trim();
 
-    const formData = new FormData(form);
-    formData.append("access_key", "02556098-34d5-4cef-aafd-a582035f1f2a"); // Replace with your actual access key
+    const successMsg  = document.getElementById('successMsg');
+    const submitButton = document.getElementById('contactForm').querySelector('button[type="submit"]');
 
-    // Disable button and show loading
-    const originalText = submitButton.textContent;
-    submitButton.textContent = "Sending...";
-    submitButton.disabled = true;
+    const mailtoSubject = encodeURIComponent(subject || 'Portfolio Contact Form');
+    const mailtoBody    = encodeURIComponent(
+        'Name: ' + name + '\n' +
+        'Email: ' + email + '\n\n' +
+        message
+    );
 
-    try {
-        const response = await fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            body: formData
-        });
+    const mailtoLink = 'mailto:rnajafi.dev@gmail.com'
+        + '?subject=' + mailtoSubject
+        + '&body='    + mailtoBody;
 
-        const data = await response.json();
+    window.location.href = mailtoLink;
 
-        if (response.ok) {
-            successMsg.textContent = "Thank you! Your message has been sent.";
-            successMsg.style.display = 'block';
-            form.reset(); // Clear the form
+    successMsg.textContent = 'Your email client has opened. Hit send and your message will arrive directly in my inbox.';
+    successMsg.style.display = 'block';
 
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 4000); // Hide message after 4 seconds
-        } else {
-            successMsg.textContent = "Error: " + data.message;
-            successMsg.style.display = 'block';
-        }
-    } catch (error) {
-        successMsg.textContent = "Something went wrong. Please try again.";
-        successMsg.style.display = 'block';
-        console.error('Form submission error:', error);
-    } finally {
-        // Re-enable button
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-    }
+    document.getElementById('contactForm').reset();
 
-    return false; // Prevent page reload
+    setTimeout(() => {
+        successMsg.style.display = 'none';
+    }, 6000);
+
+    return false;
 }
 
 // Function to open lightbox and close mobile menu
