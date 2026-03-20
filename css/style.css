@@ -938,7 +938,7 @@ footer {
   background: linear-gradient(180deg, #1E2D40, #111827);
   border: 1px solid rgba(59, 130, 246, 0.15);
   border-radius: 12px;
-  padding: 30px;
+  padding: 16px 30px;
   text-align: center;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
