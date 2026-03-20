@@ -144,7 +144,10 @@ function submitContact(event) {
         message
     );
 
-    const mailtoLink = 'mailto:rnajafi.dev@gmail.com'
+    const _u = ['r','n','a','j','a','f','i','.','d','e','v'];
+    const _d = ['g','m','a','i','l','.','c','o','m'];
+    const _e = _u.join('') + '@' + _d.join('');
+    const mailtoLink = 'mailto:' + _e
         + '?subject=' + mailtoSubject
         + '&body='    + mailtoBody;
 
