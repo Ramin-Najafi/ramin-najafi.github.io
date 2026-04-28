@@ -95,22 +95,6 @@ A fully functional e-commerce site with 35+ products across 7 categories, full s
 
 ---
 
-### **4. Java War Simulation**
-
-Console-based strategy game built with object-oriented programming principles in Java.
-
-**Technologies:** Java, OOP
-
----
-
-### **5. Swift iOS Reminder App**
-
-Productivity app with scheduling and alert features built in SwiftUI.
-
-**Technologies:** Swift, SwiftUI, iOS
-
----
-
 ## 📊 By the Numbers
 
 - **170** Cypress E2E tests — 100% pass rate on MiraStyle
