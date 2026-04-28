@@ -191,7 +191,6 @@ ramin-najafi.github.io/
 
 - **Email:** rnajafi.dev@gmail.com
 - **GitHub:** [github.com/ramin-najafi](https://github.com/ramin-najafi)
-- **LinkedIn:** [linkedin.com/in/ramin-najafi-689110390](https://www.linkedin.com/in/ramin-najafi-689110390/)
 - **Portfolio:** [ramin-najafi.github.io](https://ramin-najafi.github.io/)
 
 ---
