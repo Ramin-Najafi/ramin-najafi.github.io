@@ -312,7 +312,6 @@ This project is open source and available for educational purposes.
 **Ramin Najafi**
 - Portfolio: [ramin-najafi.github.io](https://ramin-najafi.github.io/)
 - GitHub: [@Ramin-Najafi](https://github.com/Ramin-Najafi)
-- Email: rnajafi.dev@gmail.com
 
 ---
 

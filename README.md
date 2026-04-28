@@ -1,195 +1,136 @@
-# Ramin Najafi - Full Stack Developer Portfolio
+# Ramin Najafi - Junior Full-Stack Developer Portfolio
 
-**Building modern web applications that solve real problems. Passionate about clean code, user experience, and continuous learning.**
+**Junior full-stack developer with hands-on experience shipping a production AI-powered e-commerce platform across web, iOS, and Android as part of a six-person development team.**
 
 ---
 
 ## 👋 About Me
 
-I'm a full-stack developer with a focus on creating responsive, user-centric web applications. My journey started with a curiosity about how the web works, and it's evolved into a passion for building products that people actually want to use.
+I'm a junior full-stack developer based in London, Ontario, and a March 2026 graduate of the Web and Development Fundamentals program at triOS College. Skilled in QA testing, deployment operations, team coordination, and AI-assisted development workflows. Nearly two decades of customer-facing experience building strong communication, reliability, and problem-solving skills.
 
-Currently, I'm diving deep into modern web development, with hands-on experience in:
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript (ES6+)
-- **Backend Concepts**: APIs, data persistence, server architecture
-- **Progressive Web Apps (PWA)**: Offline-first design, Service Workers, IndexedDB
-- **User Experience**: Responsive design, accessibility, intuitive interfaces
+Core experience spans:
+- **Frontend**: React, HTML5, CSS3, JavaScript (ES6+)
+- **Backend**: Node.js, Supabase, REST APIs
+- **Mobile**: Swift / SwiftUI (iOS), Progressive Web Apps
+- **QA & DevOps**: Cypress E2E testing, Vercel, Railway, deployment pipelines
 
 ---
 
-## 🏆 Career Highlights & Accomplishments
+## 🏆 Experience
 
-### **Linen — Personal AI Memory Assistant**
-*A privacy-first Progressive Web App combining conversational AI with intelligent memory management*
+### **Junior Full-Stack Developer**
+*Go-Get-Friends International · Jan 2026 – Mar 2026*
+*MiraStyle — AI-powered fashion & commerce platform (mirastyle.io)*
 
-**What I Built:**
-- Full-stack PWA from concept to deployment (no frameworks, pure vanilla JavaScript)
-- Dual-mode operation: AI-powered (Gemini API) and local mode with intelligent fallback
-- IndexedDB-based memory system with tagging, search, and emotional context
-- Service Worker implementation for seamless offline functionality
-- Responsive design optimized for mobile-first experience
-
-**Impact:**
-- 1200+ lines of well-structured, modular JavaScript code
-- Zero external dependencies while maintaining enterprise-grade functionality
-- Successfully deployed on GitHub Pages with PWA installation support
-- Privacy-first architecture with all data stored locally on user's device
-
-**Key Technical Achievements:**
-- Implemented emotion detection and context-aware conversational responses
-- Built a rule-based LocalAssistant that works without any API calls
-- Created a sophisticated memory system with intelligent filtering and recall
-- Designed for accessibility and cross-platform compatibility (iOS, Android, desktop)
-
-### **ShopAll — E-Commerce Platform**
-*A comprehensive tech product marketplace with advanced shopping features*
-
-**What I Built:**
-- 35+ product catalog across 7 categories
-- Full shopping cart with persistent local storage
-- Wishlist system with favorites management
-- Product filtering, search, and dynamic pricing
-- Responsive UI that adapts seamlessly from mobile to desktop
-
-**Technical Skills Demonstrated:**
-- Complex state management in vanilla JavaScript
-- localStorage optimization and data persistence
-- Dynamic DOM manipulation and real-time UI updates
-- Mobile-responsive design without CSS frameworks
+- Led development and coordinated a team of 6 developers across web, iOS, and Android, establishing commit conventions, QA workflows, and developer onboarding processes
+- Architected and maintained 3 production web applications (Consumer, Merchant, Admin) using React, Node.js, and Supabase across 4 repositories
+- Built and executed a Cypress E2E test suite of 170 tests with a 100% pass rate, covering all critical user flows
+- Integrated Stripe payment processing and social authentication (OAuth) for secure, production-ready transactions
+- Managed deployment pipelines across Vercel and Railway, troubleshooting build failures, healthcheck issues, and cross-repository conflicts
+- Built a native iOS app in SwiftUI with full backend integration — authentication, wardrobe, AI outfit suggestions, cart, wishlist, and virtual try-on via Gemini API
+- Implemented 12-language internationalization and cross-device cart and wishlist sync
+- Maintained daily technical reports and handoff documentation for project supervisors and developers
 
 ---
 
 ## 💡 Core Competencies
 
 ### **Frontend Development**
-- Semantic HTML5 markup
-- Modern CSS3 (Flexbox, Grid, animations, media queries)
-- Vanilla JavaScript (ES6+, Classes, async/await)
-- Responsive design (mobile-first approach)
+- React, HTML5, CSS3, Vanilla JavaScript (ES6+)
+- Mobile-first responsive design
 - Progressive Web App development (PWA)
+- Interactive UI/UX with DOM manipulation
 
-### **Web Technologies**
-- Service Workers & offline-first design
-- IndexedDB for client-side storage
-- RESTful API integration
-- Web standards and best practices
-- Browser APIs (Geolocation, Storage, Camera, etc.)
+### **Backend & Databases**
+- Node.js / Express
+- Supabase (PostgreSQL)
+- REST API integration
+- Authentication (OAuth, Supabase Auth, Stripe)
 
-### **Developer Tools & Practices**
-- Git version control
-- GitHub for project hosting and collaboration
-- Performance optimization
-- Debugging and problem-solving
-- Clean code principles
+### **Mobile Development**
+- Swift / SwiftUI (iOS & macOS)
+- Native iOS app development with full backend integration
 
-### **UI/UX Thinking**
-- User-centered design
-- Accessibility (WCAG standards)
-- Intuitive navigation and information architecture
-- Visual feedback and error handling
-- Cross-device testing
+### **Testing & QA**
+- Cypress E2E testing (170-test suite, 100% pass rate)
+- Regression testing & manual QA
+
+### **Dev Tools & Platforms**
+- Git, GitHub, VS Code, Xcode
+- Vercel, Railway (deployment pipelines)
+- AI-assisted development workflows
+
+### **Languages**
+- JavaScript, HTML, CSS (proficient)
+- Python, Java, Swift (familiar)
 
 ---
 
 ## 📚 Featured Projects
 
-### **1. Linen PWA – Personal AI Memory Assistant**
-**Live:** [https://ramin-najafi.github.io/linen/](https://ramin-najafi.github.io/linen/)
+### **1. MiraStyle Platform – AI-Powered Fashion & Commerce**
+**Live:** [mirastyle.io](https://www.mirastyle.io/)
 
-A sophisticated web application that combines conversational AI with memory management. Built from the ground up with a focus on privacy, performance, and user experience.
+Full-stack AI fashion platform with web app, native iOS app, and backend API. Led development, deployment, QA, and team coordination across four repositories.
 
-**Why it's cool:**
-- Works offline with intelligent local assistant
-- Seamlessly switches between local and AI modes
-- Remembers context from previous conversations
-- Installable as a native-like app on any device
-- Zero external dependencies
-
-**Technologies:** Vanilla JavaScript, IndexedDB, Service Workers, Google Gemini API, PWA standards
+**Technologies:** React, Node.js, Supabase, SwiftUI, Cypress, Vercel, Railway, Stripe, OAuth
 
 ---
 
-### **2. ShopAll – E-Commerce Platform**
-**Live:** [https://ramin-najafi.github.io/shopall/](https://ramin-najafi.github.io/shopall/)
+### **2. Linen – Personal Mental Health Supporter**
+**Live:** [linen-pa.github.io](https://linen-pa.github.io/)
 
-A fully functional e-commerce site showcasing product management, cart functionality, and dynamic pricing—all without a backend.
+A personal mental health supporter — a safe space to talk, available 24/7, with memory, voice, and a secure account that follows you across all your devices.
 
-**Why it's cool:**
-- 35+ products with realistic inventory system
-- Shopping cart persists across browser sessions
-- Advanced filtering and search capabilities
-- Responsive design that works on any device
-- Built with vanilla JavaScript (no libraries)
+**Technologies:** Vanilla JavaScript, IndexedDB, Service Workers, Gemini API, PWA standards
+
+---
+
+### **3. ShopAll – E-Commerce Platform**
+**Live:** [ramin-najafi.github.io/shopall/](https://ramin-najafi.github.io/shopall/)
+
+A fully functional e-commerce site with 35+ products across 7 categories, full shopping cart, wishlist system, and dynamic pricing — all without a backend.
 
 **Technologies:** HTML5, CSS3, Vanilla JavaScript, localStorage
 
 ---
 
-### **3. Portfolio Website**
-**Live:** [https://ramin-najafi.github.io/](https://ramin-najafi.github.io/)
+### **4. Java War Simulation**
 
-This portfolio itself is a clean, functional website designed to showcase my work and skills in an intuitive way.
+Console-based strategy game built with object-oriented programming principles in Java.
 
-**Features:**
-- Single-page application with smooth scrolling
-- Responsive hamburger menu
-- Integrated Linen PWA showcase
-- Mobile-first responsive design
-
-**Technologies:** HTML5, CSS3, Vanilla JavaScript, Google Fonts
+**Technologies:** Java, OOP
 
 ---
 
-## 🚀 What I'm Learning & Exploring
+### **5. Swift iOS Reminder App**
 
-- Advanced JavaScript patterns and architecture
-- State management in complex applications
-- Performance optimization and web vitals
-- AI/ML integration in web applications
-- Full-stack development with backend technologies
-- Scalable application design
+Productivity app with scheduling and alert features built in SwiftUI.
 
----
-
-## 🛠️ Projects Breakdown
-
-```
-ramin-najafi.github.io/
-├── index.html                          # Main portfolio page
-├── css/
-│   └── style.css                       # Portfolio styling
-├── js/
-│   └── app.js                          # Portfolio interactivity
-├── linen/                              # Linen PWA (Featured)
-│   ├── index.html
-│   ├── app.js                          # ~2000+ lines of core logic
-│   ├── service-worker.js               # Offline support
-│   ├── manifest.json                   # PWA configuration
-│   ├── styles.css                      # UI styling
-│   └── icon-*.png                      # App icons
-├── shopall/                            # E-Commerce platform
-│   ├── index.html
-│   ├── js/
-│   │   └── app.js
-│   └── styles/
-│       └── style.css
-└── README.md                           # This file
-```
+**Technologies:** Swift, SwiftUI, iOS
 
 ---
 
 ## 📊 By the Numbers
 
-- **2,000+** lines of production JavaScript code
-- **3** fully functional, deployed web applications
-- **0** external frameworks (pure vanilla tech stack)
-- **100%** client-side rendered apps
-- **5+** months of active development and refinement
+- **170** Cypress E2E tests — 100% pass rate on MiraStyle
+- **6** developers coordinated across web, iOS, and Android
+- **4** repositories managed simultaneously in production
+- **12** languages supported via internationalization
+- **3** production web applications (Consumer, Merchant, Admin)
+- **0** external frameworks on personal projects (pure vanilla stack)
+
+---
+
+## 🎓 Education
+
+- **triOS College** — Web & Development Fundamentals — Graduated March 2026
+- **Fanshawe College** — Academic Career Entrance — 2016
 
 ---
 
 ## 📞 Contact & Connect
 
-- **Email:** rnajafi.dev@gmail.com
 - **GitHub:** [github.com/ramin-najafi](https://github.com/ramin-najafi)
 - **Portfolio:** [ramin-najafi.github.io](https://ramin-najafi.github.io/)
 
